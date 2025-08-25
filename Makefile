@@ -1,22 +1,33 @@
 NAME = webserv
 CXX = c++
-CXXFLAGS = -g -Wall -Wextra -Werror -std=c++98
-SRCS =  console/console.cpp main.cpp
+CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -g
+
+SRCS = main.cpp console/console.cpp
+OBJDIR = obj
+
 OBJS = $(SRCS:.cpp=.o)
+OBJS := $(addprefix $(OBJDIR)/, $(notdir $(OBJS:.o=.o)))
 
 all: $(NAME)
 
 $(NAME): $(OBJS)
-		$(CXX) $(CXXFLAGS) $(OBJS) -o $(NAME)
+	$(CXX) $(CXXFLAGS) $(OBJS) -o $(NAME)
 
-%.o: %.cpp
-		$(CXX) $(CXXFLAGS) -c $< -o $@
+$(OBJDIR)/%.o: %.cpp | $(OBJDIR)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+
+$(OBJDIR)/%.o:
+	$(CXX) $(CXXFLAGS) -c $(filter %/$*.cpp,$(SRCS)) -o $@
+
+$(OBJDIR):
+	mkdir -p $(OBJDIR)
 
 clean:
-		rm -f $(OBJS)
+	rm -rf $(OBJDIR)
 
 fclean: clean
-		rm -f $(NAME)
+	rm -f $(NAME)
 
 re: fclean all
 
