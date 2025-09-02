@@ -1,11 +1,10 @@
 #include "console/console.hpp"
+#include "server/server.hpp"
 
 int main() {
 	console::setDebug(true);
-	console::log("is working", INFO);
-	console::log("is working", WARNING);
-	console::log("is working", ERROR);
-	console::log("is working", DEBUG);
+	server serv(8080);
+	serv.startServer();
 
 	return 0;
 }

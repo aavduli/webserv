@@ -1,20 +1,19 @@
 #ifndef SERVER_HPP
 # define SERVER_HPP
-# include <iostream>
-# include <string>
-# include <fstream>
+# include <sys/socket.h>
+# include <netinet/in.h>
 
 class server {
-private:
-
-
+protected:
+	int _server_fd;
+	int _newsocket;
+	int _port;
+	struct sockaddr_in _addr;
 public:
-	server();
-	server(const server &other);
+	server(int port);
 	~server();
 
-	server &operator=(const server &rhs);
-
+	void serverManager();
 };
 
 #endif
