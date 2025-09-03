@@ -6,11 +6,12 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/01 10:35:24 by jim               #+#    #+#             */
-/*   Updated: 2025/09/01 12:56:10 by jim              ###   ########.fr       */
+/*   Updated: 2025/09/03 20:15:26 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "parser_config.hpp"
+
 
 ParseConfig::ParseConfig(){}
 ParseConfig::~ParseConfig(){}
@@ -22,48 +23,70 @@ std::string ParseConfig::trim(const std::string &string) const{
 		return "";
 	return string.substr(start, end - start + 1);
 }
-//		std::vector<ConfParam> parseFile(const std::string &ConfigFile) const;
-std::vector<ConfParam> ParseConfig::parseFile(const std::string &ConfigFile) const {
+
+std::map<std::string, std::string> ParseConfig::ParseServer(const std::string &ConfigFile) const{
 	std::ifstream file(ConfigFile.c_str());
-	std::vector<ConfParam> paramConfig;
+	std::map<std::string, std::string> ServerConfig;
 
 	if (!file.is_open()){
-		std::cerr << "Error can't open file config : " << ConfigFile << std::endl;
-		return paramConfig;
+		std::cerr << "Error: can't open file "<< ConfigFile << std::endl;
+		return ServerConfig;
 	}
 
 	std::string line;
+	bool inServerBlock = false;
+
 	while(std::getline(file, line)){
 		std::string okLine = trim(line);
 
-		if (okLine.empty() || okLine == "{" || okLine == "}")
+		if (okLine.empty() || okLine[0] == '#')
 			continue;
 
-		size_t pos = okLine.find('#');
-		std::string param;
-		std::string comment;
-
-		if (pos != std::string::npos){
-			param = trim(okLine.substr(0, pos));
-			comment = trim(okLine.substr(pos+1));
+		//Block server start
+		if (okLine.find("server") == 0 && okLine.find("{") != std::string::npos){
+			inServerBlock = true;
+			continue;
 		}
-		else
-			param = okLine;
 
-		if (!param.empty() && param[param.size() - 1] == ';')
-			param.erase(param.size() -1);
+		//end server block
+		if (okLine == "}" && inServerBlock){
+			break;
+		}
 
-		if (!param.empty() || !comment.empty()){
-			paramConfig.push_back(ConfParam(param, comment));
+		//skip locations block
+		if (okLine.find("location") == 0){
+			//skip to the end
+			int braceCount = 1;
+			while(std::getline(file, line) && braceCount > 0){
+				std::string skipLine = trim(line);
+				if (skipLine.find("{") != std::string::npos)
+					braceCount++;
+				if (skipLine=="}")
+					braceCount --;
+			}
+			continue;
+		}
+		// Parse the directives
+		if (inServerBlock){
+			if (!okLine.empty() && okLine[okLine.size() - 1] == ';')
+			okLine.erase(okLine.size() -1);
+
+			//split by space
+			size_t spacePos = okLine.find(' ');
+			if (spacePos != std::string::npos){
+				std::string key = okLine.substr(0, spacePos);
+				std::string value = trim(okLine.substr(spacePos +1));
+				ServerConfig[key] = value;
+			}
 		}
 	}
-	return paramConfig;
-
+	return ServerConfig;
 }
+
 //		std::vector<Location> parseLocation(const std::string &ConfigFile) const;
-std::vector<Location> ParseConfig::parseLocation(const std::string &ConfigFile)const{
+std::map<std::string, std::map<std::string, std::string> > ParseConfig::parseLocation(const std::string &ConfigFile)const{
 	std::ifstream file(ConfigFile.c_str());
-	std::vector<Location> locations;
+	std::map<std::string, std::map<std::string, std::string> > locations;
 
 	if (!file.is_open()){
 		std::cerr << "Error : cant open file "<< ConfigFile <<std::endl;
@@ -71,7 +94,7 @@ std::vector<Location> ParseConfig::parseLocation(const std::string &ConfigFile)c
 	}
 
 	std::string line;
-	Location *currentLoc = NULL;
+	std::string currentloc = "";
 
 	while(std::getline(file, line)){
 		std::string okLine = trim(line);
@@ -86,37 +109,27 @@ std::vector<Location> ParseConfig::parseLocation(const std::string &ConfigFile)c
 			std::string path;
 
 			iss >> keyword >> path; // Should be like "Location /xx {"
-			currentLoc = new Location(path);
+			currentloc = path;
 			continue;
 		}
 
 		//End of a block
 		if (okLine == "}"){
-			if (currentLoc) {
-				locations.push_back(*currentLoc);
-				delete currentLoc;
-				currentLoc = NULL;
-			}
+			currentloc = "";
 			continue;
 		}
 
 		//line inside block
-		if (currentLoc){
-			size_t pos = okLine.find('#');
-			std::string param;
-			std::string comment;
+		if (!currentloc.empty()){
+			if (!okLine.empty() && okLine[okLine.size() -1] == ';')
+				okLine.erase(okLine.size() - 1);
 
-			if (pos != std::string::npos){
-				param = trim(okLine.substr(0, pos));
-				comment = trim(okLine.substr(pos+1));
-			}
-			else
-				param = okLine;
-
-			if (!param.empty() && param[param.size() - 1 ] == ';')
-				param.erase(param.size() -1);
-			if (!param.empty() || !comment.empty()){
-				currentLoc->addParam(ConfParam(param, comment));
+			//splitting first space
+			size_t spacePos = okLine.find(' ');
+			if (spacePos != std::string::npos){
+				std::string key = okLine.substr(0, spacePos);
+				std::string value = trim(okLine.substr(spacePos + 1));
+				locations[currentloc][key] = value;
 			}
 		}
 	}

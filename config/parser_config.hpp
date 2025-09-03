@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/01 10:35:44 by jim               #+#    #+#             */
-/*   Updated: 2025/09/01 11:32:07 by jim              ###   ########.fr       */
+/*   Updated: 2025/09/03 18:27:11 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,8 +26,13 @@ class ParseConfig{
 		ParseConfig();
 		~ParseConfig();
 
-		std::vector<ConfParam> parseFile(const std::string &ConfigFile) const;
-		std::vector<Location> parseLocation(const std::string &ConfigFile) const;
+		// Global map : location["/path"]["option"] = "value"
+		std::map<std::string, std::map<std::string, std::string> > parseLocation(const std::string &configFile) const;
+
+		//Map param server
+		std::map<std::string, std::string> ParseServer(const std::string &configFile) const;
 };
+
+//
 
 #endif

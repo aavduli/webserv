@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/01 11:25:40 by jim               #+#    #+#             */
-/*   Updated: 2025/09/01 12:54:53 by jim              ###   ########.fr       */
+/*   Updated: 2025/09/03 19:26:00 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,24 +16,30 @@
 Location::Location(const std::string &path) : _path(path){}
 Location::~Location(){}
 
-void Location::addParam(const ConfParam &param){
-	_param.push_back(param);
+void Location::addParam(const std::string &key, const std::string &value){
+	_params[key] = value;
 }
 
 std::string Location::getPath() const{
 	return _path;
 }
+//const std::map<location1<key : value> >
 
-const std::vector<ConfParam> &Location::getParam() const{
-	return _param;
+std::string Location::getParam(const std::string &key) const {
+	std::map<std::string, std::string>::const_iterator it = _params.find(key);
+	if (it != _params.end())
+		return it->second;
+	return "";
+}
+
+const std::map<std::string, std::string> &Location::getAllParams() const{
+	return _params;
 }
 
 void Location::print() const {
-	std::cout << "Location "<<_path << " {" <<std::endl;
-	for (size_t i = 0; i < _param.size(); i++){
-		std::cout << " ";
-		_param[i].print();
+	std::cout << "Location " << _path << std::endl;
+	std::map<std::string, std::string>::const_iterator it ;
+	for (it = _params.begin(); it != _params.end(); it++){
+		std::cout << it->first << " = " << it->second << std::endl;
 	}
-
-	std::cout << "}"<<std::endl;
 }
