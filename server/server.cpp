@@ -4,6 +4,7 @@
 #include <fstream>
 #include "../console/console.hpp"
 #include <cstdlib>
+#include <cstring>
 #include <unistd.h>
 
 server::server(int port) : _port(port) {}
@@ -33,7 +34,7 @@ void server::serverManager() {
 		std::cout << errno << std::endl;
 		exit(EXIT_FAILURE);
 	}
-	console::log("Server listening on port 9090", INFO);
+	console::log("Server listening", INFO);
 	size_t addrlen = sizeof(_addr);
 	int connection = accept(_server_fd, (struct sockaddr*)&_addr, (socklen_t*)&addrlen);
 	if (connection < 0) {
