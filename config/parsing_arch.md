@@ -1,4 +1,10 @@
 # Webserv - config file parser TODO - jroulet
+### DONE
+ - [ ] vector to map
+### TODO
+ - [ ] make template for utils
+ - [ ] utils with map 
+    `see below for utils`
 
 ## Utilisation des std::map
 
