@@ -1,0 +1,6 @@
+ERROR HANDLING
+- Syscall and other C errors -> function using errno and strerror
+- Basic CPP errors -> validation conditions (if Null/empty/etc.) 
+- Critical CPP errros -> exceptions (standard or custom) and try block
+- Http errors -> enum list of status codes and messages (map<int, string>?)
+- Other -> flags and exit()?, custom macros?, ...?
