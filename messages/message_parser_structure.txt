@@ -1,0 +1,41 @@
+MESSAGES
+- Receives stream content in buffer
+- Parses and stores using request/response classes
+- Returns instances
+- Updates state continuously
+
+Class Hierarchy Tree:
+└── HttpMessage (base class)
+    ├── private:
+    │   ├── int state
+    │   ├── double http_version
+    │   ├── HttpHeaders headers
+    │   └── std::string body
+    └── public methods:
+        ├── setState(int value);
+        ├── getState()
+        ├── getHttpVersion() const
+        ├── setHttpVersion(double& version)
+        ├── getHeaders() const
+        ├── setHeaders(const std::map<std::string, std::string>& fields)
+        ├── getBody() const
+        └── setBody(const std::string& body) const
+    │
+    ├── HttpRequest (inherits from HttpMessage and takes a buffer as argument)
+    │   └── private:
+    │       ├── HttpMethod method
+    │       └── std::string uri
+    │
+    └── HttpResponse (inherits from HttpMessage and takes a HttpRequest as argument)
+        └── private:
+            ├── std::map<int, std::string> status [option 1]
+            ├── int status_code + std::string reason_phrase [option 2]
+            └── ResponseStatus status [option 3 - enum]
+
+Standalone Classes:
+└── HttpHeaders
+    ├── private:
+    │   └── std::map<std::string, std::string> fields
+    └── public methods:
+        ├── getValue(const std::string& key) const
+        └── setValue(const std::string& key, const std::string& value)
