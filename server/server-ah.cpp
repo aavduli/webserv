@@ -7,6 +7,10 @@
 #include <cstring>
 #include <unistd.h>
 
+#include "../messages/HttpMessage.hpp"
+#include "../messages/HttpRequest.hpp"
+#include "../messages/HttpResponse.hpp"
+
 server::server(int port) : _port(port) {}
 
 server::~server() {}
@@ -52,15 +56,18 @@ void server::serverManager() {
 		
 		if (bytes_read > 0) {
 			console::log(buffer, INFO);
+			
 
 			// TODO?: switch case between server and parser to monitor parsing steps
 			// Parsing state flag + status code (initially set to -1?) continuously updated to break ASAP if needed
 
 			// TODO: Parse incoming HTTP request from buffer
-			// HttpRequest request(buffer);
-
 			// TODO: Create HTTP response with status code, headers and output body if needed
-			// HttpResponse	response(request);
+
+			HttpRequest request(buffer, bytes_read);
+			// HttpResponse response(request);
+
+			// TODO: encode response to stream format
 
 			// TMP: Send a string HTTP response
 			std::string http_response = 
@@ -73,7 +80,6 @@ void server::serverManager() {
 			
 			send(connection, http_response.c_str(), http_response.size(), 0);
 		}
-		
 		close(connection);
 	}
 	close(_server_fd);
