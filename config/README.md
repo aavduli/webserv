@@ -2,8 +2,13 @@
 ### DONE
  - [ ] vector to map
 ### TODO
+ - [ ] validate directive
+ - [ ] ip doesnt start with 0 if size > 0
+ - [ ] duplicate direcvite ?
+ - [ ] check if folder exist
+ - [ ] utils with map
  - [ ] make template for utils
- - [ ] utils with map 
+ - [ ] utils with map
     `see below for utils`
 
 ## Utilisation des std::map
@@ -12,10 +17,10 @@ je vais utiliser des maps a la place de vector car:
 1) recherche plus rapide
 2) key - value -> plus claire dans le code
 3) on peut facilement verifier si une directive existe (voir si dessous)
-4) possibilité d'ajouté des directive après 
+4) possibilité d'ajouté des directive après
 
 ### Exemple d'utilisation
-#### a modifier dans mon code : 
+#### a modifier dans mon code :
 ```cpp
 // Au lieu de ça :
 std::vector<ConfParam> params;
@@ -29,9 +34,9 @@ if (serverDirectives.find("listen") != serverDirectives.end())
     port = serverDirectives["listen"];
 ```
 
-## utils_parsing.cpp - TODO pour ahanzi - a voir ses besoins 
+## utils_parsing.cpp - TODO pour ahanzi - a voir ses besoins
 
-### Fonctions utils 
+### Fonctions utils
 
 ```cpp
 // utils_parsing.hpp
@@ -56,9 +61,9 @@ public:
 ```
 webserv/
 ├── parsing/
-│   ├── utils_parsing.cpp/hpp    
-│   ├── config_parser.cpp/hpp    
-│   └── http_parser.cpp/hpp      
+│   ├── utils_parsing.cpp/hpp
+│   ├── config_parser.cpp/hpp
+│   └── http_parser.cpp/hpp
 ```
 
 ## utilisation de methodes
@@ -68,7 +73,7 @@ Supprime les espaces, tabs, retours à la ligne au début et fin d'une chaîne. 
 
 ### `split(const std::string& str, char delimiter)` a voir avec ahanzi
 Découpe une chaîne selon un délimiteur. Utile pour :
-- Config : `allow_methods GET POST DELETE` → ["GET", "POST", "DELETE"]  
+- Config : `allow_methods GET POST DELETE` → ["GET", "POST", "DELETE"]
 - HTTP : `Host: localhost:8080` → ["Host", " localhost:8080"]
 
 ### `isValidIP(const std::string& ip)`
@@ -81,4 +86,4 @@ Vérifie format IPv4
 http est case sensitif
 
 ### `isValidMethod(const std::string& method)`
- `allow_methods` POST - GET ... 
+ `allow_methods` POST - GET ...
