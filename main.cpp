@@ -3,7 +3,9 @@
 
 int main() {
 	console::setDebug(true);
-	while (1)
-		server serv(8080);
+	server serv(8080);
+	while (1) {
+		serv.serverManager();
+	}
 	return 0;
 }
