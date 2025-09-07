@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/01 10:35:24 by jim               #+#    #+#             */
-/*   Updated: 2025/09/03 20:15:26 by jim              ###   ########.fr       */
+/*   Updated: 2025/09/07 15:24:34 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -109,6 +109,13 @@ std::map<std::string, std::map<std::string, std::string> > ParseConfig::parseLoc
 			std::string path;
 
 			iss >> keyword >> path; // Should be like "Location /xx {"
+
+			//deletion of '{'
+			if (path.back() == '{'){
+				path.pop_back();
+				path=trim(path);
+			}
+
 			currentloc = path;
 			continue;
 		}
