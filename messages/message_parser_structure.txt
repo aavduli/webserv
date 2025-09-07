@@ -4,38 +4,80 @@ MESSAGES
 - Returns instances
 - Updates state continuously
 
+MESSAGES
+- Receives stream content in buffer
+- Parses and stores using request/response classes
+- Returns instances
+- Updates state continuously
+
 Class Hierarchy Tree:
-└── HttpMessage (base class)
-    ├── private:
-    │   ├── int state
-    │   ├── double http_version
-    │   ├── HttpHeaders headers
-    │   └── std::string body
+└── HttpMessage (base class - virtual destructor)
+    ├── protected:
+    │   ├── State _state                    // parsing state monitor (enum with detailed states)
+    │   ├── double _http_version            // <major>.<minor> format
+    │   ├── HttpHeaders _headers            // composition - header management
+    │   └── std::string _body               // optional message body
     └── public methods:
-        ├── setState(int value);
-        ├── getState()
+        ├── setState(State state)
+        ├── getState() const
         ├── getHttpVersion() const
-        ├── setHttpVersion(double& version)
+        ├── setHttpVersion(double version)
         ├── getHeaders() const
-        ├── setHeaders(const std::map<std::string, std::string>& fields)
+        ├── setHeaders(const std::map<std::string, std::vector<std::string>>& fields)
         ├── getBody() const
-        └── setBody(const std::string& body) const
+        └── setBody(const std::string& body)
     │
-    ├── HttpRequest (inherits from HttpMessage and takes a buffer as argument)
-    │   └── private:
-    │       ├── HttpMethod method
-    │       └── std::string uri
+    ├── HttpRequest (inherits from HttpMessage)
+    │   ├── private:
+    │   │   ├── std::string _method         // HTTP method (GET, POST, etc.)
+    │   │   └── std::string _uri            // request URI/path
+    │   └── public methods:
+    │       ├── HttpRequest(char* buffer, ssize_t size)
+    │       ├── getMethod() const
+    │       ├── getUri() const
+    │       ├── parse_request(const std::string& raw_request)
+    │       ├── parse_req_line(iterator& it, iterator end)
+    │       ├── parse_req_headers(iterator& it, iterator end)
+    │       └── parse_req_body(iterator& it, iterator end)
     │
-    └── HttpResponse (inherits from HttpMessage and takes a HttpRequest as argument)
-        └── private:
-            ├── std::map<int, std::string> status [option 1]
-            ├── int status_code + std::string reason_phrase [option 2]
-            └── ResponseStatus status [option 3 - enum]
+    └── HttpResponse (inherits from HttpMessage)
+        ├── private:
+        │   ├── int _status_code            // HTTP status code (200, 404, etc.)
+        │   └── std::string _reason_phrase  // status description ("OK", "Not Found")
+        └── public methods:
+            ├── HttpResponse()
+            ├── setStatus(StatusCode code)  // using enum
+            ├── setStatus(int code, const std::string& reason)  // custom
+            └── getStatusLine() const
 
 Standalone Classes:
-└── HttpHeaders
+└── HttpHeaders (composition class for header management)
     ├── private:
-    │   └── std::map<std::string, std::string> fields
+    │   └── std::map<std::string, std::vector<std::string>> _fields  // multi-value headers
     └── public methods:
-        ├── getValue(const std::string& key) const
-        └── setValue(const std::string& key, const std::string& value)
+        ├── HttpHeaders()
+        ├── HttpHeaders(const std::map<...>& fields)
+        ├── hasHeader(const std::string& key) const
+        ├── addHeader(const std::string& key, const std::string& value)
+        ├── getHeaderValues(const std::string& key) const
+        └── setHeaderValues(const std::string& key, const std::string& value)
+
+Enums:
+├── State (detailed parsing states for fine-grained control)
+│   ├── Message states: s_msg_dead, s_msg_empty, s_msg_error, s_msg_init, s_msg_done
+│   ├── Request states: s_req_start, s_req_method, s_req_uri, s_req_version, s_req_done
+│   ├── Response states: s_res_start, s_res_protocol, s_res_version, s_res_status, s_res_done
+│   ├── Header states: s_head_start, s_head_fields, s_head_done
+│   └── Body states: s_body_start, s_body_content, s_body_done
+│
+├── HttpMethod (for request types)
+│   └── GET, POST, DELETE, HEAD, PUT, CONNECT, OPTIONS, TRACE
+│
+└── StatusCode (for HTTP response codes)
+    └── OK=200, CREATED=201, BAD_REQUEST=400, NOT_FOUND=404, INTERNAL_SERVER_ERROR=500
+
+Free Functions:
+├── print_request(HttpRequest request)  // debugging utility
+└── toLowerStr(const std::string& str)  // header normalization helper
+
+
