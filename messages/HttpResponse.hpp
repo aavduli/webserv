@@ -3,19 +3,28 @@
 
 #include "HttpMessage.hpp"
 
-enum ResponseStatus {
-	OK = 200
+enum StatusCode {
+	OK = 200,
+	CREATED = 201,
+	BAD_REQUEST = 400,
+	NOT_FOUND = 404,
+	INTERNAL_SERVER_ERROR = 500
 };
 
-class HttpResponse : public HttpMessage {
+/* 
+HTTP/1.1 200 OK
+Content-Type: text/html
+Content-Length: 456
+Connection: keep-alive
+
+[Body content]
+ */
+
+ class HttpResponse : public HttpMessage {
 
 	private:
-		// std::map<int, std::string>	_status;	// status code (key) = reason phrase (value)
-		// 										// OR
-		// int			_status_code;				// code stored alone as int
-		// std::string	_reason_phrase;				// short textual description associated to the status code
-		// 										// OR
-		ResponseStatus	_status;				// enum STR = int
+		int			_status_code;		// 3 digits
+		std::string	_reason_phrase;		// short textual description
 
 	public:
 		HttpResponse();
@@ -23,6 +32,9 @@ class HttpResponse : public HttpMessage {
 		HttpResponse& operator=(const HttpResponse& rhs);
 		~HttpResponse();
 
+		void		setStatus(StatusCode code);
+		void		setCustomStatus(int code, const std::string& reason);
+		std::string	getReasonPhrase() const;
 };
 
-#endif // HTTPRESPONSE_HPP
+#endif //HTTPRESPONSE_HPP
