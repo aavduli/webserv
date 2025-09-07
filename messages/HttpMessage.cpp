@@ -1,7 +1,7 @@
 #include "HttpMessage.hpp"
 #include <iostream>
 
-HttpMessage::HttpMessage() : _state(S_INIT), _http_version(-1), _headers(), _body() {
+HttpMessage::HttpMessage() : _state(s_msg_init), _http_version(-1), _headers(), _body() {
 	std::cout << "[HttpMessage Default Constructor]" << std::endl;
 }
 
@@ -36,7 +36,7 @@ double	HttpMessage::getHttpVersion() const {
 	return _http_version;
 }
 
-void	HttpMessage::setHttpVersion(double& version) {
+void	HttpMessage::setHttpVersion(double version) {
 	_http_version = version;
 }
 
