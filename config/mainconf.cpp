@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/01 10:57:57 by jim               #+#    #+#             */
-/*   Updated: 2025/09/03 20:17:26 by jim              ###   ########.fr       */
+/*   Updated: 2025/09/07 18:22:53 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,15 +36,20 @@ int main(int ac, char **av){
 	filename = filename+".conf";
 
 
-	std::map<std::string, std::string> serverConfig = parser.ParseServer(filename);
+	std::vector<std::map<std::string, std::string> >serverConfig = parser.parseAllServer(filename);
 	std::map<std::string, std::map<std::string, std::string> > locations = parser.parseLocation(filename);
 	std::map<std::string, std::string>::const_iterator it;
 	std::map<std::string, std::map<std::string, std::string> >::const_iterator itt;
 
 	std::cout << "===========Server Config ==========" <<std::endl;
 
-	for (it = serverConfig.begin(); it != serverConfig.end(); it++){
-		std::cout << it->first << " = " << it->second << std::endl;
+	//std::cout << serverConfig.size() <<std::endl;
+
+	for (int i = 0; i  < (int)serverConfig.size(); i++){
+		std::map<std::string, std::string>::iterator it;
+		for (it = serverConfig[i].begin(); it != serverConfig[i].end(); it++){
+			std::cout << it->first << " : " << it->second << std::endl;
+		}
 	}
 
 	std::cout << "\n===========Location ==========" <<std::endl;
