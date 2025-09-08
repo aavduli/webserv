@@ -3,6 +3,8 @@
 # include <sys/socket.h>
 # include <netinet/in.h>
 
+#include "../messages/MessageStreams.hpp"
+
 class server {
 protected:
 	int _server_fd;
