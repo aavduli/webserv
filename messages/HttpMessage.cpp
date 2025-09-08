@@ -1,5 +1,7 @@
 #include "HttpMessage.hpp"
+#include "HttpRequest.hpp"
 #include <iostream>
+#include <sstream>
 
 HttpMessage::HttpMessage() : _state(s_msg_init), _http_version(-1), _headers(), _body() {
 	std::cout << "[HttpMessage Default Constructor]" << std::endl;
@@ -55,4 +57,28 @@ std::string	HttpMessage::getBody() const {
 
 void	HttpMessage::setBody(const std::string& body) {
 	_body = body;
+}
+
+void	handle_request(s_msg_streams streams) {
+
+	// decide which stream to read from
+	// extract line by line to parse content
+	// create Request object
+	// handle request
+	// create response
+	// populate response stream
+
+	// tmp
+	std::stringstream ss;
+	ss << streams.simple.rdbuf();
+	std::string	raw_request = ss.str();
+
+	HttpRequest request(raw_request);
+
+	// if (streams.has_eof && !streams.is_chunked) {
+	// 	get_simple_request(streams);
+	// }
+	// else if (streams.is_chunked) {
+	// 	get_chunked_request(streams);
+	// }
 }

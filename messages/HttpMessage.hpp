@@ -11,6 +11,8 @@
 #define LF	'\n'
 
 #include "../parsing/Parsing.hpp"
+#include "../parsing/MessageParsing.hpp"
+#include "MessageStreams.hpp"
 #include "HttpHeaders.hpp"
 
 enum State {
@@ -19,6 +21,11 @@ enum State {
 	s_msg_error,
 	s_msg_init,
 	s_msg_version,
+
+	s_line_processing,
+	s_line_complete,
+	s_line_unexpected_end,
+	s_line_empty,
 
 	/* REQUEST */
 	s_req_start, 
@@ -43,24 +50,27 @@ enum State {
 	/* BODY */
 	s_body_start,
 	s_body_content,
-	s_body_done,	// msg_done directly?
+	s_body_done,
 
 	s_msg_done
 };
 
+
+class HttpRequest;
+class HttpResponse;
 class HttpMessage {
 
 	protected:
-		State			_state;			// monitor
+		State			_state;			// monitor for parsing
 		double			_http_version;	// <major>.<minor> format
 		HttpHeaders		_headers;		// general, request, response, entity header fields
 		std::string		_body;			// optional
-
+		
 	public:
-		HttpMessage();					// not instanciable
+		HttpMessage();
 		HttpMessage(const HttpMessage& rhs);
 		HttpMessage& operator=(const HttpMessage& rhs);
-		virtual ~HttpMessage();			// base class
+		virtual ~HttpMessage();
 
 		void		setState(State state);
 		State		getState() const;
@@ -74,5 +84,7 @@ class HttpMessage {
 		std::string	getBody() const;
 		void		setBody(const std::string& body);
 };
+
+void	handle_request(s_msg_streams streams);
 
 #endif // HTTPMESSAGE_HPP

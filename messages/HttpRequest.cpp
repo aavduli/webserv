@@ -1,9 +1,8 @@
 #include "HttpRequest.hpp"
 
-HttpRequest::HttpRequest(char *buffer, ssize_t size) {
+HttpRequest::HttpRequest(std::string raw_request) {
 	std::cout << "[HttpRequest Parameterized Constructor]" << std::endl;
 
-	std::string	raw_request(buffer, size);
 	if (!parse_request(raw_request))
 		std::cout << "An error occured during request parsing" << std::endl;
 	else {
@@ -38,6 +37,7 @@ std::string HttpRequest::getMethod() const {
 std::string HttpRequest::getUri() const {
 	return _uri;
 }
+
 
 // separate parsing in steps and monitor with state
 bool HttpRequest::parse_request(std::string raw_request) {
@@ -97,17 +97,6 @@ bool HttpRequest::parse_request(std::string raw_request) {
 
 	return (_state == s_req_done);
 }
-
-// Parse "METHOD URI HTTP/VERSION\r\n"
-// Example: "GET /index.html HTTP/1.1\r\n"
-/* 
-The Request-Line begins with a method token, followed by the
-   Request-URI and the protocol version, and ending with CRLF. The
-   elements are separated by SP characters. No CR or LF is allowed
-   except in the final CRLF sequence.
-
-        Request-Line   = Method SP Request-URI SP HTTP-Version CRLF
- */
 
 bool	HttpRequest::parse_req_version(std::string::const_iterator& it, std::string::const_iterator end) {
 
@@ -202,3 +191,29 @@ bool	HttpRequest::is_valid_request() {
 	_state = s_req_done;
 	return true;
 }
+// 
+// std::string	get_stream_line(std::ostream& stream) {
+// 
+// }
+
+// void	get_simple_request(s_msg_streams streams) {
+// 
+// 	HttpRequest request;
+// 	std::string line = get_stream_line(streams.simple);
+// 
+// 	while (line) {
+// 		switch (request.getState())
+// 		{
+// 		case constant expression:
+// 			/* code */
+// 			break;
+// 		
+// 		default:
+// 			break;
+// 		}
+// 	}
+// }
+// 
+// void	get_chunked_request(MessageStreams streams) {
+// 
+// }
