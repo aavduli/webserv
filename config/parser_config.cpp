@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/01 10:35:24 by jim               #+#    #+#             */
-/*   Updated: 2025/09/07 19:06:39 by jim              ###   ########.fr       */
+/*   Updated: 2025/09/08 14:05:31 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -210,7 +210,6 @@ bool ParseConfig::validatePort(const std::string &port) const{
 	}
 
 	int portNum = atoi(port.c_str());
-
 	if (portNum < 1 || portNum > 65535){
 		std::cerr << "Error : port out of range: "<<portNum << std::endl;
 		return false;
@@ -235,6 +234,24 @@ bool ParseConfig::validateServerDirectives(const std::map<std::string, std::stri
 	if (!validatePort(server.at("listen"))){
 		return false;
 	}
+
+	if (server.find("root") != server.end()){
+		if (!validatePath(server.at("root"))){
+			return false;
+		}
+	}
+
+	if (server.find("error_page") != server.end()){
+		std::string errorPageLine = server.at("error_page");
+		size_t spacepos = errorPageLine.find(' ');
+		if (spacepos != std::string::npos){
+			std::string filepath = errorPageLine.substr(spacepos + 1);
+			if (!validateFile(filepath)){
+				return false;
+			}
+		}
+	}
+
 	return true;
 }
 
@@ -250,7 +267,7 @@ bool ParseConfig::validateIP(const std::string &ip) const {
 		1) split into for segment
 		2) each segement is only digit
 		3) each segement only between 0 -> 255
-		4) each segement do not begin with 0, except if 0 is alone ////HERE 
+		4) each segement do not begin with 0, except if 0 is alone ////HERE
 		5) only 3 dot between segement - not a the begining and end
 		*/
 	if (ip.empty()) return false;
@@ -258,6 +275,7 @@ bool ParseConfig::validateIP(const std::string &ip) const {
 	std::istringstream iss(ip);
 	std::string segment;
 	int count = 0;
+
 
 	while (std::getline(iss, segment, '.')) {
 		if (segment.empty()) return false;
@@ -267,7 +285,11 @@ bool ParseConfig::validateIP(const std::string &ip) const {
 				std::cerr << "Error: Invalid IP format: " << ip <<std::endl;
 				return false;
 			}
-		}
+			if (segment.length() > 1 && segment[0] == '0'){
+				std::cerr << "Error : leading format not allowed in ip. " << segment << std::endl;
+				return false;
+			}
+	}
 
 		int num = atoi(segment.c_str());
 		if (num < 0 || num > 255) {
@@ -284,3 +306,63 @@ bool ParseConfig::validateIP(const std::string &ip) const {
 
 	return true;
 }
+
+bool ParseConfig::validatePath(const std::string &path) const{
+	if (path.empty()) return false;
+
+	struct stat info;
+	if (stat(path.c_str(), &info) != 0){
+		std::cerr << "Error: Directory does not exist: " << path << std::endl;
+		return false;
+	}
+	if (!(info.st_mode & S_IFDIR)) {
+		std::cerr << " Error: path is not a directory: "<< path <<std::endl;
+		return false;
+	}
+	return true;
+}
+
+bool ParseConfig::validateFile(const std::string &filepath) const {
+	if ((filepath.empty())) return false;
+
+	struct stat info;
+	if (stat(filepath.c_str(), &info) != 0){
+		std::cerr << "Error: file does not exist: " <<filepath << std::endl;
+		return false;
+	}
+	if (!(info.st_mode & S_IFREG)){
+		std::cerr << "Error : Path it nos a file: " <<filepath << std::endl;
+		return false;
+	}
+
+	return true;
+}
+
+/*
+===============Getter Setter
+*/
+
+const std::vector<std::map<std::string, std::string> > &ParseConfig::getAllServers(const std::string &configFile){
+	static std::vector<std::map<std::string, std::string> > _servers = parseAllServer(configFile);
+	return _servers;
+}
+
+std::string ParseConfig::getServerDirective(const std::map<std::string, std::string> &server, const std::string &directive) const {
+	std::map<std::string, std::string>::const_iterator it = server.find(directive);
+	if (it != server.end()){
+		return it->second;
+	}
+	return "";
+}
+
+int ParseConfig::getServerPort(const std::map<std::string, std::string> &server) const{
+	std::string port = getServerDirective(server, "listen");
+	return port.empty() ? 8080 : atoi(port.c_str()); //default port if empty 8080
+}
+
+// std::string ParseConfig::(const std::map<std::string, std::string> &server) const{
+// 	std::
+// }
+
+// std::string getServerHost(const std::map<std::string, std::string> &server) const;
+// std::string getServerRoot(const std::map<std::string, std::string> &server) const;
