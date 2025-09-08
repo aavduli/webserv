@@ -1,13 +1,14 @@
 #include "eventManager.hpp"
 
-eventManager::eventManager(int max_events) :_maxEvents(max_events) {
+eventManager::eventManager(int max_events) :  _epfd(-1), _events(NULL), _maxEvents(max_events > 0 ? max_events : 64) {
 	_epfd = epoll_create1(0);
 	if (_epfd == -1) {
 		std::cerr << RED << "epoll_create1 failed" << RESET << std::endl;
+		_maxEvents = 0;
 		return ;
 	}
 	_events = new epoll_event[_maxEvents];
-	std::memset(&_events, 0, sizeof(epoll_event) * _maxEvents);
+	std::memset(_events, 0, sizeof(epoll_event) * _maxEvents);
 }
 
 eventManager::~eventManager() {
@@ -21,6 +22,7 @@ int eventManager::getFd() const {
 }
 
 int eventManager::wait(int timeout) {
+	if (_epfd == -1) { errno = EBADF; return -1; }
 	return epoll_wait(_epfd, _events, _maxEvents, timeout);
 }
 
