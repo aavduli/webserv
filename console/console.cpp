@@ -16,7 +16,7 @@ void console::log(const std::string &msg, Level level) {
 				std::cout << YELLOW << "[WARNING] " << msg << RESET << std::endl;
 				break;
 			case ERROR:
-				std::cout << RED << "[ERROR] " << msg << RESET << std::endl;
+				std::cerr << RED << "[ERROR] " << msg << RESET << std::endl;
 				break;
 			case DEBUG:
 				std::cout << BLUE << "[DEBUG] " << msg << RESET <<std::endl;
