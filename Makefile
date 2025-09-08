@@ -2,7 +2,14 @@ NAME = webserv
 CXX = c++
 CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -g
 
-SRCS = main.cpp server/server.cpp event/eventManager.cpp console/console.cpp
+SRCS =	main.cpp\
+		server/server.cpp\
+		event/eventManager.cpp\
+		console/console.cpp\
+		config/config.cpp\
+		config/location.cpp\
+		config/parser_config.cpp\
+		config/webserv_config.cpp
 OBJDIR = obj
 
 OBJS = $(SRCS:.cpp=.o)

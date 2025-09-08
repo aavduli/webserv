@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/01 10:57:57 by jim               #+#    #+#             */
-/*   Updated: 2025/09/08 17:51:59 by jim              ###   ########.fr       */
+/*   Updated: 2025/09/08 18:34:04 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,7 @@
 #include "parser_config.hpp"
 
 #include "config.hpp"
-#include "webserv_config.hpp"  // Utilise ta nouvelle classe
+#include "webserv_config.hpp"  
 
 int main(int ac, char **av) {
 	if (ac != 2) {

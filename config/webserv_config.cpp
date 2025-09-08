@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/08 16:37:53 by jim               #+#    #+#             */
-/*   Updated: 2025/09/08 17:41:26 by jim              ###   ########.fr       */
+/*   Updated: 2025/09/08 18:25:31 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,8 +35,10 @@ bool WebservConfig::loadConfig(const std::string &configFile){
 
 	//locations
 	_locations = _parser.parseLocation(configFile);
+	WebservConfig::printConfig();
 
 	_isValid = true;
+
 
 	return true;
 }

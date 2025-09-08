@@ -6,11 +6,12 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/01 10:35:24 by jim               #+#    #+#             */
-/*   Updated: 2025/09/08 17:52:28 by jim              ###   ########.fr       */
+/*   Updated: 2025/09/08 18:43:15 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "parser_config.hpp"
+#include "../console/console.hpp"
 #include <iostream>
 #include <cstdlib>
 
@@ -313,6 +314,7 @@ bool ParseConfig::validateIP(const std::string &ip) const {
 bool ParseConfig::validatePath(const std::string &path) const{
 	if (path.empty()) return false;
 
+	console::log(path, ERROR);
 	struct stat info;
 	if (stat(path.c_str(), &info) != 0){
 		std::cerr << "Error: Directory does not exist: " << path << std::endl;
@@ -352,15 +354,3 @@ std::string ParseConfig::getServerDirective(const std::map<std::string, std::str
 	}
 	return "";
 }
-
-int ParseConfig::getServerPort(const std::map<std::string, std::string> &server) const{
-	std::string port = getServerDirective(server, "listen");
-	return port.empty() ? 8080 : atoi(port.c_str()); //default port if empty 8080
-}
-
-// std::string ParseConfig::(const std::map<std::string, std::string> &server) const{
-// 	std::
-// }
-
-// std::string getServerHost(const std::map<std::string, std::string> &server) const;
-// std::string getServerRoot(const std::map<std::string, std::string> &server) const;
