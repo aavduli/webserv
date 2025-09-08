@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/01 10:35:44 by jim               #+#    #+#             */
-/*   Updated: 2025/09/08 14:23:19 by jim              ###   ########.fr       */
+/*   Updated: 2025/09/08 17:27:34 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,7 +29,7 @@ class ParseConfig{
 		bool checkDuplicates(const std::map<std::string, std::string> &directives) const;
 		bool validatePath(const std::string &path) const;
 		bool validateFile(const std::string &path) const;
-		
+
 
 		public :
 		bool validateBraces(const std::string &configFile) const;
@@ -39,10 +39,11 @@ class ParseConfig{
 		// Global map : location["/path"]["option"] = "value"
 		std::map<std::string, std::map<std::string, std::string> > parseLocation(const std::string &configFile) const;
 		//vecotr to multiple server
-		std::vector<std::map<std::string, std::string> > parseAllServer(const std::string &configFile) const;
+		//std::vector<std::map<std::string, std::string> > parseAllServer(const std::string &configFile) const;
+		std::map<std::string, std::string> parseServer(const std::string &configFile) const;
 
 		//get-setradio
-		const std::vector<std::map<std::string, std::string> > &getAllServers(const std::string &configFile);
+		//const std::vector<std::map<std::string, std::string> > &getAllServers(const std::string &configFile);
 		const std::map<std::string, std::map<std::string, std::string> > &getAllLocations(const std::string &configFile);
 
 		//get server directive

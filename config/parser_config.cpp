@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/01 10:35:24 by jim               #+#    #+#             */
-/*   Updated: 2025/09/08 14:05:31 by jim              ###   ########.fr       */
+/*   Updated: 2025/09/08 17:52:28 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,79 +26,82 @@ std::string ParseConfig::trim(const std::string &string) const{
 	return string.substr(start, end - start + 1);
 }
 
-std::vector<std::map<std::string, std::string> > ParseConfig::parseAllServer(const std::string &configFile) const
-{
-	if (!validateBraces(configFile)){
-		std::vector<std::map<std::string, std::string> > empty;
+std::map<std::string, std::string> ParseConfig::parseServer(const std::string &configFile) const {
+	if (!validateBraces(configFile)) {
+		std::map<std::string, std::string> empty;
 		return empty;
 	}
 
 	std::ifstream file(configFile.c_str());
-	std::vector<std::map<std::string, std::string> > allServers;
+	std::map<std::string, std::string> server;
 
-	if (!file.is_open()){
-		std::cerr << "Error : can't open file " << configFile << std::endl;
-		return allServers;
+	if (!file.is_open()) {
+		std::cerr << "Error : cant pen file " << configFile << std::endl;
+		return server;
 	}
 
 	std::string line;
 	bool inServerBlock = false;
-	std::map<std::string, std::string> currentServer;
-	while(std::getline(file, line)){
-		std::string okLine = ParseConfig::trim(line);
+	bool serverFound = false;
+
+	while (std::getline(file, line)) {
+		std::string okLine = trim(line);
 
 		if (okLine.empty() || okLine[0] == '#')
 			continue;
 
-		//Block Serverstart
-		if (okLine == "server{" || okLine == "server {"){
+		// block srv begining
+		if (okLine == "server{" || okLine == "server {") {
+			if (serverFound) {
+				//if more than one srv, we break
+				break;
+			}
 			inServerBlock = true;
-			currentServer.clear(); // new srv
+			server.clear();
 			continue;
 		}
 
-		//end srv blokc
-		if (okLine == "}" && inServerBlock){
-			if (!validateServerDirectives(currentServer)){
-				std::cerr<< "Error : Invalide server configuration" << std::endl;
-				allServers.clear();
-				return allServers;
+		// end block server
+		if (okLine == "}" && inServerBlock) {
+			if (!validateServerDirectives(server)) {
+				std::cerr << "Error : Invalid server configuration" << std::endl;
+				server.clear();
+				return server;
 			}
-			allServers.push_back(currentServer); //save srv
+			serverFound = true;
 			inServerBlock = false;
-			continue;
+			break; // no more than one srv
 		}
-		//skip locations block
-		if ( okLine.find("location") == 0){
-			//skip to the end
+
+		// Sskip locations block
+		if (okLine.find("location") == 0) {
 			int braceCount = 1;
-			while(std::getline(file, line) && braceCount > 0){
+			while (std::getline(file, line) && braceCount > 0) {
 				std::string skipLine = trim(line);
 				if (skipLine.find("{") != std::string::npos)
 					braceCount++;
-				if (skipLine=="}")
-					braceCount --;
+				if (skipLine == "}")
+					braceCount--;
 			}
 			continue;
 		}
-		// Parse the directives
-		if (inServerBlock){
-			if (!okLine.empty() && okLine[okLine.size() - 1] == ';')
-			okLine.erase(okLine.size() -1);
 
-			//split by space
+		// parse directive in srv block
+		if (inServerBlock) {
+			if (!okLine.empty() && okLine[okLine.size() - 1] == ';')
+				okLine.erase(okLine.size() - 1);
+
 			size_t spacePos = okLine.find(' ');
-			if (spacePos != std::string::npos){
+			if (spacePos != std::string::npos) {
 				std::string key = okLine.substr(0, spacePos);
-				std::string value = trim(okLine.substr(spacePos +1));
-				currentServer[key] = value;
+				std::string value = trim(okLine.substr(spacePos + 1));
+				server[key] = value;
 			}
 		}
 	}
-
-
-	return allServers;
+	return server;
 }
+
 
 //		std::vector<Location> parseLocation(const std::string &ConfigFile) const;
 std::map<std::string, std::map<std::string, std::string> > ParseConfig::parseLocation(const std::string &ConfigFile)const{
@@ -341,11 +344,6 @@ bool ParseConfig::validateFile(const std::string &filepath) const {
 /*
 ===============Getter Setter
 */
-
-const std::vector<std::map<std::string, std::string> > &ParseConfig::getAllServers(const std::string &configFile){
-	static std::vector<std::map<std::string, std::string> > _servers = parseAllServer(configFile);
-	return _servers;
-}
 
 std::string ParseConfig::getServerDirective(const std::map<std::string, std::string> &server, const std::string &directive) const {
 	std::map<std::string, std::string>::const_iterator it = server.find(directive);

@@ -6,7 +6,7 @@
 #    By: jim <jim@student.42.fr>                    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/09/01 11:10:05 by jim               #+#    #+#              #
-#    Updated: 2025/09/01 12:53:19 by jim              ###   ########.fr        #
+#    Updated: 2025/09/08 17:52:50 by jim              ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -17,7 +17,8 @@ CXXFLAGS = -Wall -Werror -Wextra -std=c++98
 SRCS =	config.cpp\
 		mainconf.cpp\
 		parser_config.cpp\
-		location.cpp
+		location.cpp\
+		webserv_config.cpp
 
 OBJS = $(SRCS:.cpp=.o)
 
