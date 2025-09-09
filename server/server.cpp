@@ -1,4 +1,5 @@
 #include "server.hpp"
+#include "../messages/MessageStreams.hpp"
 
 server::server(int port) : _port(port), _serverfd(-1), _ev(1024)  {}
 
@@ -22,7 +23,6 @@ void server::ignore_sigpipe() {
 	std::memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = SIG_IGN;
 	sigaction(SIGPIPE, &sa, NULL);
-	console::log("SIGPIPE is ignored", INFO);
 }
 
 void server::setServer() {
@@ -40,7 +40,6 @@ void server::setServer() {
 		std::cerr << RED << "nonblock(listen):" << RESET << std::strerror(errno) << std::endl;
 		exit(1);
 	}
-	console::log("socket is ready to listen", INFO);
 }
 
 void server::setSockaddr() {
@@ -48,13 +47,13 @@ void server::setSockaddr() {
 	_address.sin_family = AF_INET;
 	_address.sin_addr.s_addr = htonl(INADDR_ANY);
 	_address.sin_port = htons(_port);
-	console::log("struct sockaddr is ready", INFO);
 }
 
 void server::serverManager() {
 	ignore_sigpipe();
 	setServer();
 	setSockaddr();
+	s_msg_streams request();
 
 	if (bind(_serverfd, (struct sockaddr *)&_address, sizeof(_address)) < 0) {
 		std::cerr << RED << "failed to bind: " << std::strerror(errno) << RESET << std::endl;
@@ -69,7 +68,7 @@ void server::serverManager() {
 	_ev.addFd(_serverfd, EPOLLIN);
 
 	// const int maxresp = 8096;
-	std::vector<char> rbuf(8096);
+	std::string buff[1024];
 
 	while (true) {
 		int nfds = _ev.wait(-1);
@@ -96,7 +95,6 @@ void server::serverManager() {
 						close(cfd);
 						continue;
 					}
-					console::log("request accepted and made non block!", INFO);
 					_ev.addFd(cfd, EPOLLIN | EPOLLRDHUP);
 				}
 				continue;
@@ -109,18 +107,12 @@ void server::serverManager() {
 			if (events & EPOLLIN) {
 				bool close_it = false;
 				while (true) {
-					ssize_t n = recv(fd, &rbuf[0], rbuf.size(), 0);
+					ssize_t n = recv(fd, buff, buff.size(), 0);
+					std::cout << YELLOW << n << RESET << std::endl;
 					if (n > 0) {
-						static const char resp[] = 
-						"HTTP/1.1 200 OK\r\n"
-						"Content-type: text/plain\r\n"
-						"Content-lenght: 6\r\n"
-						"Connection: close\r\n"
-						"\r\n"
-						"Hello\n";
 						size_t sent = 0;
-						while (sent < sizeof(resp) -1) {
-							ssize_t s = send(fd, resp + sent, (sizeof(resp) - 1) - sent, 0
+						while (sent < sizeof(buff) -1) {
+							ssize_t s = send(fd, buff + sent, (sizeof(buff) - 1) - sent, 0
 #ifdef MSG_NOSIGNAL
 							| MSG_NOSIGNAL
 #endif	
