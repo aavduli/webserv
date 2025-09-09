@@ -1,6 +1,6 @@
 #include "server.hpp"
 
-server::server(int port) : _port(port), _serverfd(-1), _ev(10)  {}
+server::server(int port) : _port(port), _serverfd(-1), _ev(1024)  {}
 
 server::~server() {
 	if (_serverfd != -1) close(_serverfd);
@@ -14,7 +14,6 @@ int server::make_nonblock(int fd) {
 	int clo = fcntl(fd, F_GETFD);
 	if (clo == -1) return -1;
 	if (fcntl(fd, F_SETFD, clo | FD_CLOEXEC) == -1) return -1;
-	console::log("webserv is non blocking", INFO);
 	return 0;
 }
 
