@@ -14,7 +14,7 @@ int main(int ac, char **av) {
 	if (fn.find(".conf") == std::string::npos){
 		fn += ".conf";
 	}
-
+	
 	WebservConfig config;
 	if (!config.loadConfig(fn)){
 		console::log("Config file error ", ERROR);
@@ -22,8 +22,6 @@ int main(int ac, char **av) {
 	std::string portStr = config.getDirective("listen");
 	int port = atoi(portStr.c_str());
 	console::log("Config file error ", INFO);
-
-
 	server serv(port);
 	while (1) {
 		serv.serverManager();
