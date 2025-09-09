@@ -14,7 +14,7 @@ int main(int ac, char **av) {
 	if (fn.find(".conf") == std::string::npos){
 		fn += ".conf";
 	}
-	
+
 	WebservConfig config;
 	if (!config.loadConfig(fn)){
 		console::log("Config file error ", ERROR);

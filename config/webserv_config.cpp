@@ -35,7 +35,7 @@ bool WebservConfig::loadConfig(const std::string &configFile){
 
 	//locations
 	_locations = _parser.parseLocation(configFile);
-	WebservConfig::printConfig();
+	// WebservConfig::printConfig();
 
 	_isValid = true;
 
