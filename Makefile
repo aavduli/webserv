@@ -10,6 +10,14 @@ SRCS =	main.cpp\
 		config/location.cpp\
 		config/parser_config.cpp\
 		config/webserv_config.cpp
+		console/console.cpp \
+		server/server-ah.cpp \
+		messages/HttpMessage.cpp \
+		messages/HttpHeaders.cpp \
+		messages/HttpResponse.cpp \
+		messages/HttpRequest.cpp \
+		parsing/Normalization.cpp
+
 OBJDIR = obj
 
 OBJS = $(SRCS:.cpp=.o)
