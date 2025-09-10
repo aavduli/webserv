@@ -3,21 +3,20 @@
 
 #include "HttpMessage.hpp"
 
-enum StatusCode {
-	OK = 200,
-	CREATED = 201,
-	BAD_REQUEST = 400,
-	NOT_FOUND = 404,
-	INTERNAL_SERVER_ERROR = 500
-};
+/* EXAMPLE USAGE FLOW:
 
-/* 
-HTTP/1.1 200 OK
-Content-Type: text/html
-Content-Length: 456
-Connection: keep-alive
+// 1. PARSING PHASE
+string raw_request = "GET /index.html HTTP/1.1\r\n...";
+RequestParser parser;
+HttpRequest* request = parser.parse(raw_request);
 
-[Body content]
+// 2. HANDLING PHASE  
+RequestHandler handler;
+HttpResponse* response = handler.process_request(request);
+
+// 3. OUTPUT PHASE
+ResponseHandler responder;
+string response_string = responder.serialize(response);
  */
 
  class HttpResponse : public HttpMessage {
@@ -35,6 +34,7 @@ Connection: keep-alive
 		void		setStatus(StatusCode code);
 		void		setCustomStatus(int code, const std::string& reason);
 		std::string	getReasonPhrase() const;
+
 };
 
 #endif //HTTPRESPONSE_HPP

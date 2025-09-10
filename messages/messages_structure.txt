@@ -1,0 +1,111 @@
+
+OVERVIEW:
+- Separated parsing logic from data storage
+- Clean layer separation with single responsibilities  
+- Scalable design and separate testing possibilities
+
+FOLDER STRUCTURE:
+└── messages/
+    ├── data/                          # Pure Data Structures Layer
+    │   ├── HttpMessage.hpp/.cpp       # Base message data container
+    │   ├── HttpRequest.hpp/.cpp       # Request-specific data
+    │   └── HttpResponse.hpp/.cpp      # Response-specific data
+    ├── parsing/                       # String → Data Structures Layer
+    │   └── MessageParser.hpp/.cpp     # Parsing logic and state management
+    ├── handling/                      # Data Processing → Business Logic Layer
+    │   └── MessageHandler.hpp/.cpp    # Request/response processing
+    ├── MessageStreams.hpp             # I/O operations utility
+    └── utils_print.cpp               # Debugging utilities
+
+
+================================================================
+
+CURRENT IMPLEMENTATION - CLASS HIERARCHY:
+
+DATA LAYER - Pure Data Storage
+   └── HttpMessage (base data container)
+       ├── protected:
+       │   ├── State _state                                    # Parsing state monitor
+       │   ├── double _http_version                            # HTTP version (1.0, 1.1, etc.)
+       │   ├── std::map<string, vector<string>> _headers       # Direct header storage (no HttpHeaders class)
+       │   └── std::string _body                               # Message body content
+       └── public methods:
+           ├── getState() const / setState(State)
+           ├── getHttpVersion() const / setHttpVersion(double)
+           ├── getHeaders() const / setHeaders(map<string, vector<string>>)
+           └── getBody() const / setBody(const string&)
+       │
+       ├── HttpRequest (inherits from HttpMessage) - REQUEST DATA ONLY
+       │   ├── private:
+       │   │   ├── std::string _method                         # HTTP method (GET, POST, etc.)
+       │   │   └── std::string _uri                            # Request URI/path
+       │   └── public methods:
+       │       ├── getMethod() const
+       │       └── getUri() const
+       │
+       └── HttpResponse (inherits from HttpMessage) - RESPONSE DATA ONLY
+           ├── private:
+           │   ├── int _status_code                            # HTTP status code (200, 404, etc.)
+           │   └── std::string _reason_phrase                  # Status description
+           └── public methods:
+               ├── setStatus(StatusCode code)                  # Using enum
+               ├── setCustomStatus(int code, const string& reason)  # Custom status
+               └── getReasonPhrase() const
+
+
+PARSING LAYER - String → Data Conversion
+   └── MessageParser (base parser with state machine)
+       ├── protected:
+       │   ├── State _state                                    # Current parsing state
+       │   ├── std::string _line                               # Line being parsed
+       │   ├── std::string* _line_ptr                          # Pointer to char in current line
+       │   └── int _error_status                               # Error tracking
+       └── Methods:
+           └── ...
+       │
+       ├── RequestParser (inherits from MessageParser) - PARSE REQUEST
+       │   ├── private:
+       │   │   └── ...
+       │   └── public methods:
+       │       ├── parse_request_line()
+       │       ├── parse_headers()
+       │       ├── parse_method()
+       │       ├── parse_uri()
+       │       ├── parse_version()
+       │       └── parse_body()
+       │
+       └── ResponseParser (inherits from MessageParser) - PARSE RESPONSE
+           ├── private:
+           │   └── ...
+           └── public methods:
+               └── ...
+
+
+HANDLING LAYER - Logic Processing
+   └── MessageHandler (business logic processing)
+       └── Methods:
+           ├── is_valid_request()                              # Request validation
+           ├── process_request()                               # Request processing
+           └── generate_response()                             # Response generation
+
+           ├── format_response()                               # String?
+           ├── add_headers()                                   # Default headers?
+           └── encode_response()                               # Serialization?
+
+
+================================================================
+
+EXAMPLE USAGE (from comments in files):
+
+// 1. PARSING PHASE
+string raw_request = "GET /index.html HTTP/1.1\r\n...";
+RequestParser parser;
+HttpRequest* request = parser.parse(raw_request);
+
+// 2. HANDLING PHASE  
+RequestHandler handler;
+HttpResponse* response = handler.process_request(request);
+
+// 3. OUTPUT PHASE
+ResponseHandler responder;
+string response_string = responder.serialize(response);
