@@ -36,8 +36,9 @@ class HttpRequest : public HttpMessage {
 	private:
 		std::string	_method;
 		std::string	_uri;		// needs to be a class?
-
+		
 	public:
+		HttpRequest();
 		HttpRequest(std::string raw_request);
 		HttpRequest(const HttpRequest& rhs);
 		HttpRequest& operator=(const HttpRequest& rhs);
@@ -54,12 +55,12 @@ class HttpRequest : public HttpMessage {
 		bool	parse_req_body(std::string::const_iterator& it, std::string::const_iterator end);
 		bool	is_valid_request();
 };
-// 
-// void		get_simple_request(s_msg_streams streams);
-// void		get_chunked_request(s_msg_streams streams);
-// 
-// std::string	get_stream_line(std::ostream& stream);
-// 
-// void		print_request(HttpRequest request);
+
+void	handle_request(s_MessageStreams streams);
+
+void		get_simple_request(s_MessageStreams streams);
+void		get_chunked_request(s_MessageStreams streams);
+
+void		print_request(HttpRequest request);
 
 #endif // HTTPREQUEST_HPP

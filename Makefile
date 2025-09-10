@@ -4,7 +4,8 @@ CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -g
 
 SRCS =	main.cpp \
 		console/console.cpp \
-		server/server-ah.cpp \
+		server/server.cpp \
+		event/eventManager.cpp \
 		messages/HttpMessage.cpp \
 		messages/HttpHeaders.cpp \
 		messages/HttpResponse.cpp \

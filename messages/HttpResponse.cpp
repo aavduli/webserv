@@ -1,6 +1,6 @@
 #include "HttpResponse.hpp"
 
-HttpResponse::HttpResponse() {
+HttpResponse::HttpResponse() : _status_code(0), _reason_phrase("") {
 	std::cout << "[HttpResponse Default Constructor]" << std::endl;
 }
 
