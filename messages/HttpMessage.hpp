@@ -11,9 +11,11 @@
 #define LF	'\n'
 
 #include "../parsing/Parsing.hpp"
-#include "../parsing/MessageParsing.hpp"
 #include "MessageStreams.hpp"
 #include "HttpHeaders.hpp"
+
+class HttpRequest;
+class HttpResponse;
 
 enum State {
 	s_msg_dead = 1,
@@ -55,9 +57,6 @@ enum State {
 	s_msg_done
 };
 
-
-class HttpRequest;
-class HttpResponse;
 class HttpMessage {
 
 	protected:
@@ -85,6 +84,7 @@ class HttpMessage {
 		void		setBody(const std::string& body);
 };
 
-void	handle_request(s_msg_streams streams);
+void	handle_message(s_MessageStreams *streams);
+std::string	get_stream_line(std::fstream& stream);
 
 #endif // HTTPMESSAGE_HPP

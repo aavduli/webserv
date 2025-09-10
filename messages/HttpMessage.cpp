@@ -1,5 +1,6 @@
 #include "HttpMessage.hpp"
 #include "HttpRequest.hpp"
+#include "HttpResponse.hpp"
 #include <iostream>
 #include <sstream>
 
@@ -59,26 +60,79 @@ void	HttpMessage::setBody(const std::string& body) {
 	_body = body;
 }
 
-void	handle_request(s_msg_streams streams) {
+void	handle_message(s_MessageStreams *streams) {
 
-	// decide which stream to read from
+	// tmp
+	// 	std::stringstream ss;
+	// 	ss << streams.simple.rdbuf();
+	// 	std::string	raw_request = ss.str();
+	// 
+	// 	HttpRequest request(raw_request);
+
+	HttpRequest		request;
+	HttpResponse	response;
+	std::fstream	*stream;
+
+	// 1. Decide which stream to read from
+	if (streams->has_eof && !streams->is_chunked)
+		stream = &streams->simple;
+	else if (streams->is_chunked)
+		stream = &streams->secondary;
+
+	switch (request.getState()) {
+		case s_msg_dead:
+			break;
+		case s_msg_empty:
+			break;
+		case s_msg_error:
+			break;
+		case s_msg_init:
+			break;
+		case s_msg_version:
+			break;
+		case s_req_start:
+			break;
+		case s_req_method:
+			break;
+		case s_req_uri:
+			break;
+		case s_req_done:
+			break;
+		case s_head_start:
+			break;
+		case s_head_fields:
+			break;
+		case s_head_done:
+			break;
+		case s_body_start:
+			break;
+		case s_body_content:
+			break;
+		case s_body_done:
+			break;
+		case s_msg_done:
+			break;
+	}
+	
+	std::string stream_line;
+
+		stream_line = get_stream_line(streams->simple);
+		stream_line = get_stream_line(streams->secondary);
+
+	
+	get_chunked_request(*streams);
+	get_simple_request(*streams);
+		
+	// with sta	te checking and switch case
 	// extract line by line to parse content
 	// create Request object
 	// handle request
 	// create response
 	// populate response stream
 
-	// tmp
-	std::stringstream ss;
-	ss << streams.simple.rdbuf();
-	std::string	raw_request = ss.str();
+}
 
-	HttpRequest request(raw_request);
-
-	// if (streams.has_eof && !streams.is_chunked) {
-	// 	get_simple_request(streams);
-	// }
-	// else if (streams.is_chunked) {
-	// 	get_chunked_request(streams);
-	// }
+std::string	get_stream_line(std::fstream& stream) {
+	// getline
+	return "";
 }

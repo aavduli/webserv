@@ -1,5 +1,9 @@
 #include "HttpRequest.hpp"
 
+HttpRequest::HttpRequest() : _method(""), _uri("") {
+	std::cout << "[HttpRequest Default Constructor]" << std::endl;
+}
+
 HttpRequest::HttpRequest(std::string raw_request) {
 	std::cout << "[HttpRequest Parameterized Constructor]" << std::endl;
 
@@ -191,12 +195,8 @@ bool	HttpRequest::is_valid_request() {
 	_state = s_req_done;
 	return true;
 }
-// 
-// std::string	get_stream_line(std::ostream& stream) {
-// 
-// }
 
-// void	get_simple_request(s_msg_streams streams) {
+// void	get_simple_request(s_MessageStreams streams) {
 // 
 // 	HttpRequest request;
 // 	std::string line = get_stream_line(streams.simple);
@@ -214,6 +214,11 @@ bool	HttpRequest::is_valid_request() {
 // 	}
 // }
 // 
-// void	get_chunked_request(MessageStreams streams) {
+// void	get_chunked_request(s_MessageStreams streams) {
 // 
 // }
+
+void	handle_request(s_MessageStreams streams) {
+
+	
+}
