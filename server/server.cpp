@@ -54,6 +54,7 @@ void server::serverManager() {
 	setServer();
 	setSockaddr();
 	s_msg_streams request();
+	console::log("HLAKHSWHA:F", ERROR);
 
 	if (bind(_serverfd, (struct sockaddr *)&_address, sizeof(_address)) < 0) {
 		std::cerr << RED << "failed to bind: " << std::strerror(errno) << RESET << std::endl;
@@ -107,7 +108,7 @@ void server::serverManager() {
 			if (events & EPOLLIN) {
 				bool close_it = false;
 				while (true) {
-					ssize_t n = recv(fd, buff, buff.size(), 0);
+					ssize_t n = recv(fd, &buff, 1024, 0);
 					std::cout << YELLOW << n << RESET << std::endl;
 					if (n > 0) {
 						size_t sent = 0;

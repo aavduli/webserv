@@ -15,6 +15,8 @@ SRCS =	main.cpp \
 		messages/HttpResponse.cpp \
 		messages/HttpRequest.cpp \
 		parsing/Normalization.cpp
+		
+OBJDIR = obj
 
 OBJS = $(SRCS:.cpp=.o)
 OBJS := $(addprefix $(OBJDIR)/, $(notdir $(OBJS:.o=.o)))
