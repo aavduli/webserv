@@ -32,9 +32,10 @@ class HttpRequest : public HttpMessage {
 		~HttpRequest();
 
 		std::string	getMethod() const;
-		std::string	getUri() const;
-};
+		void		setMethod(std::string method);
 
-void	print_request(HttpRequest request);
+		std::string	getUri() const;
+		void		setUri(std::string uri);
+};
 
 #endif // HTTPREQUEST_HPP

@@ -6,10 +6,13 @@ SRCS =	main.cpp \
 		console/console.cpp \
 		server/server.cpp \
 		event/eventManager.cpp \
-		messages/HttpMessage.cpp \
-		messages/HttpHeaders.cpp \
-		messages/HttpResponse.cpp \
-		messages/HttpRequest.cpp \
+		messages/data/HttpMessage.cpp \
+		messages/data/HttpResponse.cpp \
+		messages/data/HttpRequest.cpp \
+		messages/handling/MessageHandler.cpp \
+		messages/parsing/MessageParser.cpp \
+		messages/parsing/RequestParser.cpp \
+		messages/utils_print.cpp \
 		parsing/Normalization.cpp
 
 OBJDIR = obj

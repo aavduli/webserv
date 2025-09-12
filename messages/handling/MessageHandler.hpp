@@ -4,6 +4,8 @@
 #include "../parsing/MessageParser.hpp"
 #include "../MessageStreams.hpp"
 #include "../data/HttpMessage.hpp"
+#include "../data/HttpRequest.hpp"
+#include "../data/HttpRequest.hpp"
 
 /* EXAMPLE USAGE FLOW:
 

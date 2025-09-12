@@ -26,6 +26,14 @@ std::string HttpRequest::getMethod() const {
 	return _method;
 }
 
+void	HttpRequest::setMethod(std::string method) {
+	_method = method;
+}
+
 std::string HttpRequest::getUri() const {
 	return _uri;
+}
+
+void	HttpRequest::setUri(std::string uri) {
+	_uri = uri;
 }

@@ -3,7 +3,8 @@
 server::server(int port) : _port(port), _serverfd(-1), _ev(10)  {}
 
 server::~server() {
-	if (_serverfd != -1) close(_serverfd);
+	if (_serverfd != -1) 
+		close(_serverfd);
 }
 
 int server::make_nonblock(int fd) {
@@ -112,6 +113,10 @@ void server::serverManager() {
 				while (true) {
 					ssize_t n = recv(fd, &rbuf[0], rbuf.size(), 0);
 					if (n > 0) {
+
+						std::string raw_request(rbuf.data(), n);
+						const char* response = get_response(raw_request);
+						(void)response;
 						static const char resp[] = 
 						"HTTP/1.1 200 OK\r\n"
 						"Content-type: text/plain\r\n"

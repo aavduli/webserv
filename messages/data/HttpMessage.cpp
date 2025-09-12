@@ -1,7 +1,11 @@
 #include "HttpMessage.hpp"
+#include "HttpRequest.hpp"
 
-HttpMessage::HttpMessage() : _state(s_msg_init), _http_version(-1), _headers(), _body() {
+HttpMessage::HttpMessage() {
 	std::cout << "[HttpMessage Default Constructor]" << std::endl;
+	_state = s_msg_dead;
+	_http_version = "";
+	_body = "";
 }
 
 HttpMessage::HttpMessage(const HttpMessage& rhs) : _state(rhs._state), _http_version(rhs._http_version), _headers(rhs._headers), _body(rhs._body) {
@@ -31,49 +35,41 @@ void	HttpMessage::setState(State state) {
 	_state = state;
 }
 
-double	HttpMessage::getHttpVersion() const {
+std::string	HttpMessage::getHttpVersion() const {
 	return _http_version;
 }
 
-void	HttpMessage::setHttpVersion(double version) {
+void	HttpMessage::setHttpVersion(std::string version) {
 	_http_version = version;
 }
 
 bool	HttpMessage::hasHeader(const std::string& key) const {
-	std::string normalized = toLowerStr(key);
+	std::string normalized = lower(key);
 	return _headers.find(normalized) != _headers.end();
 }
 
-void	HttpMessage::addHeader(const std::string& key, const std::string& value) {
+void	HttpMessage::addHeader(const std::string& key, const std::vector<std::string>& values) {
 
-	(void)key;
-	(void)value;
-
-	std::string					new_key;	// TODO PARSING -> extract key from string
-	std::vector<std::string>	new_value;	// TODO PARSING -> extract value from string
-
-	// TODO PARSING -> check for multiple comma-separated strings in new_value
-
-	if (this->hasHeader(new_key)) {		// if key duplicate, check for value uniqueness 
-		std::vector<std::string>::iterator	new_it;
-		for (new_it = new_value.begin(); new_it != new_value.end(); ++new_it) {
+	if (this->hasHeader(key)) {		// if key duplicate, check for value uniqueness 
+		std::vector<std::string>::const_iterator	new_it;
+		for (new_it = values.begin(); new_it != values.end(); ++new_it) {
 			std::vector<std::string>::iterator	it;
-			for (it = _headers.at(new_key).begin(); it != _headers.at(new_key).end(); ++it) {
+			for (it = _headers.at(key).begin(); it != _headers.at(key).end(); ++it) {
 				if (*it == *new_it)
 					return ;							// if duplicate, exit without adding
 			}
-			_headers.at(new_key).push_back(*new_it);		// if unique, add value to vector
+			_headers.at(key).push_back(*new_it);		// if unique, add value to vector
 		}
 	}
 	else {
-		_headers[new_key] = new_value;	// if unique, add new key-value pair
+		_headers[lower(key)] = values;	// if unique, add new key-value pair
 	}
 }
 
 // TODO -> add checks
 std::vector<std::string>	HttpMessage::getHeaderValues(const std::string& key) const {
 	
-	std::string normalized = toLowerStr(key);
+	std::string normalized = lower(key);
 	if (this->hasHeader(normalized)) {
 		std::map<std::string, std::vector<std::string> >::const_iterator it;
 		it = _headers.find(normalized);
@@ -95,4 +91,21 @@ std::string	HttpMessage::getBody() const {
 
 void	HttpMessage::setBody(const std::string& body) {
 	_body = body;
+}
+
+const char* get_response(std::string raw_request) {
+
+	std::cout << "raw_request received: \n" << raw_request << std::endl;
+	if (raw_request.empty()) {
+		console::log("empty request", WARNING);
+		return NULL;
+	}
+	else {
+		RequestParser	parser;
+		HttpRequest*	request = parser.parse_request(raw_request);
+		if (request)
+			print_request(request);
+	}
+
+	return "temporary response\n";
 }

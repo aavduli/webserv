@@ -8,10 +8,8 @@
 #include <map>
 #include <vector>
 
-#include "../MessageStreams.hpp"
+#include "../../console/console.hpp"
 #include "../parsing/MessageParser.hpp"
-#include "HttpRequest.hpp"
-#include "HttpResponse.hpp"
 
 /* EXAMPLE USAGE FLOW:
 
@@ -36,8 +34,8 @@ class HttpMessage {
 
 	protected:
 		State			_state;			// monitor for parsing
-		double			_http_version;	// <major>.<minor> format
-		std::map<std::string, std::vector<std::string> >		_headers;		// general, request, response, entity header fields
+		std::string		_http_version;	// <major>.<minor> format
+		std::map<std::string, std::vector<std::string> >	_headers;		// general, request, response, entity header fields
 		std::string		_body;			// optional
 		
 	public:
@@ -48,16 +46,19 @@ class HttpMessage {
 
 		State		getState() const;
 		void		setState(State state);
-		double		getHttpVersion() const;
-		void		setHttpVersion(double version);
+		std::string	getHttpVersion() const;
+		void		setHttpVersion(std::string version);
 
 		bool		hasHeader(const std::string& key) const;
-		void		addHeader(const std::string& key, const std::string& value);
+		void		addHeader(const std::string& key, const std::vector<std::string>& values);
 		std::vector<std::string>	getHeaderValues(const std::string& key) const;
 		void		setHeaderValues(const std::string& key, const std::string& value);	// map?
 
 		std::string	getBody() const;
 		void		setBody(const std::string& body);
 };
+
+const char*	get_response(std::string raw_request);
+void	print_request(HttpRequest* request);
 
 #endif // HTTPMESSAGE_HPP

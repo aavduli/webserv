@@ -10,6 +10,7 @@
 #define CR	'\r'
 #define LF	'\n'
 
+#include "../../console/console.hpp"
 #include "../../parsing/Parsing.hpp"
 #include "../MessageStreams.hpp"
 
@@ -29,7 +30,9 @@ ResponseHandler responder;
 string response_string = responder.serialize(response);
  */
 
-class HttpMessage;
+ class HttpMessage;
+ class HttpRequest;
+ class HttpResponse;
 
 enum HttpMethod {
 	GET,		// 0
@@ -52,21 +55,12 @@ enum StatusCode {
 
 enum State {
 	s_msg_dead = 1,
-	s_msg_empty,
 	s_msg_error,
 	s_msg_init,
-	s_msg_version,
-
-	s_line_processing,
-	s_line_complete,
-	s_line_unexpected_end,
-	s_line_empty,
 
 	/* REQUEST */
 	s_req_start, 
-	s_req_method, 
-	s_req_uri, 
-	s_req_version, 
+	s_req_line,
 	s_req_done, 
 
 	/* RESPONSE */
@@ -95,9 +89,10 @@ class MessageParser {
 
 	protected:
 		State			_state;			// monitor for parsing
-		std::string		_line;			// line being parsed
-		std::string*	_line_ptr;		// ptr to char in current line
-		int				_error_status;	// relevant?
+		std::string		_raw_data;		// raw_request
+		size_t			_current_pos;	// pos in raw_data string
+		HttpRequest*	_request;		// for request parsing
+		HttpResponse*	_response;		// for response parsing
 
 	public:
 		MessageParser();
@@ -108,13 +103,8 @@ class MessageParser {
 		// ACCESSORS?
 };
 
-std::string	get_stream_line(std::fstream& stream);
-
-
 // REQUEST PARSER (inherits from MessageParser)
 class RequestParser : public MessageParser {
-
-	private:
 
 	public:
 		RequestParser();
@@ -122,12 +112,13 @@ class RequestParser : public MessageParser {
 		RequestParser& operator=(const RequestParser& rhs);
 		~RequestParser();
 
-		bool	parse_request_line();
-		bool	parse_headers();
-		bool	parse_method();
-		bool	parse_uri();
-		bool	parse_version();
-		bool	parse_body();
+		HttpRequest*	parse_request(std::string raw_request);
+		bool			parse_request_line();
+		bool			parse_method(std::string request_line);
+		bool			parse_uri(std::string request_line);
+		bool			parse_version(std::string request_line);
+		bool			parse_headers();
+		bool			parse_body();
 };
 
 

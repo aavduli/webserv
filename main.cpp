@@ -4,8 +4,6 @@
 int main() {
 	console::setDebug(true);
 	server serv(8080);
-	while (1) {
-		serv.serverManager();
-	}
+	serv.serverManager();
 	return 0;
 }
