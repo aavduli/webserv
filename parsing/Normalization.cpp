@@ -28,7 +28,7 @@ std::string	trim(const std::string& str, std::vector<std::string>& to_trim) {
 	return trimmed;
 }
 
-std::vector<std::string>	stringToVector(const std::string& str, const std::string& del) {
+std::vector<std::string>	str_to_vect(const std::string& str, const std::string& del) {
 
 	std::vector<std::string>	v;
 
@@ -40,4 +40,15 @@ std::vector<std::string>	stringToVector(const std::string& str, const std::strin
 		found = str.find(del, current_pos);
 	}
 	return v;
+}
+
+size_t to_size_t(const char *number) {
+
+	size_t st;
+	std::istringstream iss(number);
+	iss >> st;
+	if (iss.fail())
+		return std::numeric_limits<size_t>::max();
+	else
+		return st;
 }

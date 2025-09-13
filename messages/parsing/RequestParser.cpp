@@ -3,24 +3,35 @@
 #include <iostream>
 #include <sstream>
 
-RequestParser::RequestParser() : MessageParser() {
+RequestParser::RequestParser() : MessageParser(), _request(NULL) {
 	console::log("RequestParser Constructor", DEBUG);
 }
 
 RequestParser::RequestParser(const RequestParser& rhs) : MessageParser(rhs) {
 	console::log("RequestParser copy constructor", DEBUG);
+	if (rhs._request)
+		_request = new HttpRequest(*rhs._request);
+	else
+		_request = NULL;
 }
 
 RequestParser& RequestParser::operator=(const RequestParser& rhs) {
 	console::log("RequestParser assignment operator", DEBUG);
 	if (this != &rhs) {
 		MessageParser::operator=(rhs);
+		delete _request;
+		if (rhs._request)
+			_request = new HttpRequest(*rhs._request);
+		else
+			_request = NULL;
 	}
 	return *this;
 }
 
 RequestParser::~RequestParser() {
 	console::log("RequestParser destructor", DEBUG);
+	if (_request)
+		delete _request;
 }
 
 HttpRequest* RequestParser::parse_request(std::string raw_request) {
@@ -219,7 +230,7 @@ bool RequestParser::parse_headers() {
 
 		// Split if multiple comma-separated strings in value
 		// TODO: check for commas in comments () which must not be split
-		std::vector<std::string>	values = stringToVector(value, ",");
+		std::vector<std::string>	values = str_to_vect(value, ",");
 
 		_request->addHeader(name, values);
 	}

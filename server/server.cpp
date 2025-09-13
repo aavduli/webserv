@@ -111,12 +111,29 @@ void server::serverManager() {
 			if (events & EPOLLIN) {
 				bool close_it = false;
 				while (true) {
+
+					std::string tmp_buf;
+					RequestParser parser;
+					
 					ssize_t n = recv(fd, &rbuf[0], rbuf.size(), 0);
 					if (n > 0) {
+						
+						// append data
+						tmp_buf.append(rbuf.data(), n);
+						
+						if (parser.is_complete_request(tmp_buf)) {
+							HttpRequest* request = parser.parse_request(tmp_buf);
+							tmp_buf.clear();
+							(void)request;
+							// generate_response
+							// delete request; ?
+						}
+						else {
+							// continue listening for data, break out of loop?
+							console::log("Incomplete request", ERROR);
+						}
 
-						std::string raw_request(rbuf.data(), n);
-						const char* response = get_response(raw_request);
-						(void)response;
+						// dont go there if request incomplete, wait for more data arriving through epoll
 						static const char resp[] = 
 						"HTTP/1.1 200 OK\r\n"
 						"Content-type: text/plain\r\n"

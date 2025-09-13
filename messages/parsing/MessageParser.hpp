@@ -9,6 +9,7 @@
 
 #define CR	'\r'
 #define LF	'\n'
+#define MAX_CONTENT_LENGTH 1000000
 
 #include "../../console/console.hpp"
 #include "../../parsing/Parsing.hpp"
@@ -57,8 +58,12 @@ enum State {
 	s_msg_dead = 1,
 	s_msg_error,
 	s_msg_init,
-
-	/* REQUEST */
+		
+	/* REQUEST CHECKS */
+	s_req_incomplete,
+	s_req_invalid_content_length,
+	
+	/* REQUEST PARSING */
 	s_req_start, 
 	s_req_line,
 	s_req_done, 
@@ -71,7 +76,7 @@ enum State {
 	s_res_reason,
 	s_res_done,
 
-	/* HEADERS */
+	/* HEADERS PARSING */
 	s_head_start,
 	s_head_fields,
 	s_head_done,
@@ -91,8 +96,6 @@ class MessageParser {
 		State			_state;			// monitor for parsing
 		std::string		_raw_data;		// raw_request
 		size_t			_current_pos;	// pos in raw_data string
-		HttpRequest*	_request;		// for request parsing
-		HttpResponse*	_response;		// for response parsing
 
 	public:
 		MessageParser();
@@ -100,11 +103,18 @@ class MessageParser {
 		MessageParser& operator=(const MessageParser& rhs);
 		virtual ~MessageParser();
 
-		// ACCESSORS?
+		State	getState() const;
+		void	setState(State state);
+
+		bool	is_complete_request(const std::string& buffer);
+		size_t	get_content_length(const std::string& buffer);
 };
 
 // REQUEST PARSER (inherits from MessageParser)
 class RequestParser : public MessageParser {
+
+	private:
+		HttpRequest*	_request;		// for request parsing
 
 	public:
 		RequestParser();
@@ -126,6 +136,7 @@ class RequestParser : public MessageParser {
 class ResponseParser : public MessageParser {
 
 	private:
+		HttpResponse*	_response;		// for response parsing
 
 	public:
 		ResponseParser();
@@ -133,5 +144,6 @@ class ResponseParser : public MessageParser {
 		ResponseParser& operator=(const ResponseParser& rhs);
 		~ResponseParser();
 };
+
 
 #endif //MESSAGEPARSER_HPP
