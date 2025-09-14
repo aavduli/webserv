@@ -2,11 +2,11 @@
 #include "../data/HttpRequest.hpp"
 #include "../data/HttpResponse.hpp"
 
-MessageParser::MessageParser() : _state(s_msg_init), _current_pos(0) {
+MessageParser::MessageParser() : _state(s_msg_init), _current_pos(0), _content_length(0) {
 	console::log("MessageParser Constructor", DEBUG);
 }
 
-MessageParser::MessageParser(const MessageParser& rhs) : _state(rhs._state), _raw_data(rhs._raw_data), _current_pos(rhs._current_pos) {
+MessageParser::MessageParser(const MessageParser& rhs) : _state(rhs._state), _raw_data(rhs._raw_data), _current_pos(rhs._current_pos), _content_length(rhs._content_length) {
 	console::log("MessageParser copy constructor", DEBUG);
 }
 
@@ -16,6 +16,7 @@ MessageParser& MessageParser::operator=(const MessageParser& rhs) {
 		_state = rhs._state;
 		_raw_data = rhs._raw_data;
 		_current_pos = rhs._current_pos;
+		_content_length = rhs._content_length;
 	}
 	return *this;
 }
@@ -26,6 +27,10 @@ MessageParser::~MessageParser() {
 
 State	MessageParser::getState() const {
 	return _state;
+}
+
+size_t	MessageParser::getContentLength() const {
+	return _content_length;
 }
 
 void	MessageParser::setState(State state) {
@@ -39,22 +44,22 @@ bool	MessageParser::is_complete_request(const std::string& buffer) {
 	if (head_end == std::string::npos)
 		return false;
 		
-	size_t content_len = get_content_length(buffer);
+	_content_length = extract_content_length(buffer);
 	if (_state == s_req_invalid_content_length)
 		return false;
 
 	size_t body_start = head_end + 4;
 	size_t body_len = buffer.size() - body_start;
-	if (body_len && !content_len) {
+	if (body_len && !_content_length) {
 		// 400 (bad request) if it cannot determine the length of the message OR
 		// 411 (length required) if it wishes to insist on receiving a valid Content-Length
 		console::log("Status 400/411", ERROR);
 		return false;
 	}
-	return body_len >= content_len;
+	return body_len >= _content_length;
 }
 
-size_t	MessageParser::get_content_length(const std::string& buffer) {
+size_t	MessageParser::extract_content_length(const std::string& buffer) {
 
 	size_t	pos = buffer.find("Content-Length:");
 	if (pos == std::string::npos) {

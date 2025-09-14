@@ -97,6 +97,7 @@ class MessageParser {
 		State			_state;			// monitor for parsing
 		std::string		_raw_data;		// raw_request
 		size_t			_current_pos;	// pos in raw_data string
+		size_t			_content_length;
 
 	public:
 		MessageParser();
@@ -107,8 +108,10 @@ class MessageParser {
 		State	getState() const;
 		void	setState(State state);
 
+		size_t	getContentLength() const;
+
 		bool	is_complete_request(const std::string& buffer);
-		size_t	get_content_length(const std::string& buffer);
+		size_t	extract_content_length(const std::string& buffer);
 };
 
 // REQUEST PARSER (inherits from MessageParser)
