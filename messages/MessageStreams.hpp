@@ -4,6 +4,8 @@
 #include <iostream>
 #include <fstream>
 
+#include "../errors/errors.hpp"
+
 struct s_MessageStreams {
 
 	std::fstream&	simple;

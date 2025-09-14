@@ -17,5 +17,6 @@ std::string	error_msg(Error e) {
 		case E_INVALID_PATH: return "Invalid path";
 		case E_INVALID_HEADER: return "Invalid header";
 		case E_INVALID_CONTENT_LENGTH: return "Invalid content length";
+		default: return "Unknown error";
 	}
 }

@@ -6,6 +6,7 @@ SRCS =	main.cpp \
 		console/console.cpp \
 		server/server.cpp \
 		event/eventManager.cpp \
+		errors/errors.cpp \
 		messages/data/HttpMessage.cpp \
 		messages/data/HttpResponse.cpp \
 		messages/data/HttpRequest.cpp \

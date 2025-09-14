@@ -12,6 +12,7 @@
 #define MAX_CONTENT_LENGTH 1000000
 
 #include "../../console/console.hpp"
+#include "../../errors/errors.hpp"
 #include "../../parsing/Parsing.hpp"
 #include "../MessageStreams.hpp"
 
