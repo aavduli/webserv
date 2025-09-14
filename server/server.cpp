@@ -1,4 +1,6 @@
 #include "server.hpp"
+#include "../messages/data/HttpResponse.hpp"
+#include "../messages/handling/MessageHandler.hpp"
 
 server::server(int port) : _port(port), _serverfd(-1), _ev(10)  {}
 
@@ -121,15 +123,20 @@ void server::serverManager() {
 						// append data
 						tmp_buf.append(rbuf.data(), n);
 						
+						// if request complete, parse it and generate response
 						if (parser.is_complete_request(tmp_buf)) {
 							HttpRequest* request = parser.parse_request(tmp_buf);
 							tmp_buf.clear();
-							(void)request;
-							// generate_response
-							// delete request; ?
+							// MessageHandler handler(request);
+							// if (handler.is_valid_request()) {
+							// 	handler.process_request();
+							// 	handler.generate_response();
+							// }
+							// std::string resp_str = handler.serialize_response();
+							delete request;
 						}
 						else {
-							// continue listening for data, break out of loop?
+							// if request incomplete, continue listening for data
 							console::log("Incomplete request", ERROR);
 						}
 

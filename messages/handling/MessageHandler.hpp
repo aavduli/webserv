@@ -1,43 +1,32 @@
 #ifndef MESSAGEHANDLER_HPP
 #define MESSAGEHANDLER_HPP
 
+#include "../../errors/errors.hpp"
 #include "../parsing/MessageParser.hpp"
 #include "../MessageStreams.hpp"
 #include "../data/HttpMessage.hpp"
 #include "../data/HttpRequest.hpp"
-#include "../data/HttpRequest.hpp"
-
-/* EXAMPLE USAGE FLOW:
-
-// 1. PARSING PHASE
-string raw_request = "GET /index.html HTTP/1.1\r\n...";
-RequestParser parser;
-HttpRequest* request = parser.parse(raw_request);
-
-// 2. HANDLING PHASE  
-RequestHandler handler;
-HttpResponse* response = handler.process_request(request);
-
-// 3. OUTPUT PHASE
-ResponseHandler responder;
-string response_string = responder.serialize(response);
- */
+#include "../data/HttpResponse.hpp"
 
  class MessageHandler {
 
+	private:
+		const HttpRequest*	_request;
+		HttpResponse*		_response;
+
 	public:
+		MessageHandler(const HttpRequest* request);
+		MessageHandler(const MessageHandler& rhs);
+		MessageHandler& operator=(const MessageHandler& rhs);
+		~MessageHandler();
 
-		// from request data
-		bool	is_valid_request();
-		void	process_request();
-		void	generate_response();
+		const HttpRequest*	getRequest() const;
+		HttpResponse*		getResponse() const;
 
-		// from response data
-		void	format_response();	// string?
-		void	add_headers();		// default headers?
-		void	encode_response();	// serialization
+		bool		is_valid_request() const;
+		void		process_request();
+		void		generate_response();
+		std::string	serialize_response();
 };
-
-void	handle_message(s_MessageStreams *streams);
 
 #endif //MESSAGEHANDLER_HPP
