@@ -37,15 +37,11 @@ RequestParser::~RequestParser() {
 HttpRequest* RequestParser::parse_request(std::string raw_request) {
 	console::log("RequestParser parse_request", DEBUG);
 	
-	// Initialize parsing state
 	_state = s_req_start;
 	_raw_data = raw_request;
-	
-	// Create new HttpRequest object
 	HttpRequest* request = new HttpRequest();
 	_request = request;
 	
-	// Parse through all states
 	while (_state != s_msg_done && _state != s_msg_error) {
 		switch (_state) {
 			case s_req_start:
@@ -81,41 +77,29 @@ HttpRequest* RequestParser::parse_request(std::string raw_request) {
 				return NULL;
 		}
 	}
-	
 	if (_state == s_msg_error) {
 		console::log("Parsing failed", ERROR);
 		delete request;
 		return NULL;
 	}
-	
 	console::log("Parsing completed successfully", DEBUG);
 	return request;
 }
 
 // Request-Line = Method SP Request-URI SP HTTP-Version CRLF
-
 bool RequestParser::parse_request_line() {
 	console::log("RequestParser parse_request_line", DEBUG);
+
 	_state = s_req_line;
-	
-	// Find end of request line CRLF '\r\n'
 	size_t line_end = _raw_data.find("\r\n", _current_pos);
 	if (line_end == std::string::npos) {
 		console::log("No CRLF found in request line", ERROR);
 		return false;
 	}
-	
-	// Extract request line
 	std::string request_line = _raw_data.substr(_current_pos, line_end - _current_pos);
-
-	// trim leading and trailing whitespaces
-	std::vector<std::string> 	whitespaces;
-	whitespaces.push_back(" ");
-	whitespaces.push_back("\t");
-	request_line = trim(request_line, whitespaces);
+	request_line = trim_whitespaces(request_line);
 	std::cout << "[DEBUG] Request line: " << request_line << std::endl;
 	
-	// get method, URI, and version from request line
 	if (!parse_method(request_line)) {
 		console::log("Failed to parse method", ERROR);
 		return false;
@@ -137,7 +121,6 @@ bool RequestParser::parse_request_line() {
 bool RequestParser::parse_method(std::string request_line) {
 	console::log("RequestParser parse_method", DEBUG);
 
-	// Find SP between method and URI
 	size_t method_end = request_line.find(" ", _current_pos);
 	if (method_end == std::string::npos) {
 		console::log("No SP found after method", ERROR);
@@ -150,7 +133,6 @@ bool RequestParser::parse_method(std::string request_line) {
 	}
 	_request->setMethod(method);
 	_current_pos = method_end + 1;	// move past SP
-
 	std::cout << "[DEBUG] Method parsed - " << method << std::endl;
 	return true;
 }
@@ -158,7 +140,6 @@ bool RequestParser::parse_method(std::string request_line) {
 bool RequestParser::parse_uri(std::string request_line) {
 	console::log("RequestParser parse_uri", DEBUG);
 
-	// Find SP between URI and version
 	size_t uri_end = request_line.find(" ", _current_pos);
 	if (uri_end == std::string::npos) {
 		console::log("No SP found after URI", ERROR);
@@ -171,7 +152,6 @@ bool RequestParser::parse_uri(std::string request_line) {
 	}
 	_request->setUri(uri);
 	_current_pos = uri_end + 1;	// move past SP
-
 	std::cout << "[DEBUG] URI parsed - " << uri << std::endl;
 	return true;
 }
@@ -179,12 +159,12 @@ bool RequestParser::parse_uri(std::string request_line) {
 bool RequestParser::parse_version(std::string request_line) {
 	console::log("RequestParser parse_version", DEBUG);
 
-	size_t start = request_line.find("HTTP/", _current_pos);
-	if (start != std::string::npos) {
+	size_t version = request_line.find("HTTP/", _current_pos);
+	if (version != std::string::npos) {
 		_current_pos += 5;	// move past HTTP/
 		size_t dot = request_line.find_first_of('.', _current_pos);
-		double major = atof((request_line.substr(_current_pos, 1)).c_str());
-		double minor = atof((request_line.substr(dot + 1, 1)).c_str());
+		double major = atof((request_line.substr(_current_pos, dot - _current_pos)).c_str());
+		double minor = atof((request_line.substr(dot + 1, request_line.size() - (dot + 1))).c_str());
 		_request->setHttpVersion(major, minor);
 		std::cout << "[DEBUG] Version parsed - " << major << "." << minor << std::endl;
 		return true;
@@ -195,51 +175,76 @@ bool RequestParser::parse_version(std::string request_line) {
 
 bool RequestParser::parse_headers() {
 	console::log("RequestParser parse_headers", DEBUG);
-	_state = s_head_fields;
 
+	_state = s_head_fields;
 	std::map<std::string, std::vector<std::string> > headers;
 	
-	// loop through all headers
 	while (_current_pos < _raw_data.length()) {
 
-		// Find the end of current line
 		size_t line_end = _raw_data.find("\r\n", _current_pos);
 		if (line_end == std::string::npos) {
 			console::log("No CRLF found in headers", ERROR);
 			return false;
 		}
 		
-		// Extract current line
-		std::string line = _raw_data.substr(_current_pos, line_end - _current_pos);
+		std::string header_line = _raw_data.substr(_current_pos, line_end - _current_pos);
 		_current_pos = line_end + 2; // Move past \r\n
 		
 		// Empty line (containing only CRLF) indicates end of headers
-		if (line.empty()) {
+		if (header_line.empty()) {
 			console::log("End of headers found", DEBUG);
 			break;
 		}
-		
-		// Parse header: "Name: Value"
-		size_t colon_pos = line.find(':');
-		if (colon_pos == std::string::npos) {
-			console::log("Missing colon in header line: ", ERROR);
-			std::cout << line << std::endl;
+
+		std::string name = parse_header_name(header_line);
+		std::vector<std::string> values = parse_header_values(name, header_line);
+		if (name.empty() || values.empty()) {
+			console::log("Invalid header", DEBUG);
 			return false;
 		}
-		
-		std::string name = line.substr(0, colon_pos);
-		std::string value = line.substr(colon_pos + 1);
-		std::cout << "[DEBUG] Header parsed - " << name << ": " << value << std::endl;
-
-		// Split if multiple comma-separated strings in value
-		// TODO: check for commas in comments () which must not be split
-		std::vector<std::string>	values = str_to_vect(value, ",");
-
+		std::cout << "[DEBUG] Header parsed - " << name << std::endl;
 		_request->addHeader(name, values);
 	}
-	
 	_state = s_head_done;
 	return true;
+}
+
+std::string	RequestParser::parse_header_name(std::string line) {
+
+	// Parse header: "Name: Value"
+	size_t colon_pos = line.find(':');
+	if (colon_pos == std::string::npos) {
+		console::log("Missing colon in header line: ", ERROR);
+		std::cout << line << std::endl;
+		return NULL;
+	}
+	std::string	name = line.substr(0, colon_pos);
+	return trim_whitespaces(name);
+}
+
+// Comments allowed in User-Agent/Server/Via fields only
+std::vector<std::string>	RequestParser::parse_header_values(std::string name, std::string line) {
+
+	std::vector<std::string> values;
+	size_t colon_pos = line.find(':');
+	if (colon_pos == std::string::npos) {
+		console::log("Missing colon in header line: ", ERROR);
+		std::cout << line << std::endl;
+	}
+	else {
+		std::string	value = line.substr(colon_pos + 1, line.size() - (colon_pos + 1));
+		if (value.find(',') != std::string::npos) {
+			if (name.compare("User-Agent") || name.compare("Server") || name.compare("Via")) {
+				// dont split commas in parenthesis comments
+				values = str_to_vect(value, ",");
+			}
+			else
+				values = str_to_vect(value, ",");
+		}
+		else
+			values.push_back(value);
+	}
+	return values;
 }
 
 bool RequestParser::parse_body() {
