@@ -179,15 +179,18 @@ bool RequestParser::parse_uri(std::string request_line) {
 bool RequestParser::parse_version(std::string request_line) {
 	console::log("RequestParser parse_version", DEBUG);
 
-	// Last element is version
-	std::string version = request_line.substr(_current_pos, request_line.size() - _current_pos);
-	if (version.empty()) {
-		console::log("No request version found", ERROR);
-		return false;
+	size_t start = request_line.find("HTTP/", _current_pos);
+	if (start != std::string::npos) {
+		_current_pos += 5;	// move past HTTP/
+		size_t dot = request_line.find_first_of('.', _current_pos);
+		double major = atof((request_line.substr(_current_pos, 1)).c_str());
+		double minor = atof((request_line.substr(dot + 1, 1)).c_str());
+		_request->setHttpVersion(major, minor);
+		std::cout << "[DEBUG] Version parsed - " << major << "." << minor << std::endl;
+		return true;
 	}
-	_request->setHttpVersion(version);
-	std::cout << "[DEBUG] Version parsed - " << version << std::endl;
-	return true;
+	console::log("Invalid HTTP version in request", ERROR);
+	return false;
 }
 
 bool RequestParser::parse_headers() {

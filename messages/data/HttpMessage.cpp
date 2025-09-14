@@ -4,11 +4,12 @@
 HttpMessage::HttpMessage() {
 	std::cout << "[HttpMessage Default Constructor]" << std::endl;
 	_state = s_msg_dead;
-	_http_version = "";
+	_version_major = 0;
+	_version_minor = 0;
 	_body = "";
 }
 
-HttpMessage::HttpMessage(const HttpMessage& rhs) : _state(rhs._state), _http_version(rhs._http_version), _headers(rhs._headers), _body(rhs._body) {
+HttpMessage::HttpMessage(const HttpMessage& rhs) : _state(rhs._state), _version_major(rhs._version_major), _version_minor(rhs._version_minor), _headers(rhs._headers), _body(rhs._body) {
 	std::cout << "[HttpMessage Copy Constructor]" << std::endl;
 }
 
@@ -16,7 +17,8 @@ HttpMessage& HttpMessage::operator=(const HttpMessage& rhs) {
 	std::cout << "[HttpMessage Assignment Operator]" << std::endl;
 	if (this != &rhs) {
 		_state = rhs._state;
-		_http_version = rhs._http_version;
+		_version_major = rhs._version_major;
+		_version_minor = rhs._version_minor;
 		_headers = rhs._headers;
 		_body = rhs._body;
 	}
@@ -35,12 +37,13 @@ void	HttpMessage::setState(State state) {
 	_state = state;
 }
 
-std::string	HttpMessage::getHttpVersion() const {
-	return _http_version;
+double	HttpMessage::getHttpVersion() const {
+	return (_version_major + (_version_minor * 0.1));
 }
 
-void	HttpMessage::setHttpVersion(std::string version) {
-	_http_version = version;
+void	HttpMessage::setHttpVersion(double major, double minor) {
+	_version_major = major;
+	_version_minor = minor;
 }
 
 bool	HttpMessage::hasHeader(const std::string& key) const {

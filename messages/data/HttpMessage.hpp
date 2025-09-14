@@ -8,6 +8,7 @@
 #include <map>
 #include <vector>
 
+#include "../../errors/errors.hpp"
 #include "../../console/console.hpp"
 #include "../parsing/MessageParser.hpp"
 
@@ -33,10 +34,11 @@ class HttpResponse;
 class HttpMessage {
 
 	protected:
-		State			_state;			// monitor for parsing
-		std::string		_http_version;	// <major>.<minor> format
-		std::map<std::string, std::vector<std::string> >	_headers;		// general, request, response, entity header fields
-		std::string		_body;			// optional
+		State			_state;
+		double			_version_major;	// HTTP version in <major>.<minor> format
+		double			_version_minor;
+		std::map<std::string, std::vector<std::string> >	_headers;
+		std::string		_body;
 		
 	public:
 		HttpMessage();
@@ -46,8 +48,8 @@ class HttpMessage {
 
 		State		getState() const;
 		void		setState(State state);
-		std::string	getHttpVersion() const;
-		void		setHttpVersion(std::string version);
+		double		getHttpVersion() const;
+		void		setHttpVersion(double major, double minor);
 
 		bool		hasHeader(const std::string& key) const;
 		void		addHeader(const std::string& key, const std::vector<std::string>& values);
