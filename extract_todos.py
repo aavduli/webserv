@@ -27,27 +27,55 @@ def scan_directory(directory):
 
 	return all_todos
 
-def generate_markdown(todos_dict, output_file):
-	with open(output_file, 'w', encoding='utf-8') as f:
-		f.write("# TODO List\n\n")
-		f.write("Liste de tous les TODOs trouvés dans les fichiers .cpp/.hpp\n\n")
-
-		if not todos_dict:
-			f.write("Aucun TODO trouvé.\n")
-			return
-
+def update_readme_with_todos(todos_dict, readme_path):
+	# Lire le contenu existant du README ou créer un nouveau contenu
+	existing_content = ""
+	if os.path.exists(readme_path):
+		try:
+			with open(readme_path, 'r', encoding='utf-8') as f:
+				existing_content = f.read()
+		except Exception as e:
+			print(f"Erreur lors de la lecture de {readme_path}: {e}")
+	
+	# Supprimer la section TODO existante si elle existe
+	todo_start_pattern = r'\n## TODO List\n'
+	todo_end_pattern = r'\n(?=##|\Z)'
+	
+	# Rechercher et supprimer la section TODO existante
+	todo_match = re.search(todo_start_pattern + r'.*?(?=' + todo_end_pattern + ')', existing_content, re.DOTALL)
+	if todo_match:
+		existing_content = existing_content[:todo_match.start()] + existing_content[todo_match.end():]
+	
+	# Générer la nouvelle section TODO
+	todo_section = "\n## TODO List\n\n"
+	
+	if not todos_dict:
+		todo_section += "Aucun TODO trouvé dans les fichiers .cpp/.hpp\n"
+	else:
+		todo_section += "Liste de tous les TODOs trouvés dans les fichiers .cpp/.hpp\n\n"
 		for filepath, todos in sorted(todos_dict.items()):
-			f.write(f"## {filepath}\n\n")
+			todo_section += f"### {filepath}\n\n"
 			for line_num, line_content in todos:
-				f.write(f"- **Ligne {line_num}**: `{line_content}`\n")
-			f.write("\n")
+				todo_section += f"- **Ligne {line_num}**: `{line_content}`\n"
+			todo_section += "\n"
+	
+	# Ajouter la nouvelle section TODO à la fin du fichier
+	updated_content = existing_content.rstrip() + todo_section
+	
+	# Écrire le contenu mis à jour
+	try:
+		with open(readme_path, 'w', encoding='utf-8') as f:
+			f.write(updated_content)
+	except Exception as e:
+		print(f"Erreur lors de l'écriture de {readme_path}: {e}")
+		return False
+	
+	return True
 
 def main():
-	parser = argparse.ArgumentParser(description='Extract TODO comments from C++ files')
+	parser = argparse.ArgumentParser(description='Extract TODO comments from C++ files and update README.md')
 	parser.add_argument('directory', nargs='?', default='.',
 					help='Directory to scan (default: current directory)')
-	parser.add_argument('-o', '--output', default='todo.md',
-					help='Output file name (default: todo.md)')
 
 	args = parser.parse_args()
 
@@ -58,11 +86,20 @@ def main():
 	print(f"Scan du répertoire: {args.directory}")
 	todos = scan_directory(args.directory)
 
-	print(f"Génération du fichier: {args.output}")
-	generate_markdown(todos, args.output)
-
-	total_todos = sum(len(todo_list) for todo_list in todos.values())
-	print(f"Terminé! {total_todos} TODOs trouvés dans {len(todos)} fichiers.")
+	# Le README.md se trouve dans le même répertoire que le script
+	script_dir = os.path.dirname(os.path.abspath(__file__))
+	readme_path = os.path.join(script_dir, 'README.md')
+	
+	print(f"Mise à jour du README.md: {readme_path}")
+	success = update_readme_with_todos(todos, readme_path)
+	
+	if success:
+		total_todos = sum(len(todo_list) for todo_list in todos.values())
+		print(f"Terminé! {total_todos} TODOs trouvés dans {len(todos)} fichiers.")
+		print(f"README.md mis à jour avec succès.")
+	else:
+		print("Erreur lors de la mise à jour du README.md")
+		return 1
 
 	return 0
 
