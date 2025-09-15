@@ -51,25 +51,24 @@ bool	HttpMessage::hasHeader(const std::string& key) const {
 	return _headers.find(normalized) != _headers.end();
 }
 
+// includes keys and values uniqueness check
 void	HttpMessage::addHeader(const std::string& key, const std::vector<std::string>& values) {
 
-	if (this->hasHeader(key)) {		// if key duplicate, check for value uniqueness 
+	if (this->hasHeader(key)) { 
 		std::vector<std::string>::const_iterator	new_it;
 		for (new_it = values.begin(); new_it != values.end(); ++new_it) {
 			std::vector<std::string>::iterator	it;
 			for (it = _headers.at(key).begin(); it != _headers.at(key).end(); ++it) {
 				if (*it == *new_it)
-					return ;							// if duplicate, exit without adding
+					return ;
 			}
-			_headers.at(key).push_back(*new_it);		// if unique, add value to vector
+			_headers.at(key).push_back(trim_whitespaces(*new_it));
 		}
 	}
-	else {
-		_headers[lower(key)] = values;	// if unique, add new key-value pair
-	}
+	else
+		_headers[lower(key)] = values;
 }
 
-// TODO -> add checks
 std::vector<std::string>	HttpMessage::getHeaderValues(const std::string& key) const {
 	
 	std::string normalized = lower(key);
@@ -82,10 +81,17 @@ std::vector<std::string>	HttpMessage::getHeaderValues(const std::string& key) co
 	return std::vector<std::string>();
 }
 
-// TODO
-void	HttpMessage::setHeaderValues(const std::string& key, const std::string& value) {
-	(void)key;
-	(void)value;
+void	HttpMessage::printHeaders() const {
+
+	std::map<std::string, std::vector<std::string> >::const_iterator	map_it;
+	std::vector<std::string>::const_iterator	vector_it;
+
+	for (map_it = _headers.begin(); map_it != _headers.end(); map_it++) {
+		std::cout << "		" << map_it->first << ": ";
+		for (vector_it = map_it->second.begin(); vector_it != map_it->second.end(); vector_it++)
+			std::cout << *vector_it << " / ";
+		std::cout << std::endl;
+	}
 }
 
 std::string	HttpMessage::getBody() const {

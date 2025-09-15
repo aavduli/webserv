@@ -36,7 +36,7 @@ RequestParser::~RequestParser() {
 
 HttpRequest* RequestParser::parse_request(std::string raw_request) {
 	console::log("RequestParser parse_request", DEBUG);
-	
+
 	_state = s_req_start;
 	_raw_data = raw_request;
 	HttpRequest* request = new HttpRequest();
@@ -83,6 +83,7 @@ HttpRequest* RequestParser::parse_request(std::string raw_request) {
 		return NULL;
 	}
 	console::log("Parsing completed successfully", DEBUG);
+	print_request(_request);
 	return request;
 }
 
@@ -98,7 +99,6 @@ bool RequestParser::parse_request_line() {
 	}
 	std::string request_line = _raw_data.substr(_current_pos, line_end - _current_pos);
 	request_line = trim_whitespaces(request_line);
-	std::cout << "[DEBUG] Request line: " << request_line << std::endl;
 	
 	if (!parse_method(request_line)) {
 		console::log("Failed to parse method", ERROR);
@@ -133,7 +133,6 @@ bool RequestParser::parse_method(std::string request_line) {
 	}
 	_request->setMethod(method);
 	_current_pos = method_end + 1;	// move past SP
-	std::cout << "[DEBUG] Method parsed - " << method << std::endl;
 	return true;
 }
 
@@ -152,7 +151,6 @@ bool RequestParser::parse_uri(std::string request_line) {
 	}
 	_request->setUri(uri);
 	_current_pos = uri_end + 1;	// move past SP
-	std::cout << "[DEBUG] URI parsed - " << uri << std::endl;
 	return true;
 }
 
@@ -166,7 +164,6 @@ bool RequestParser::parse_version(std::string request_line) {
 		double major = atof((request_line.substr(_current_pos, dot - _current_pos)).c_str());
 		double minor = atof((request_line.substr(dot + 1, request_line.size() - (dot + 1))).c_str());
 		_request->setHttpVersion(major, minor);
-		std::cout << "[DEBUG] Version parsed - " << major << "." << minor << std::endl;
 		return true;
 	}
 	console::log("Invalid HTTP version in request", ERROR);
@@ -197,12 +194,11 @@ bool RequestParser::parse_headers() {
 		}
 
 		std::string name = parse_header_name(header_line);
-		std::vector<std::string> values = parse_header_values(name, header_line);
+		std::vector<std::string> values = parse_header_values(header_line);
 		if (name.empty() || values.empty()) {
 			console::log("Invalid header", DEBUG);
 			return false;
 		}
-		std::cout << "[DEBUG] Header parsed - " << name << std::endl;
 		_request->addHeader(name, values);
 	}
 	_state = s_head_done;
@@ -223,7 +219,7 @@ std::string	RequestParser::parse_header_name(std::string line) {
 }
 
 // Comments allowed in User-Agent/Server/Via fields only
-std::vector<std::string>	RequestParser::parse_header_values(std::string name, std::string line) {
+std::vector<std::string>	RequestParser::parse_header_values(std::string line) {
 
 	std::vector<std::string> values;
 	size_t colon_pos = line.find(':');
@@ -233,16 +229,10 @@ std::vector<std::string>	RequestParser::parse_header_values(std::string name, st
 	}
 	else {
 		std::string	value = line.substr(colon_pos + 1, line.size() - (colon_pos + 1));
-		if (value.find(',') != std::string::npos) {
-			if (name.compare("User-Agent") || name.compare("Server") || name.compare("Via")) {
-				// dont split commas in parenthesis comments
-				values = str_to_vect(value, ",");
-			}
-			else
-				values = str_to_vect(value, ",");
-		}
+		if (value.find(',') != std::string::npos)
+			values = str_to_vect_exept_between(value, ",", "(", ")");
 		else
-			values.push_back(value);
+			values.push_back(trim_whitespaces(value));
 	}
 	return values;
 }
@@ -255,7 +245,6 @@ bool RequestParser::parse_body() {
 	if (_current_pos < _raw_data.length()) {
 		std::string body = _raw_data.substr(_current_pos);
 		_request->setBody(body);
-		std::cout << "[DEBUG] Body parsed, length: " << body.length() << std::endl;
 	}
 	else
 		console::log("No body found", DEBUG);

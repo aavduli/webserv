@@ -133,7 +133,7 @@ class RequestParser : public MessageParser {
 		bool			parse_version(std::string request_line);
 		bool			parse_headers();
 		std::string		parse_header_name(std::string line);
-		std::vector<std::string>	parse_header_values(std::string name, std::string line);
+		std::vector<std::string>	parse_header_values(std::string line);
 		bool			parse_body();
 };
 
