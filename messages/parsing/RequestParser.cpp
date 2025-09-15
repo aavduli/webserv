@@ -83,7 +83,7 @@ HttpRequest* RequestParser::parse_request(std::string raw_request) {
 		return NULL;
 	}
 	console::log("Parsing completed successfully", DEBUG);
-	print_request(_request);
+	//print_request(_request);
 	return request;
 }
 
@@ -118,6 +118,27 @@ bool RequestParser::parse_request_line() {
 	return true;
 }
 
+HttpMethod	string_to_method(std::string str) {
+	if (str.compare("GET") == 0)
+		return GET;
+	else if (str.compare("POST") == 0)
+		return POST;
+	else if (str.compare("DELETE") == 0)
+		return DELETE;
+	else if (str.compare("HEAD") == 0)
+		return HEAD;
+	else if (str.compare("PUT") == 0)
+		return PUT;
+	else if (str.compare("CONNECT") == 0)
+		return CONNECT;
+	else if (str.compare("OPTIONS") == 0)
+		return OPTIONS;
+	else if (str.compare("TRACE") == 0)
+		return TRACE;
+	else
+		return UNKNOWN;
+}
+
 bool RequestParser::parse_method(std::string request_line) {
 	console::log("RequestParser parse_method", DEBUG);
 
@@ -131,11 +152,17 @@ bool RequestParser::parse_method(std::string request_line) {
 		console::log("No request method found", ERROR);
 		return false;
 	}
-	_request->setMethod(method);
+	HttpMethod e_method = string_to_method(method);
+	if (e_method == UNKNOWN) {
+		console::log("Unknown method", ERROR);
+		return false;
+	}
+	_request->setMethod(e_method);
 	_current_pos = method_end + 1;	// move past SP
 	return true;
 }
 
+// needs uri validation
 bool RequestParser::parse_uri(std::string request_line) {
 	console::log("RequestParser parse_uri", DEBUG);
 

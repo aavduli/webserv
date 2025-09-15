@@ -3,26 +3,10 @@
 
 #include "HttpMessage.hpp"
 
-/* EXAMPLE USAGE FLOW:
-
-// 1. PARSING PHASE
-string raw_request = "GET /index.html HTTP/1.1\r\n...";
-RequestParser parser;
-HttpRequest* request = parser.parse(raw_request);
-
-// 2. HANDLING PHASE  
-RequestHandler handler;
-HttpResponse* response = handler.process_request(request);
-
-// 3. OUTPUT PHASE
-ResponseHandler responder;
-string response_string = responder.serialize(response);
- */
-
 class HttpRequest : public HttpMessage {
 
 	private:
-		std::string	_method;
+		HttpMethod	_method;
 		std::string	_uri;		// needs to be a class?
 		
 	public:
@@ -31,8 +15,8 @@ class HttpRequest : public HttpMessage {
 		HttpRequest& operator=(const HttpRequest& rhs);
 		~HttpRequest();
 
-		std::string	getMethod() const;
-		void		setMethod(std::string method);
+		HttpMethod	getMethod() const;
+		void		setMethod(HttpMethod method);
 
 		std::string	getUri() const;
 		void		setUri(std::string uri);

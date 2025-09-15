@@ -1,15 +1,15 @@
 #include "HttpRequest.hpp"
 
-HttpRequest::HttpRequest() : _method(""), _uri("") {
-	std::cout << "[HttpRequest Default Constructor]" << std::endl;
+HttpRequest::HttpRequest() : _method(UNKNOWN), _uri("") {
+	console::log("[HttpRequest Default Constructor]", DEBUG);
 }
 
 HttpRequest::HttpRequest(const HttpRequest& rhs) : HttpMessage(rhs), _method(rhs._method), _uri(rhs._uri) {
-	std::cout << "[HttpRequest Copy Constructor]" << std::endl;
+	console::log("[HttpRequest Copy Constructor]", DEBUG);
 }
 
 HttpRequest& HttpRequest::operator=(const HttpRequest& rhs) {
-	std::cout << "[HttpRequest Assignment Operator]" << std::endl;
+	console::log("[HttpRequest Assignment Operator]", DEBUG);
 	if (this != &rhs) {
 		HttpMessage::operator=(rhs);
 		_method = rhs._method;
@@ -19,14 +19,14 @@ HttpRequest& HttpRequest::operator=(const HttpRequest& rhs) {
 }
 
 HttpRequest::~HttpRequest() {
-	std::cout << "[HttpRequest Destructor]" << std::endl;
+	console::log("[HttpRequest Destructor]", DEBUG);
 }
 
-std::string HttpRequest::getMethod() const {
+HttpMethod HttpRequest::getMethod() const {
 	return _method;
 }
 
-void	HttpRequest::setMethod(std::string method) {
+void	HttpRequest::setMethod(HttpMethod method) {
 	_method = method;
 }
 

@@ -1,11 +1,11 @@
 #include "MessageHandler.hpp"
 
 MessageHandler::MessageHandler(const HttpRequest* request) : _request(request), _response(NULL) {
-	std::cout << "[MessageHandler Default Constructor]" << std::endl;
+	console::log("[MessageHandler Default Constructor]", DEBUG);
 }
 
 MessageHandler::MessageHandler(const MessageHandler& rhs) {
-	std::cout << "[MessageHandler Copy Constructor]" << std::endl;
+	console::log("[MessageHandler Copy Constructor]", DEBUG);
 	if (rhs._request)
 		_request = new HttpRequest(*rhs._request);
 	else
@@ -17,7 +17,7 @@ MessageHandler::MessageHandler(const MessageHandler& rhs) {
 }
 
 MessageHandler& MessageHandler::operator=(const MessageHandler& rhs) {
-	std::cout << "[MessageHandler Assignement Operator]" << std::endl;
+	console::log("[MessageHandler Assignement Operator]", DEBUG);
 	if (this != &rhs) {
 		if (rhs._request)
 			_request = new HttpRequest(*rhs._request);
@@ -32,7 +32,7 @@ MessageHandler& MessageHandler::operator=(const MessageHandler& rhs) {
 }
 
 MessageHandler::~MessageHandler() {
-	std::cout << "[MessageHandler Destructor]" << std::endl;
+	console::log("[MessageHandler Destructor]", DEBUG);
 	if (_request)
 		delete _request;
 	if (_response)

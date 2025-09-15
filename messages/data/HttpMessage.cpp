@@ -2,7 +2,7 @@
 #include "HttpRequest.hpp"
 
 HttpMessage::HttpMessage() {
-	std::cout << "[HttpMessage Default Constructor]" << std::endl;
+	console::log("[HttpMessage Default Constructor]", DEBUG);
 	_state = s_msg_dead;
 	_version_major = 0;
 	_version_minor = 0;
@@ -10,11 +10,11 @@ HttpMessage::HttpMessage() {
 }
 
 HttpMessage::HttpMessage(const HttpMessage& rhs) : _state(rhs._state), _version_major(rhs._version_major), _version_minor(rhs._version_minor), _headers(rhs._headers), _body(rhs._body) {
-	std::cout << "[HttpMessage Copy Constructor]" << std::endl;
+	console::log("[HttpMessage Copy Constructor]", DEBUG);
 }
 
 HttpMessage& HttpMessage::operator=(const HttpMessage& rhs) {
-	std::cout << "[HttpMessage Assignment Operator]" << std::endl;
+	console::log("[HttpMessage Assignment Operator]", DEBUG);
 	if (this != &rhs) {
 		_state = rhs._state;
 		_version_major = rhs._version_major;
@@ -26,7 +26,7 @@ HttpMessage& HttpMessage::operator=(const HttpMessage& rhs) {
 }
 
 HttpMessage::~HttpMessage() {
-	std::cout << "[HttpMessage Destructor]" << std::endl;
+	console::log("[HttpMessage Destructor]", DEBUG);
 }
 
 State	HttpMessage::getState() const {
@@ -106,7 +106,7 @@ const char* get_response(std::string raw_request) {
 
 	std::cout << "raw_request received: \n" << raw_request << std::endl;
 	if (raw_request.empty()) {
-		console::log("empty request", WARNING);
+		console::log("[empty request", WARNING);
 		return NULL;
 	}
 	else {
