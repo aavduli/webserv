@@ -1,4 +1,5 @@
 concept
 README.txt
-
 .vscode
+Dockerfile
+docker-compose.yml
