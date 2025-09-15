@@ -127,3 +127,36 @@ int	main(void) {
 		
 	return 0;
 }
+
+================================================================
+
+SERVER OLD IMPLEMENTATION
+
+// append data
+tmp_buf.append(rbuf.data(), n);
+
+// if request complete, parse it and generate response
+if (parser.is_complete_request(tmp_buf)) {
+	HttpRequest* request = parser.parse_request(tmp_buf);
+	tmp_buf.clear();
+	// MessageHandler handler(request);
+	// if (handler.is_valid_request()) {
+	// 	handler.process_request();
+	// 	handler.generate_response();
+	// }
+	// std::string resp_str = handler.serialize_response();
+	delete request;
+}
+else {
+	// if request incomplete, continue listening for data
+	console::log("Incomplete request", ERROR);
+}
+
+// dont go there if request incomplete, wait for more data arriving through epoll
+static const char resp[] = 
+"HTTP/1.1 200 OK\r\n"
+"Content-type: text/plain\r\n"
+"Content-lenght: 6\r\n"
+"Connection: close\r\n"
+"\r\n"
+"Hello\n";
