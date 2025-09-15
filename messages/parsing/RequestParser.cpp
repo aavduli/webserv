@@ -158,7 +158,7 @@ bool RequestParser::parse_method(std::string request_line) {
 		return false;
 	}
 	_request->setMethod(e_method);
-	_current_pos = method_end + 1;	// move past SP
+	_current_pos = request_line.find_first_not_of(" ", method_end);
 	return true;
 }
 
@@ -177,7 +177,7 @@ bool RequestParser::parse_uri(std::string request_line) {
 		return false;
 	}
 	_request->setUri(uri);
-	_current_pos = uri_end + 1;	// move past SP
+	_current_pos = request_line.find_first_not_of(" ", uri_end);
 	return true;
 }
 
@@ -204,26 +204,25 @@ bool RequestParser::parse_headers() {
 	std::map<std::string, std::vector<std::string> > headers;
 	
 	while (_current_pos < _raw_data.length()) {
-
 		size_t line_end = _raw_data.find("\r\n", _current_pos);
 		if (line_end == std::string::npos) {
 			console::log("No CRLF found in headers", ERROR);
 			return false;
 		}
-		
 		std::string header_line = _raw_data.substr(_current_pos, line_end - _current_pos);
 		_current_pos = line_end + 2; // Move past \r\n
-		
-		// Empty line (containing only CRLF) indicates end of headers
 		if (header_line.empty()) {
 			console::log("End of headers found", DEBUG);
 			break;
 		}
-
 		std::string name = parse_header_name(header_line);
+		if (name.empty()) {
+			console::log("Empty header name", DEBUG);
+			return false;
+		}
 		std::vector<std::string> values = parse_header_values(header_line);
-		if (name.empty() || values.empty()) {
-			console::log("Invalid header", DEBUG);
+		if (values.empty()) {
+			console::log("Empty header value", DEBUG);
 			return false;
 		}
 		_request->addHeader(name, values);
