@@ -53,8 +53,6 @@ void server::serverManager() {
 	ignore_sigpipe();
 	setServer();
 	setSockaddr();
-	s_msg_streams request();
-	console::log("HLAKHSWHA:F", ERROR);
 
 	if (bind(_serverfd, (struct sockaddr *)&_address, sizeof(_address)) < 0) {
 		std::cerr << RED << "failed to bind: " << std::strerror(errno) << RESET << std::endl;
@@ -67,9 +65,6 @@ void server::serverManager() {
 	std::cout << GREEN << "server listening on: " << _port << RESET << std::endl;
 
 	_ev.addFd(_serverfd, EPOLLIN);
-
-	// const int maxresp = 8096;
-	std::string buff[1024];
 
 	while (true) {
 		int nfds = _ev.wait(-1);
@@ -107,17 +102,16 @@ void server::serverManager() {
 			}
 			if (events & EPOLLIN) {
 				bool close_it = false;
+				char buff[8096];
+				std::string tmp;
 				while (true) {
-					ssize_t n = recv(fd, &buff, 1024, 0);
-					std::cout << YELLOW << n << RESET << std::endl;
+					ssize_t n = recv(fd, buff, sizeof(buff), 0);
+					tmp.append(buff, n);
+					std::cout << tmp << std::endl;
 					if (n > 0) {
 						size_t sent = 0;
 						while (sent < sizeof(buff) -1) {
-							ssize_t s = send(fd, buff + sent, (sizeof(buff) - 1) - sent, 0
-#ifdef MSG_NOSIGNAL
-							| MSG_NOSIGNAL
-#endif	
-							);
+							ssize_t s = send(fd, buff + sent, (sizeof(buff) - 1) - sent, MSG_NOSIGNAL);
 							if (s > 0) sent += (size_t)s;
 							else if (s == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) break;
 							else {close_it = true; break; }
