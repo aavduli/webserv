@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   webserv_config.cpp                                 :+:      :+:    :+:   */
+/*   WebservConfig.cpp                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "webserv_config.hpp"
+#include "WebservConfig.hpp"
 
 WebservConfig::WebservConfig(): _isValid(false){}
 
@@ -80,16 +80,19 @@ std::string WebservConfig::getDirective(const std::string& directive)const{
 }
 
 bool WebservConfig::loadConfig(const std::string& configFile){
+	//readin'
 	FileReader reader;
-	ConfigParser parser;
-
 	std::vector<std::string> lines = reader.readLines(configFile);
-	if (lines.empty()) return false;
 
-	if (!parser.validateBraces(lines)) return false;
-
+	//parsin'
+	ConfigParser parser;
 	ServerConfig serverConfig = parser.parseServer(lines);
 	LocationsConfig locationsConfig = parser.parseLocations(lines);
+
+	//validatin'
+	if (lines.empty()) return false;
+	if (!parser.validateBraces(lines)) return false;
+
 
 	_server = serverConfig.directives;
 	_locations = convertToOldFormat(locationsConfig);

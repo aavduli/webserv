@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   parser_config.hpp                                  :+:      :+:    :+:   */
+/*   ConfigParser.hpp                                  :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
@@ -10,8 +10,8 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef PARSER_CONFIG_HPP
-# define PARSER_CONFIG_HPP
+#ifndef CONFIG_PARSER_HPP
+# define CONFIG_PARSER_HPP
 
 # include <string>
 # include <vector>

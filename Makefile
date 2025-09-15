@@ -7,8 +7,8 @@ SRCS =	main.cpp \
 		event/eventManager.cpp \
 		console/console.cpp \
 		config/location.cpp \
-		config/parser_config.cpp \
-		config/webserv_config.cpp \
+		config/ConfigParser.cpp \
+		config/WebservConfig.cpp \
 		config/file_reader.cpp\
 		messages/HttpMessage.cpp \
 		messages/HttpHeaders.cpp \

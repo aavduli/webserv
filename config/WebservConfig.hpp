@@ -1,23 +1,23 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   webserv_config.hpp                                 :+:      :+:    :+:   */
+/*   WebservConfig.hpp                                  :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/08 16:24:01 by jim               #+#    #+#             */
-/*   Updated: 2025/09/15 12:00:47 by jim              ###   ########.fr       */
+/*   Updated: 2025/09/15 14:53:13 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef WEBSERV_CONFIG_HPP
-# define WEBSERV_CONFIG_HPP
+#ifndef WEBSERVCONFIG_HPP
+# define WEBSERVCONFIG_HPP
 
 # include <string>
 # include <vector>
 # include <map>
 # include <iostream>
-# include "parser_config.hpp"
+# include "ConfigParser.hpp"
 # include "location.hpp"
 # include "file_reader.hpp"
 # include "config_data.hpp"

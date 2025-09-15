@@ -1,6 +1,6 @@
 #include "console/console.hpp"
 #include "server/server.hpp"
-#include "config/webserv_config.hpp"
+#include "config/WebservConfig.hpp"
 
 int main(int ac, char **av) {
 	console::setDebug(true);

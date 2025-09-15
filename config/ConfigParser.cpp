@@ -1,16 +1,16 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   parser_config.cpp                                  :+:      :+:    :+:   */
+/*   ConfigParser.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/15 10:45:14 by jim               #+#    #+#             */
-/*   Updated: 2025/09/15 13:58:59 by jim              ###   ########.fr       */
+/*   Updated: 2025/09/15 14:51:13 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "parser_config.hpp"
+#include "ConfigParser.hpp"
 
 const std::string ConfigParser::SERVER_START = "server";
 const std::string ConfigParser::LOCATION_START = "location";
@@ -31,7 +31,7 @@ ServerConfig ConfigParser::parseServer(const std::vector<std::string>& lines) co
 					state = IN_SERVER_BLOCK;
 				break;
 
-			case IN_SERVER_BLOCK:{ //added { to create scope for directive var
+			case IN_SERVER_BLOCK:{
 				if (line == BLOCK_END)
 					return config;
 				if (line.find(LOCATION_START) == 0){
@@ -88,10 +88,4 @@ LocationsConfig ConfigParser::parseLocations(const std::vector<std::string> & li
 	LocationsConfig config;
 	//TODO : parse locations
 	return config;
-}
-
-bool ConfigParser::validateBraces(const std::vector<std::string>& lines) const{
-	(void) lines;
-	//TODO :: change validate braces
-	return true;
 }
