@@ -1,15 +1,18 @@
 # Webserv - config file parser TODO - jroulet
 ### DONE
  - [ ] vector to map
+ - [ ] ip doesnt start with 0 if size > 0
+ - [ ] utils with map
+### DIDNT DID IT
+ - [ ] make template for utils :reason, kinda overkill (for now too use template)
+
 ### TODO
  - [ ] validate directive
- - [ ] ip doesnt start with 0 if size > 0
  - [ ] duplicate direcvite ?
  - [ ] check if folder exist
  - [ ] utils with map
- - [ ] make template for utils
- - [ ] utils with map
- 
+ - [ ] add max_size_body (allowed content size max) - getter return octet
+
     `see below for utils`
 
 ## Utilisation des std::map

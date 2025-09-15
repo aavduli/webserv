@@ -6,23 +6,25 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/08 16:24:01 by jim               #+#    #+#             */
-/*   Updated: 2025/09/08 17:33:40 by jim              ###   ########.fr       */
+/*   Updated: 2025/09/15 12:00:47 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef WEBSERV_CONFIG_HPP
 # define WEBSERV_CONFIG_HPP
 
-#include <string>
-#include <vector>
-#include <map>
-#include <iostream>
-#include "parser_config.hpp"
-#include "location.hpp"
+# include <string>
+# include <vector>
+# include <map>
+# include <iostream>
+# include "parser_config.hpp"
+# include "location.hpp"
+# include "file_reader.hpp"
+# include "config_data.hpp"
 
 class WebservConfig{
 	private:
-		ParseConfig 	_parser;
+		ConfigParser  _parser;
 		std::map<std::string, std::string> _server;
 		std::map<std::string, std::map<std::string, std::string> > _locations;
 		std::string		_configFile;
@@ -35,6 +37,7 @@ class WebservConfig{
 
 		bool loadConfig(const std::string& configFile);
 		bool isvalid() const;
+		std::map<std::string, std::map<std::string, std::string> > convertToOldFormat(const LocationsConfig& locationsConfig) const;
 
 		//srv access
 		const std::map<std::string, std::string> &getServer() const;

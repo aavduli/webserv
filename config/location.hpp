@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/01 11:22:48 by jim               #+#    #+#             */
-/*   Updated: 2025/09/03 20:07:07 by jim              ###   ########.fr       */
+/*   Updated: 2025/09/13 16:23:18 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,6 @@
 
 #include <string>
 #include <map>
-#include "config.hpp"
 
 class Location{
 	private:

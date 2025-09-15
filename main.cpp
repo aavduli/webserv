@@ -15,9 +15,10 @@ int main(int ac, char **av) {
 		fn += ".conf";
 	}
 	WebservConfig config;
-	if (!config.loadConfig(fn)){
+	if (!config.loadConfig(fn))
 		console::log("Config file error ", ERROR);
-	}
+	else
+		config.printConfig();
 	std::string portStr = config.getDirective("listen");
 	int port = atoi(portStr.c_str());
 	console::log("Config file error ", INFO);

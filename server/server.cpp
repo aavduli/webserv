@@ -18,7 +18,7 @@ int server::make_nonblock(int fd) {
 	return 0;
 }
 
-void server::ignore_sigpipe() { 
+void server::ignore_sigpipe() {
 	struct sigaction sa;
 	std::memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = SIG_IGN;
@@ -53,7 +53,7 @@ void server::serverManager() {
 	ignore_sigpipe();
 	setServer();
 	setSockaddr();
-	s_msg_streams request();
+	//s_msg_streams request();
 	console::log("HLAKHSWHA:F", ERROR);
 
 	if (bind(_serverfd, (struct sockaddr *)&_address, sizeof(_address)) < 0) {
@@ -116,7 +116,7 @@ void server::serverManager() {
 							ssize_t s = send(fd, buff + sent, (sizeof(buff) - 1) - sent, 0
 #ifdef MSG_NOSIGNAL
 							| MSG_NOSIGNAL
-#endif	
+#endif
 							);
 							if (s > 0) sent += (size_t)s;
 							else if (s == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) break;

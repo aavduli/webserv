@@ -6,58 +6,40 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/01 10:35:44 by jim               #+#    #+#             */
-/*   Updated: 2025/09/08 17:27:34 by jim              ###   ########.fr       */
+/*   Updated: 2025/09/15 13:31:09 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef PARSER_CONFIG_HPP
 # define PARSER_CONFIG_HPP
 
-#include <string>
-#include <vector>
-#include <map>
-#include <sys/stat.h>
-#include "config.hpp"
-#include "location.hpp"
+# include <string>
+# include <vector>
+# include <map>
+# include <sys/stat.h>
 
-class ParseConfig{
+# include "location.hpp"
+# include "config_data.hpp"
+
+class ConfigParser{
 	private:
-		std::string trim(const std::string &string) const;
-		bool validateServerDirectives(const std::map<std::string, std::string> &server) const;
-		bool validatePort(const std::string &port) const;
-		bool validateIP(const std::string &ip) const;
-		bool checkDuplicates(const std::map<std::string, std::string> &directives) const;
-		bool validatePath(const std::string &path) const;
-		bool validateFile(const std::string &path) const;
+		static const std::string SERVER_START;
+		static const std::string LOCATION_START;
+		static const std::string BLOCK_END;
 
+		enum ParseState{
+			OUTSIDE_BLOCK,
+			IN_SERVER_BLOCK,
+			IN_LOCATION_BLOCK,
+		};
 
-		public :
-		bool validateBraces(const std::string &configFile) const;
-		ParseConfig();
-		~ParseConfig();
+		std::pair<std::string, std::string> parseDirective(const std::string& line) const;
+		void skipBlock(size_t& index, const std::vector<std::string>& lines) const;
 
-		// Global map : location["/path"]["option"] = "value"
-		std::map<std::string, std::map<std::string, std::string> > parseLocation(const std::string &configFile) const;
-		//vecotr to multiple server
-		//std::vector<std::map<std::string, std::string> > parseAllServer(const std::string &configFile) const;
-		std::map<std::string, std::string> parseServer(const std::string &configFile) const;
+	public:
+		ServerConfig parseServer(const std::vector<std::string>& lines) const;
+		LocationsConfig parseLocations(const std::vector<std::string>& lines) const;
+		bool validateBraces(const std::vector<std::string>& lines) const;
 
-		//get-setradio
-		//const std::vector<std::map<std::string, std::string> > &getAllServers(const std::string &configFile);
-		const std::map<std::string, std::map<std::string, std::string> > &getAllLocations(const std::string &configFile);
-
-		//get server directive
-		std::string getServerDirective(const std::map<std::string, std::string> &server, const std::string &directive) const;
-		int getServerPort(const std::map<std::string, std::string> &server) const;
-		std::string getServerName(const std::map<std::string, std::string> &server) const;
-		std::string getServerHost(const std::map<std::string, std::string> &server) const;
-		std::string getServerRoot(const std::map<std::string, std::string> &server) const;
-
-		//get lcoations
-		std::vector<std::string> getLocationPath(const std::string &configfile);
-		std::map<std::string, std::string> getLocationDirectives(const std::string &location) const;
 };
-
-//
-
 #endif

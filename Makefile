@@ -6,16 +6,16 @@ SRCS =	main.cpp \
 		server/server.cpp \
 		event/eventManager.cpp \
 		console/console.cpp \
-		config/config.cpp \
 		config/location.cpp \
 		config/parser_config.cpp \
 		config/webserv_config.cpp \
+		config/file_reader.cpp\
 		messages/HttpMessage.cpp \
 		messages/HttpHeaders.cpp \
 		messages/HttpResponse.cpp \
 		messages/HttpRequest.cpp \
 		parsing/Normalization.cpp
-		
+
 OBJDIR = obj
 
 OBJS = $(SRCS:.cpp=.o)
