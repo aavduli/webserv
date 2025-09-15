@@ -3,19 +3,19 @@ CXX = c++
 CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -g
 
 SRCS =	main.cpp \
-		console/console.cpp \
 		server/server.cpp \
 		event/eventManager.cpp \
-		errors/errors.cpp \
-		messages/data/HttpMessage.cpp \
-		messages/data/HttpResponse.cpp \
-		messages/data/HttpRequest.cpp \
-		messages/handling/MessageHandler.cpp \
-		messages/parsing/MessageParser.cpp \
-		messages/parsing/RequestParser.cpp \
-		messages/utils_print.cpp \
+		console/console.cpp \
+		config/config.cpp \
+		config/location.cpp \
+		config/parser_config.cpp \
+		config/webserv_config.cpp \
+		messages/HttpMessage.cpp \
+		messages/HttpHeaders.cpp \
+		messages/HttpResponse.cpp \
+		messages/HttpRequest.cpp \
 		parsing/Normalization.cpp
-
+		
 OBJDIR = obj
 
 OBJS = $(SRCS:.cpp=.o)

@@ -1,8 +1,7 @@
 #include "server.hpp"
-#include "../messages/data/HttpResponse.hpp"
-#include "../messages/handling/MessageHandler.hpp"
+#include "../messages/MessageStreams.hpp"
 
-server::server(int port) : _port(port), _serverfd(-1), _ev(10)  {}
+server::server(int port) : _port(port), _serverfd(-1), _ev(1024)  {}
 
 server::~server() {
 	if (_serverfd != -1) 
@@ -17,7 +16,6 @@ int server::make_nonblock(int fd) {
 	int clo = fcntl(fd, F_GETFD);
 	if (clo == -1) return -1;
 	if (fcntl(fd, F_SETFD, clo | FD_CLOEXEC) == -1) return -1;
-	console::log("webserv is non blocking", INFO);
 	return 0;
 }
 
@@ -26,7 +24,6 @@ void server::ignore_sigpipe() {
 	std::memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = SIG_IGN;
 	sigaction(SIGPIPE, &sa, NULL);
-	console::log("SIGPIPE is ignored", INFO);
 }
 
 void server::setServer() {
@@ -44,7 +41,6 @@ void server::setServer() {
 		std::cerr << RED << "nonblock(listen):" << RESET << std::strerror(errno) << std::endl;
 		exit(1);
 	}
-	console::log("socket is ready to listen", INFO);
 }
 
 void server::setSockaddr() {
@@ -52,13 +48,13 @@ void server::setSockaddr() {
 	_address.sin_family = AF_INET;
 	_address.sin_addr.s_addr = htonl(INADDR_ANY);
 	_address.sin_port = htons(_port);
-	console::log("struct sockaddr is ready", INFO);
 }
 
 void server::serverManager() {
 	ignore_sigpipe();
 	setServer();
 	setSockaddr();
+	s_msg_streams msg();
 
 	if (bind(_serverfd, (struct sockaddr *)&_address, sizeof(_address)) < 0) {
 		std::cerr << RED << "failed to bind: " << std::strerror(errno) << RESET << std::endl;
@@ -71,9 +67,6 @@ void server::serverManager() {
 	std::cout << GREEN << "server listening on: " << _port << RESET << std::endl;
 
 	_ev.addFd(_serverfd, EPOLLIN);
-
-	// const int maxresp = 8096;
-	std::vector<char> rbuf(8096);
 
 	while (true) {
 		int nfds = _ev.wait(-1);
@@ -100,7 +93,6 @@ void server::serverManager() {
 						close(cfd);
 						continue;
 					}
-					console::log("request accepted and made non block!", INFO);
 					_ev.addFd(cfd, EPOLLIN | EPOLLRDHUP);
 				}
 				continue;
@@ -112,49 +104,15 @@ void server::serverManager() {
 			}
 			if (events & EPOLLIN) {
 				bool close_it = false;
+				char buff[8096];
+				std::string tmp;
 				while (true) {
-
-					std::string tmp_buf;
-					RequestParser parser;
-					
-					ssize_t n = recv(fd, &rbuf[0], rbuf.size(), 0);
+					ssize_t n = recv(fd, buff, sizeof(buff), 0);
+					tmp.append(buff, n);
 					if (n > 0) {
-						
-						// append data
-						tmp_buf.append(rbuf.data(), n);
-						
-						// if request complete, parse it and generate response
-						if (parser.is_complete_request(tmp_buf)) {
-							HttpRequest* request = parser.parse_request(tmp_buf);
-							tmp_buf.clear();
-							// MessageHandler handler(request);
-							// if (handler.is_valid_request()) {
-							// 	handler.process_request();
-							// 	handler.generate_response();
-							// }
-							// std::string resp_str = handler.serialize_response();
-							delete request;
-						}
-						else {
-							// if request incomplete, continue listening for data
-							console::log("Incomplete request", ERROR);
-						}
-
-						// dont go there if request incomplete, wait for more data arriving through epoll
-						static const char resp[] = 
-						"HTTP/1.1 200 OK\r\n"
-						"Content-type: text/plain\r\n"
-						"Content-lenght: 6\r\n"
-						"Connection: close\r\n"
-						"\r\n"
-						"Hello\n";
 						size_t sent = 0;
-						while (sent < sizeof(resp) -1) {
-							ssize_t s = send(fd, resp + sent, (sizeof(resp) - 1) - sent, 0
-#ifdef MSG_NOSIGNAL
-							| MSG_NOSIGNAL
-#endif	
-							);
+						while (sent < sizeof(buff) -1) {
+							ssize_t s = send(fd, buff + sent, (sizeof(buff) - 1) - sent, MSG_NOSIGNAL);
 							if (s > 0) sent += (size_t)s;
 							else if (s == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) break;
 							else {close_it = true; break; }
