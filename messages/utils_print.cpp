@@ -1,27 +1,21 @@
-#include "HttpRequest.hpp"
+#include "data/HttpRequest.hpp"
+#include <iostream>
 
-void	print_request(HttpRequest request) {
-	std::cout << "\n=== HTTP REQUEST INFO ===" << std::endl;
+void	print_request(HttpRequest* request) {
+	std::cout << "\n=== HTTP REQUEST ===" << std::endl;
 	
-	// Print HTTP version
-	std::cout << "HTTP Version: " << request.getHttpVersion() << std::endl;
-	
-	// Print method and URI (HttpRequest specific)
-	std::cout << "Method: " << request.getMethod() << std::endl;
-	std::cout << "URI: " << request.getUri() << std::endl;
-	
-	// Print headers
+	// Print request line
+	std::cout << "Method:		" << request->getMethod() << std::endl;
+	std::cout << "URI:		" << request->getUri() << std::endl;
+	std::cout << "HTTP Version:	" << request->getHttpVersion() << std::endl;
 	std::cout << "Headers:" << std::endl;
-	HttpHeaders headers = request.getHeaders();
-	std::cout << "  [Headers object created - specific values would need header parsing implementation]" << std::endl;
-	
-	// Print body
-	std::cout << "Body: ";
-	std::string body = request.getBody();
-	if (body.empty()) {
-		std::cout << "[Empty]" << std::endl;
+	request->printHeaders();
+	std::string body = request->getBody();
+	if (!body.empty()) {
+		std::cout << "Body (" << body.length() << " bytes):" << std::endl;
+		std::cout << body << std::endl;
 	} else {
-		std::cout << "\"" << body << "\"" << std::endl;
+		std::cout << "Body: (empty)" << std::endl;
 	}
-	std::cout << "================================\n" << std::endl;
+	std::cout << "===================" << std::endl;
 }

@@ -4,7 +4,8 @@
 server::server(int port) : _port(port), _serverfd(-1), _ev(1024)  {}
 
 server::~server() {
-	if (_serverfd != -1) close(_serverfd);
+	if (_serverfd != -1) 
+		close(_serverfd);
 }
 
 int server::make_nonblock(int fd) {

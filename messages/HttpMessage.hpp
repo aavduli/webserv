@@ -87,3 +87,4 @@ class HttpMessage {
 void	handle_request(s_msg_streams streams);
 
 #endif // HTTPMESSAGE_HPP
+
