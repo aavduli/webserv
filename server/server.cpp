@@ -53,6 +53,7 @@ void server::serverManager() {
 	ignore_sigpipe();
 	setServer();
 	setSockaddr();
+	s_msg_streams msg();
 
 	if (bind(_serverfd, (struct sockaddr *)&_address, sizeof(_address)) < 0) {
 		std::cerr << RED << "failed to bind: " << std::strerror(errno) << RESET << std::endl;
@@ -107,7 +108,6 @@ void server::serverManager() {
 				while (true) {
 					ssize_t n = recv(fd, buff, sizeof(buff), 0);
 					tmp.append(buff, n);
-					std::cout << tmp << std::endl;
 					if (n > 0) {
 						size_t sent = 0;
 						while (sent < sizeof(buff) -1) {
