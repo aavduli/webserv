@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/08 16:24:01 by jim               #+#    #+#             */
-/*   Updated: 2025/09/15 14:53:13 by jim              ###   ########.fr       */
+/*   Updated: 2025/09/16 13:38:40 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,9 +18,10 @@
 # include <map>
 # include <iostream>
 # include "ConfigParser.hpp"
-# include "location.hpp"
-# include "file_reader.hpp"
+# include "ConfigLocation.hpp"
+# include "FileReader.hpp"
 # include "config_data.hpp"
+# include "ConfigValidator.hpp"
 
 class WebservConfig{
 	private:
@@ -29,11 +30,14 @@ class WebservConfig{
 		std::map<std::string, std::map<std::string, std::string> > _locations;
 		std::string		_configFile;
 		bool			_isValid;
+		ConfigValidator	_validator;
 
 	public:
 		WebservConfig();
 		WebservConfig(const std::string& configFile);
 		~WebservConfig();
+
+		std::string getLastError() const;
 
 		bool loadConfig(const std::string& configFile);
 		bool isvalid() const;

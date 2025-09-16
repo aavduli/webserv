@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/15 14:45:23 by jim               #+#    #+#             */
-/*   Updated: 2025/09/15 17:22:44 by jim              ###   ########.fr       */
+/*   Updated: 2025/09/16 11:23:11 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,13 +26,14 @@ class ConfigValidator{
 		bool isValidPath(const std::string& path) const;
 		bool isValidFile(const std::string& filepath) const;
 		void setError(const std::string& error);
+		std::string toString(size_t num) const;
 
 	public:
 		ConfigValidator();
 		~ConfigValidator();
 
 		bool validateBraces(const std::vector<std::string>& lines);
-		bool validateSyntaxe(const std::vector<std::string>& lines);
+		bool validateSyntax(const std::vector<std::string>& lines);
 
 
 		//serveur
@@ -46,7 +47,7 @@ class ConfigValidator{
 		bool validateErrorParge(const std::string& errorPageLine);
 
 		//location
-		bool validateLocationSConfig(const LocationConfig& config); //plurals
+		bool validateLocationSConfig(const LocationsConfig& config); //plurals
 		bool validateLocationConfig(const LocationConfig& config);
 		bool validateLocationPath(const std::string& path);
 		bool validateHTTPMethods(const std::string& methods);

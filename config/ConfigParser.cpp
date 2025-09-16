@@ -6,11 +6,12 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/15 10:45:14 by jim               #+#    #+#             */
-/*   Updated: 2025/09/15 14:51:13 by jim              ###   ########.fr       */
+/*   Updated: 2025/09/16 13:20:09 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "ConfigParser.hpp"
+#include <sstream>
 
 const std::string ConfigParser::SERVER_START = "server";
 const std::string ConfigParser::LOCATION_START = "location";
@@ -46,8 +47,7 @@ ServerConfig ConfigParser::parseServer(const std::vector<std::string>& lines) co
 				break;
 			}
 
-			case IN_LOCATION_BLOCK:
-				//TODO loc
+			case IN_LOCATION_BLOCK: // TODO
 				break;
 		}
 	}
@@ -83,9 +83,56 @@ void ConfigParser::skipBlock(size_t& index, const std::vector<std::string>& line
 }
 
 
-LocationsConfig ConfigParser::parseLocations(const std::vector<std::string> & lines) const{
-	(void)lines;
+LocationsConfig ConfigParser::parseLocations(const std::vector<std::string> & lines) const{ //TODO : parse locations
 	LocationsConfig config;
-	//TODO : parse locations
+	std::string currentLocationPath = "";
+	LocationConfig currentLocation;
+
+	for (size_t i = 0; i < lines.size();++i){
+		const std::string& line = lines[i];
+
+		if (line.empty() || line[0] == '#') continue;
+
+		//location block
+		if (line.find(LOCATION_START) == 0){
+			//save prev. location
+			if (!currentLocationPath.empty())
+				config.locations[currentLocationPath] = currentLocation;
+
+			//new loc
+			std::istringstream iss(line);
+			std::string keyword;
+			std::string path;
+			iss >>keyword >> path;
+
+			//delte the {
+			if (!path.empty() && path[path.length() -1] == '{')
+				path.resize(path.length() -1);
+
+			currentLocationPath = path;
+			currentLocation.path = path;
+			currentLocation.directives.clear();
+			continue;
+		}
+
+		//end loca block
+		if (line == BLOCK_END && !currentLocationPath.empty()){
+			//save current location
+			config.locations[currentLocationPath] = currentLocation;
+			continue;
+		}
+
+		//parse directive inside loc. block
+		if (!currentLocationPath.empty()){
+			std::pair<std::string, std::string> directive = parseDirective(line);
+			if (!directive.first.empty())
+				currentLocation.directives[directive.first] = directive.second;
+		}
+	}
+
+	//save last location
+	if (!currentLocationPath.empty())
+		config.locations[currentLocationPath] = currentLocation;
+
 	return config;
 }

@@ -6,18 +6,18 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/15 14:57:26 by jim               #+#    #+#             */
-/*   Updated: 2025/09/15 17:22:26 by jim              ###   ########.fr       */
+/*   Updated: 2025/09/16 11:37:45 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <iostream>
+#include <vector>
 #include <sstream>
 #include <cstdlib>
 #include <cstring>
 #include <unistd.h>
 #include <sys/stat.h>
 #include "ConfigValidator.hpp"
-
 
 const int ConfigValidator::MIN_PORT;
 const int ConfigValidator::MAX_PORT;
@@ -40,7 +40,7 @@ void ConfigValidator::clearError(){
 
 /// validation
 
-bool ConfigValidator::validateBraces(const std::vector<std::string>& lines){ //todo correct this func
+bool ConfigValidator::validateBraces(const std::vector<std::string>& lines){ //todo oo correct this func
 	int braceCount = 0;
 	size_t lineCounter = 0;
 
@@ -75,17 +75,20 @@ bool ConfigValidator::validateBraces(const std::vector<std::string>& lines){ //t
 	return true;
 }
 
-bool ConfigValidator::validateSyntaxe(const std::vector<std::string>& lines){//todo correct this func
+bool ConfigValidator::validateSyntax(const std::vector<std::string>& lines) {
 	if (!validateBraces(lines)) return false;
 
-	for (std::vector<std::string>::const_iterator it = lines.begin(); it != lines.end(); ++it){
-		if (it->length()>MAX_DIRECTIVE_LEN){
-			setError("Line too long, max : " + tostring(MAX_DIRECTIVE_LEN) + " chars");
+	for (std::vector<std::string>::const_iterator it = lines.begin();
+		it != lines.end(); ++it) {
+		if (it->length() > MAX_DIRECTIVE_LEN) {
+			setError("Line too long, max: " + toString(MAX_DIRECTIVE_LEN) + " chars");
 			return false;
 		}
 	}
 	return true;
 }
+
+
 
 bool ConfigValidator::isValidNumber(const std::string& str) const{
 	if (str.empty()) return false;
@@ -112,7 +115,11 @@ bool ConfigValidator::isValidFile(const std::string& filepath) const{
 	return (info.st_mode & S_IFREG);
 }
 
-void ConfigValidator::setError(const std::string& error){} // TODO
+std::string ConfigValidator::toString(size_t num) const {
+	std::ostringstream oss;
+	oss << num;
+	return oss.str();
+}
 
 //mandatory direcovec
 bool ConfigValidator::validateServerConfig(const ServerConfig& config){
@@ -258,13 +265,15 @@ bool ConfigValidator::validateErrorParge(const std::string& errorPageLine){
 	return true;
 }
 
-bool ConfigValidator::validateLocationSConfig(const LocationConfig& config){//plurals
-	for (std::map<std::string, std::string>::const_iterator it = config.locations.begin(); //todo add locationS to config.
-		it != config.locations.end(); ++it){
-			if (!validateLocationConfig(it->second)) return false;
-		}
-		return true;
+bool ConfigValidator::validateLocationSConfig(const LocationsConfig& config) {
+	for (std::map<std::string, LocationConfig>::const_iterator it =
+config.locations.begin();
+		it != config.locations.end(); ++it) {
+		if (!validateLocationConfig(it->second)) return false;  // call the singular version
+	}
+	return true;
 }
+
 
 bool ConfigValidator::validateLocationConfig(const LocationConfig& config){
 	if (!validateLocationPath(config.path)) return false;
@@ -344,14 +353,29 @@ bool ConfigValidator::hasWPerm(const std::string& path) const{
 		return access(path.c_str(), W_OK) == 0;
 }
 
-bool ConfigValidator::validateTimeout(const std::string& timeout){} //todo
+bool ConfigValidator::validateTimeout(const std::string& timeout){ //todo
+	(void) timeout;
+	return true;
+}
 
 
-bool ConfigValidator::validateRedirection(const std::string& redir){} //todo
+bool ConfigValidator::validateRedirection(const std::string& redir){ //todo
+	(void) redir;
+	return true;
+}
 
-bool ConfigValidator::validateIndex(const std::string& index){} // todo
+bool ConfigValidator::validateIndex(const std::string& index){ //todo
+	(void) index;
+	return true;
+}
 
 
-bool ConfigValidator::validatePath(const std::string& path){} //todo
+bool ConfigValidator::validatePath(const std::string& path){ //todo
+	(void) path;
+	return true;
+}
 
-bool ConfigValidator::isPortUsed(int port) const{} // todo need a free port ?
+bool ConfigValidator::isPortUsed(int port) const{ //todo do we need a check for free port?
+	(void) port;
+	return false; // /!\ watch out invers, false = free port
+}

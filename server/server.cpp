@@ -54,7 +54,7 @@ void server::serverManager() {
 	setServer();
 	setSockaddr();
 	//s_msg_streams request();
-	console::log("HLAKHSWHA:F", ERROR);
+	//console::log("HLAKHSWHA:F", ERROR);
 
 	if (bind(_serverfd, (struct sockaddr *)&_address, sizeof(_address)) < 0) {
 		std::cerr << RED << "failed to bind: " << std::strerror(errno) << RESET << std::endl;

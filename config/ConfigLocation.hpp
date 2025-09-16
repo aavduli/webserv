@@ -1,17 +1,17 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   location.hpp                                       :+:      :+:    :+:   */
+/*   ConfigLocation.hpp                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/01 11:22:48 by jim               #+#    #+#             */
-/*   Updated: 2025/09/13 16:23:18 by jim              ###   ########.fr       */
+/*   Updated: 2025/09/16 13:18:52 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef LOCATION_HPP
-#define LOCATION_HPP
+#ifndef CONFIGLOCATION_HPP
+#define CONFIGLOCATION_HPP
 
 #include <string>
 #include <map>

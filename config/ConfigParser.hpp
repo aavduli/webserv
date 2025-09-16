@@ -18,7 +18,7 @@
 # include <map>
 # include <sys/stat.h>
 
-# include "location.hpp"
+# include "ConfigLocation.hpp"
 # include "config_data.hpp"
 
 class ConfigParser{
@@ -39,7 +39,5 @@ class ConfigParser{
 	public:
 		ServerConfig parseServer(const std::vector<std::string>& lines) const;
 		LocationsConfig parseLocations(const std::vector<std::string>& lines) const;
-		bool validateBraces(const std::vector<std::string>& lines) const;
-
 };
 #endif

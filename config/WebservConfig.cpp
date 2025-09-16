@@ -55,8 +55,7 @@ void WebservConfig::printConfig() const {
 	}
 
 	std::cout << "\n=== LOCATIONS ===" << std::endl;
-	for (std::map<std::string, std::map<std::string, std::string> >::const_iterator it =
-_locations.begin();
+	for (std::map<std::string, std::map<std::string, std::string> >::const_iterator it = _locations.begin();
 		it != _locations.end(); ++it) {
 		std::cout << "Location " << it->first << ":" << std::endl;
 
@@ -80,24 +79,36 @@ std::string WebservConfig::getDirective(const std::string& directive)const{
 }
 
 bool WebservConfig::loadConfig(const std::string& configFile){
-	//readin'
 	FileReader reader;
-	std::vector<std::string> lines = reader.readLines(configFile);
-
-	//parsin'
 	ConfigParser parser;
+
+	std::vector<std::string> lines = reader.readLines(configFile);
+	if (lines.empty()) return false;
+
+	if (!_validator.validateSyntax(lines)){
+		std::cerr << "Syntax error : " << _validator.getLastError() << std::endl;
+		return false;
+	}
+
 	ServerConfig serverConfig = parser.parseServer(lines);
 	LocationsConfig locationsConfig = parser.parseLocations(lines);
 
-	//validatin'
-	if (lines.empty()) return false;
-	if (!parser.validateBraces(lines)) return false;
+	if (!_validator.validateServerConfig(serverConfig)){
+		std::cerr << "Server config error: " <<_validator.getLastError() <<std::endl;
+		return false;
+	}
 
+	for (std::map<std::string, LocationConfig>::const_iterator it = locationsConfig.locations.begin();
+		it != locationsConfig.locations.end(); ++it){
+			if (!_validator.validateLocationConfig(it->second)){
+				std::cerr<< "Location config error: "<< _validator.getLastError() << std::endl;
+				return false;
+			}
+		}
 
 	_server = serverConfig.directives;
 	_locations = convertToOldFormat(locationsConfig);
-
-	_isValid = !serverConfig.isEmpty();
+	_isValid = true;
 	return _isValid;
 }
 
@@ -110,4 +121,8 @@ std::map<std::string, std::map<std::string, std::string> > WebservConfig::conver
 	}
 
 	return oldFormat;
+}
+
+std::string WebservConfig::getLastError() const{
+	return _validator.getLastError();
 }

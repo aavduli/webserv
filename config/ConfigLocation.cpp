@@ -1,16 +1,16 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   location.cpp                                       :+:      :+:    :+:   */
+/*   ConfigLocation.cpp                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/01 11:25:40 by jim               #+#    #+#             */
-/*   Updated: 2025/09/03 19:26:00 by jim              ###   ########.fr       */
+/*   Updated: 2025/09/16 11:50:29 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "location.hpp"
+#include "ConfigLocation.hpp"
 #include <iostream>
 
 Location::Location(const std::string &path) : _path(path){}

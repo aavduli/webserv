@@ -15,14 +15,19 @@ int main(int ac, char **av) {
 		fn += ".conf";
 	}
 	WebservConfig config;
-	if (!config.loadConfig(fn))
-		console::log("Config file error ", ERROR);
-	else
+	if (!config.loadConfig(fn)){
+		console::log("config file error", ERROR);
+		console::log(fn, WARNING);
+		console::log("Detail: " + config.getLastError(), INFO);
+		return 1;
+	}else{
+		console::log("config loaded succeffulsy", INFO);
 		config.printConfig();
-	std::string portStr = config.getDirective("listen");
-	int port = atoi(portStr.c_str());
-	console::log("Config file error ", INFO);
-	server serv(port);
+	}
+
+
+
+	server serv(8080);
 	while (1) {
 		serv.serverManager();
 	}

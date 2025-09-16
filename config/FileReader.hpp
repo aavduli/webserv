@@ -1,17 +1,17 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   file_reader.hpp                                    :+:      :+:    :+:   */
+/*   FileReader.hpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/15 10:14:53 by jim               #+#    #+#             */
-/*   Updated: 2025/09/15 11:48:39 by jim              ###   ########.fr       */
+/*   Updated: 2025/09/16 11:47:56 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef FILE_READER_HPP
-# define FILE_READER_HPP
+#ifndef FILEREADER_HPP
+# define FILEREADER_HPP
 # include <string>
 # include <vector>
 # include <fstream>

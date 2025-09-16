@@ -1,16 +1,17 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   file_reader.cpp                                    :+:      :+:    :+:   */
+/*   FileReader.cpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/15 11:43:45 by jim               #+#    #+#             */
-/*   Updated: 2025/09/15 11:56:47 by jim              ###   ########.fr       */
+/*   Updated: 2025/09/16 13:22:14 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "file_reader.hpp"
+#include "FileReader.hpp"
+#include "../console/console.hpp"
 #include <fstream>
 #include <iostream>
 
@@ -18,6 +19,8 @@ std::vector<std::string> FileReader::readLines(const std::string& filepath) cons
 	std::vector<std::string> lines;
 	std::ifstream file(filepath.c_str());
 
+	console::log(filepath.c_str(), WARNING);
+	
 	if (!file.is_open()){
 		std::cerr << " Error, cant open fille " <<filepath << std::endl;
 		return lines;
