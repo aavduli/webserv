@@ -4,7 +4,7 @@ CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -g
 
 SRCS =	main.cpp \
 		server/server.cpp \
-		server/onConnection/cpp \
+		server/onConnection.cpp \
 		event/eventManager.cpp \
 		console/console.cpp \
 		config/config.cpp \
@@ -32,7 +32,6 @@ $(NAME): $(OBJS)
 
 $(OBJDIR)/%.o: %.cpp | $(OBJDIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
-
 
 $(OBJDIR)/%.o:
 	$(CXX) $(CXXFLAGS) -c $(filter %/$*.cpp,$(SRCS)) -o $@

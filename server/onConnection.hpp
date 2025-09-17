@@ -1,6 +1,8 @@
 #ifndef ONCONNECTION_HPP
 # define ONCONNECTION_HPP
 
+# include <iostream>
+# include <cstdlib>
 # include <string>
 # include <map>
 
@@ -15,15 +17,13 @@ struct Conn {
 	Conn();
 };
 
-std::map<int, Conn> Conns;
-
-enum { MAX_HEADER_BYTES = 16384}; //16kb
 
 class onConn {
 	public:
 		onConn();
 		~onConn();
 	
+	enum { MAX_HEADER_BYTES = 16384}; //16kb
 		//if true, req_end receives the index *just past* the end of the first element
 		static bool update_and_ready(Conn &c, size_t &req_end);
 
@@ -33,7 +33,7 @@ class onConn {
 	private:
 		static void try_mark_headers(Conn &c);
 		static void inspect_headers_minimally(Conn &c); //sets content_len, chunked
-		static void chunked_complete(const std::string &body, size_t &cut_after); //when chunked
+		static bool chunked_complete(const std::string &body, size_t &cut_after); //when chunked
 };
 
 #endif

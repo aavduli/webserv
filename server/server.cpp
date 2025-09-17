@@ -1,6 +1,14 @@
 #include "server.hpp"
 #include "../messages/MessageStreams.hpp"
 
+static void give_to_angela(const std::string &raw) {
+	std::cout << GREEN << "===BEGIN RAW TEST====" << std::endl;
+	std::cout << raw;
+	if (!raw.empty() && raw[raw.size() - 1] != '\n') 
+		std::cout << std::endl;
+	std::cout << "====END OF RAW====" << RESET << std::endl;
+}
+
 server::server(int port) : _port(port), _serverfd(-1), _ev(1024)  {}
 
 server::~server() {
@@ -92,40 +100,82 @@ void server::serverManager() {
 						continue;
 					}
 					_ev.addFd(cfd, EPOLLIN | EPOLLRDHUP);
+					_conns[cfd] = Conn();
 				}
 				continue;
 			}
 			if (events & (EPOLLHUP | EPOLLERR | EPOLLRDHUP)) {
+				std::cout << "[DEBUG] EPOLLHUP/ERR/RDHUP for fd " << fd << std::endl;
 				_ev.delFd(fd);
+				std::cout << "[DEBUG] Closing fd " << fd << std::endl;
 				close(fd);
+				std::cout << "[DEBUG] Erasing connection for fd " << fd << std::endl;
+				_conns.erase(fd);
 				continue;
 			}
 			if (events & EPOLLIN) {
-				bool close_it = false;
-				Conn &c = conns[fd];
+				std::cout << "[DEBUG] EPOLLIN for fd " << fd << std::endl;
+				Conn &c = _conns[fd]; // safe: creates if not present
 				char buff[8192];
+				bool alive = true;
+
 				while (true) {
 					ssize_t n = recv(fd, buff, sizeof(buff), 0);
 					if (n > 0) {
-						std::cout << "msg recived" << std::endl;
-						std::cout << c.in << std::endl;
 						c.in.append(buff, static_cast<size_t>(n));
 						continue;
 					}
 					if (n == 0) {
-						_ev.delFd(fd); close(fd); conns.erase(fd);
+						std::cout << "[DEBUG] recv returned 0 for fd " << fd << std::endl;
+						size_t endpos;
+						while (onConn::update_and_ready(c, endpos)) {
+							give_to_angela(c.in.substr(0, endpos));
+							c.in.erase(0, endpos);
+							c.header_done = false;
+							c.chunked = false;
+							c.content_len = -1;
+							c.body_have = 0;
+							c.headers_end = std::string::npos;
+						}
+						_ev.delFd(fd);
+						std::cout << "[DEBUG] Closing fd " << fd << std::endl;
+						close(fd);
+						std::cout << "[DEBUG] Erasing connection for fd " << fd << std::endl;
+						_conns.erase(fd);
+						alive = false;
 						break;
 					}
-					if (n == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
-						break;
-					}
+					if (n == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) break;
 					if (n == -1 && errno == EINTR) continue;
-					_ev.delFd(fd); close(fd); conns.erase(fd);
+					std::cout << "[DEBUG] recv error for fd " << fd << ", errno: " << errno << std::endl;
+					_ev.delFd(fd);
+					std::cout << "[DEBUG] Closing fd " << fd << std::endl;
+					close(fd);
+					std::cout << "[DEBUG] Erasing connection for fd " << fd << std::endl;
+					_conns.erase(fd);
+					alive = false;
 					break;
 				}
-				if (close_it) {
+				if (!alive) continue;
+				size_t endpos;
+				while (onConn::update_and_ready(c, endpos)) {
+					give_to_angela(c.in.substr(0, endpos));
+					c.in.erase(0, endpos);
+					c.header_done = false;
+					c.chunked = false;
+					c.content_len = -1;
+					c.body_have = 0;
+					c.headers_end = std::string::npos;
+				}
+				if (!c.header_done && c.in.size() > onConn::MAX_HEADER_BYTES
+					&& onConn::headers_end_pos(c.in) == std::string::npos) {
+					std::cout << "[DEBUG] Header too large for fd " << fd << std::endl;
 					_ev.delFd(fd);
+					std::cout << "[DEBUG] Closing fd " << fd << std::endl;
 					close(fd);
+					std::cout << "[DEBUG] Erasing connection for fd " << fd << std::endl;
+					_conns.erase(fd);
+					continue;
 				}
 			}
 		}
