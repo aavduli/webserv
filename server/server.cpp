@@ -54,26 +54,24 @@ void server::serverManager() {
 	ignore_sigpipe();
 	setServer();
 	setSockaddr();
-	s_msg_streams msg();
 
-	if (bind(_serverfd, (struct sockaddr *)&_address, sizeof(_address)) < 0) {
-		std::cerr << RED << "failed to bind: " << std::strerror(errno) << RESET << std::endl;
+	if (bind(_serverfd, (struct sockaddr*)&_address, sizeof(_address)) < 0) {
+		console::log("failed to bind", ERROR);
 		exit(1);
 	}
 	if (listen(_serverfd, SOMAXCONN) < 0) {
-		std::cerr << RED << "failed to listen: " << std::strerror(errno) << RESET << std::endl;
+		console::log("failed to listen", ERROR);
 		exit(1);
 	}
 	std::cout << GREEN << "server listening on: " << _port << RESET << std::endl;
 
 	_ev.addFd(_serverfd, EPOLLIN);
-
 	while (true) {
 		int nfds = _ev.wait(-1);
 		if (nfds < 0) {
-			if (errno == EINTR)  continue;
-			std::cerr << RED << "epoll_wait: " << std::strerror(errno) << RESET << std::endl;
-			break;
+			if (errno == EINTR) continue;
+			console::log("epoll_wait: ", ERROR); std::cout << std::strerror(errno) << std::endl;
+			break ;
 		}
 		for (int i = 0; i < nfds; ++i) {
 			int fd = _ev[i].data.fd;
@@ -81,15 +79,15 @@ void server::serverManager() {
 			if (fd == _serverfd) {
 				while (true) {
 					struct sockaddr_storage ca;
-					socklen_t cl = sizeof(ca);
+					socklen_t cl =sizeof(ca);
 					int cfd = accept(_serverfd, (struct sockaddr*)&ca, &cl);
 					if (cfd == -1) {
 						if (errno == EAGAIN || errno == EWOULDBLOCK) break;
-						std::cerr << RED << "accept: " << std::strerror(errno) << RESET << std::endl;
+						console::log("ACCEPT: ", ERROR); std::cout << std::strerror(errno) << std::endl;
 						break;
 					}
 					if (make_nonblock(cfd) == -1) {
-						std::cerr << YELLOW << "non block(client)" << std::strerror(errno) << RESET << std::endl;
+						console::log("non block(client)", ERROR); std::cout << std::strerror(errno) << std::endl;
 						close(cfd);
 						continue;
 					}
@@ -104,28 +102,30 @@ void server::serverManager() {
 			}
 			if (events & EPOLLIN) {
 				bool close_it = false;
-				char buff[8096];
+				char buff[8192];
 				std::string tmp;
 				while (true) {
 					ssize_t n = recv(fd, buff, sizeof(buff), 0);
 					tmp.append(buff, n);
-					if (n > 0) {
-						size_t sent = 0;
-						while (sent < sizeof(buff) -1) {
-							ssize_t s = send(fd, buff + sent, (sizeof(buff) - 1) - sent, MSG_NOSIGNAL);
+					if (n == 0) {
+						MessageParser *request;
+						request->_raw_data = tmp;
+						close_it = true;
+					}
+					bool ready = true;
+					if (ready) {
+						ssize_t sent = 0;
+						while (sent < sizeof(buff) - 1) {
+							ssize_t s = send(fd, tmp + sent, (sizeof(tmp) - 1) - sent, MSG_NOSIGNAL);
 							if (s > 0) sent += (size_t)s;
-							else if (s == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) break;
-							else {close_it = true; break; }
+							else if (s == - 1 && (errno == EAGAIN || errno == EWOULDBLOCK)) break;
+							else  {close_it = true; break ;}
 						}
 						close_it = true;
-						break;
-						}
-					else if (n == 0) {
-						close_it = true;
-						break;
+						break ;
 					}
 					else {
-						if (errno == EAGAIN  || errno == EWOULDBLOCK) break;
+						if (errno == EAGAIN || errno == EWOULDBLOCK) break;
 						if (errno == EINTR) continue;
 						close_it = true;
 						break;
