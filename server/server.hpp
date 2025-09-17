@@ -14,6 +14,7 @@
 # include <vector>
 
 #include "../messages/data/HttpMessage.hpp"
+#include "../messages/handling/MessageHandler.hpp"
 #include "../messages/MessageStreams.hpp"
 
 class server {

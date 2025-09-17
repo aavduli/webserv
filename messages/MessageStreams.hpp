@@ -6,19 +6,13 @@
 
 #include "../errors/errors.hpp"
 
-struct s_MessageStreams {
-
-	std::fstream&	simple;
-	std::fstream&	secondary;	// chunked
-	std::ostream&	response;
-	bool			has_eof;
-	bool			is_chunked;
-	bool			response_done;
-	
-	// Constructor to initialize references
-	s_MessageStreams(std::fstream& simple_stream, std::fstream& secondary_stream, std::ostream& response_stream)
-		: simple(simple_stream), secondary(secondary_stream), response(response_stream),
-		  has_eof(false), is_chunked(false), response_done(false) {}
+class s_msgStream {
+	protected:
+		std::string acc;
+	public:
+		s_msgStream();
+		~s_msgStream();
+		//std::vector<std::string> feed(const char* data, size_t n);
 };
 
-#endif // MESSAGESTREAMS_HPP
+#endif

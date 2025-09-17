@@ -54,7 +54,7 @@ void server::serverManager() {
 	ignore_sigpipe();
 	setServer();
 	setSockaddr();
-	s_msg_streams msg();
+	//s_msg_streams msg();
 
 	if (bind(_serverfd, (struct sockaddr *)&_address, sizeof(_address)) < 0) {
 		std::cerr << RED << "failed to bind: " << std::strerror(errno) << RESET << std::endl;
@@ -106,13 +106,29 @@ void server::serverManager() {
 				bool close_it = false;
 				char buff[8096];
 				std::string tmp;
+				const char* resp;	// tmp
 				while (true) {
-					ssize_t n = recv(fd, buff, sizeof(buff), 0);
-					tmp.append(buff, n);
-					if (n > 0) {
+					// tmp start
+					RequestParser	parser;
+					ssize_t n = recv(fd, buff, sizeof(buff), 0);	// not tmp
+					tmp.append(buff, n);	// not tmp
+					if (n > 0) {	// not tmp
+						if (parser.is_complete_request(tmp)) {
+							HttpRequest* request = parser.parse_request(tmp);
+							MessageHandler handler(request);
+							if (handler.is_valid_request()) {
+								handler.process_request();
+								handler.generate_response();
+							}
+							resp = (handler.serialize_response()).c_str();
+							delete request;
+						}
+						else
+							console::log("Incomplete request", ERROR);
+						// tmp end
 						size_t sent = 0;
-						while (sent < sizeof(buff) -1) {
-							ssize_t s = send(fd, buff + sent, (sizeof(buff) - 1) - sent, MSG_NOSIGNAL);
+						while (sent < sizeof(resp) -1) {
+							ssize_t s = send(fd, resp + sent, (sizeof(resp) - 1) - sent, MSG_NOSIGNAL);
 							if (s > 0) sent += (size_t)s;
 							else if (s == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) break;
 							else {close_it = true; break; }

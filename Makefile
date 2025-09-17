@@ -10,11 +10,17 @@ SRCS =	main.cpp \
 		config/location.cpp \
 		config/parser_config.cpp \
 		config/webserv_config.cpp \
-		messages/HttpMessage.cpp \
-		messages/HttpHeaders.cpp \
-		messages/HttpResponse.cpp \
-		messages/HttpRequest.cpp \
-		parsing/Normalization.cpp
+		messages/data/HttpMessage.cpp \
+		messages/data/HttpResponse.cpp \
+		messages/data/HttpRequest.cpp \
+		messages/handling/MessageHandler.cpp \
+		messages/parsing/MessageParser.cpp \
+		messages/parsing/RequestParser.cpp \
+		messages/MessageStreams.cpp \
+		messages/utils_print.cpp \
+		parsing/Normalization.cpp \
+		parsing/Conversion.cpp \
+		parsing/Validation.cpp
 		
 OBJDIR = obj
 
