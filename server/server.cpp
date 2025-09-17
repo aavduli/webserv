@@ -4,7 +4,7 @@
 server::server(int port) : _port(port), _serverfd(-1), _ev(1024)  {}
 
 server::~server() {
-	if (_serverfd != -1) 
+	if (_serverfd != -1)
 		close(_serverfd);
 }
 
@@ -19,7 +19,7 @@ int server::make_nonblock(int fd) {
 	return 0;
 }
 
-void server::ignore_sigpipe() { 
+void server::ignore_sigpipe() {
 	struct sigaction sa;
 	std::memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = SIG_IGN;
@@ -107,6 +107,22 @@ void server::serverManager() {
 				while (true) {
 					ssize_t n = recv(fd, buff, sizeof(buff), 0);
 					if (n > 0) {
+						size_t sent = 0;
+						while (sent < sizeof(buff) -1) {
+							ssize_t s = send(fd, buff + sent, (sizeof(buff) - 1) - sent, 0
+#ifdef MSG_NOSIGNAL
+							| MSG_NOSIGNAL
+#endif
+							);
+							if (s > 0) sent += (size_t)s;
+							else if (s == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) break;
+							else {close_it = true; break; }
+						}
+						close_it = true;
+						break;
+						}
+					else if (n == 0) {
+						close_it = true;
 						std::cout << "msg recived" << std::endl;
 						std::cout << c.in << std::endl;
 						c.in.append(buff, static_cast<size_t>(n));

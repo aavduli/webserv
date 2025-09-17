@@ -1,0 +1,138 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   ConfigParser.cpp                                   :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/09/15 10:45:14 by jim               #+#    #+#             */
+/*   Updated: 2025/09/16 13:20:09 by jim              ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "ConfigParser.hpp"
+#include <sstream>
+
+const std::string ConfigParser::SERVER_START = "server";
+const std::string ConfigParser::LOCATION_START = "location";
+const std::string ConfigParser::BLOCK_END = "}";
+
+ServerConfig ConfigParser::parseServer(const std::vector<std::string>& lines) const{
+	ServerConfig config;
+	ParseState state = OUTSIDE_BLOCK;
+
+	for (size_t i = 0 ; i <lines.size(); ++i){
+		const std::string& line = lines[i];
+
+		if (line.empty() || line[0] == '#') continue;
+
+		switch(state){
+			case OUTSIDE_BLOCK:
+				if (line.find(SERVER_START) == 0)
+					state = IN_SERVER_BLOCK;
+				break;
+
+			case IN_SERVER_BLOCK:{
+				if (line == BLOCK_END)
+					return config;
+				if (line.find(LOCATION_START) == 0){
+					skipBlock(i, lines);
+					continue;
+				}
+
+					std::pair<std::string, std::string>  directive = parseDirective(line);
+					if (!directive.first.empty()){
+						config.directives[directive.first] = directive.second;
+					}
+				break;
+			}
+
+			case IN_LOCATION_BLOCK: // TODO
+				break;
+		}
+	}
+	return config;
+}
+
+std::pair<std::string, std::string> ConfigParser::parseDirective(const std::string& line) const{
+	std::string cleanLine = line;
+	if (!cleanLine.empty() && cleanLine[cleanLine.size()-1] == ';')
+		cleanLine.erase(cleanLine.size() -1);
+
+	size_t spacePos = cleanLine.find(' ');
+	if (spacePos == std::string::npos)
+		return std::make_pair("","");
+
+	std::string key = cleanLine.substr(0, spacePos);
+	std::string value = cleanLine.substr(spacePos +1);
+
+	return std::make_pair(key, value);
+
+}
+
+void ConfigParser::skipBlock(size_t& index, const std::vector<std::string>& lines) const{
+	int braceCount = 1;
+	++index;
+
+	while(index < lines.size() && braceCount > 0){
+		if (lines[index].find("{") != std::string::npos) braceCount ++;
+		if (lines[index] == BLOCK_END) braceCount --;
+		++index;
+	}
+	--index;
+}
+
+
+LocationsConfig ConfigParser::parseLocations(const std::vector<std::string> & lines) const{ //TODO : parse locations
+	LocationsConfig config;
+	std::string currentLocationPath = "";
+	LocationConfig currentLocation;
+
+	for (size_t i = 0; i < lines.size();++i){
+		const std::string& line = lines[i];
+
+		if (line.empty() || line[0] == '#') continue;
+
+		//location block
+		if (line.find(LOCATION_START) == 0){
+			//save prev. location
+			if (!currentLocationPath.empty())
+				config.locations[currentLocationPath] = currentLocation;
+
+			//new loc
+			std::istringstream iss(line);
+			std::string keyword;
+			std::string path;
+			iss >>keyword >> path;
+
+			//delte the {
+			if (!path.empty() && path[path.length() -1] == '{')
+				path.resize(path.length() -1);
+
+			currentLocationPath = path;
+			currentLocation.path = path;
+			currentLocation.directives.clear();
+			continue;
+		}
+
+		//end loca block
+		if (line == BLOCK_END && !currentLocationPath.empty()){
+			//save current location
+			config.locations[currentLocationPath] = currentLocation;
+			continue;
+		}
+
+		//parse directive inside loc. block
+		if (!currentLocationPath.empty()){
+			std::pair<std::string, std::string> directive = parseDirective(line);
+			if (!directive.first.empty())
+				currentLocation.directives[directive.first] = directive.second;
+		}
+	}
+
+	//save last location
+	if (!currentLocationPath.empty())
+		config.locations[currentLocationPath] = currentLocation;
+
+	return config;
+}

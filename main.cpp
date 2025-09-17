@@ -1,6 +1,6 @@
 #include "console/console.hpp"
 #include "server/server.hpp"
-#include "config/webserv_config.hpp"
+#include "config/WebservConfig.hpp"
 
 int main(int ac, char **av) {
 	console::setDebug(true);
@@ -16,12 +16,18 @@ int main(int ac, char **av) {
 	}
 	WebservConfig config;
 	if (!config.loadConfig(fn)){
-		console::log("Config file error ", ERROR);
+		console::log("config file error", ERROR);
+		console::log(fn, WARNING);
+		console::log("Detail: " + config.getLastError(), INFO);
+		return 1;
+	}else{
+		console::log("config loaded succeffulsy", INFO);
+		config.printConfig();
 	}
-	std::string portStr = config.getDirective("listen");
-	int port = atoi(portStr.c_str());
-	console::log("Config file error ", INFO);
-	server serv(port);
+
+
+
+	server serv(8080);
 	while (1) {
 		serv.serverManager();
 	}

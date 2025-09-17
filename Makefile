@@ -7,19 +7,17 @@ SRCS =	main.cpp \
 		server/onConnection/cpp \
 		event/eventManager.cpp \
 		console/console.cpp \
-		config/config.cpp \
-		config/location.cpp \
-		config/parser_config.cpp \
-		config/webserv_config.cpp \
-		messages/data/HttpMessage.cpp \
-		messages/data/HttpResponse.cpp \
-		messages/data/HttpRequest.cpp \
-		messages/handling/MessageHandler.cpp \
-		messages/parsing/MessageParser.cpp \
-		messages/parsing/RequestParser.cpp \
-		messages/utils_print.cpp \
+		config/ConfigLocation.cpp \
+		config/ConfigParser.cpp \
+		config/ConfigValidator.cpp\
+		config/WebservConfig.cpp \
+		config/FileReader.cpp\
+		messages/HttpMessage.cpp \
+		messages/HttpHeaders.cpp \
+		messages/HttpResponse.cpp \
+		messages/HttpRequest.cpp \
 		parsing/Normalization.cpp
-		
+
 OBJDIR = obj
 
 OBJS = $(SRCS:.cpp=.o)
