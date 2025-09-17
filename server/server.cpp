@@ -102,30 +102,26 @@ void server::serverManager() {
 			}
 			if (events & EPOLLIN) {
 				bool close_it = false;
+				Conn &c = conns[fd];
 				char buff[8192];
-				std::string tmp;
 				while (true) {
 					ssize_t n = recv(fd, buff, sizeof(buff), 0);
-					tmp.append(buff, n);
-					std::cout << GREEN << tmp << RESET << std::endl;
-					bool ready = true;
-					if (ready) {
-						size_t sent = 0;
-						while (sent < sizeof(buff) - 1) {
-							ssize_t s = send(fd, buff + sent, (sizeof(tmp) - 1) - sent, MSG_NOSIGNAL);
-							if (s > 0) sent += (size_t)s;
-							else if (s == - 1 && (errno == EAGAIN || errno == EWOULDBLOCK)) break;
-							else  {close_it = true; break ;}
-						}
-						close_it = true;
-						break ;
+					if (n > 0) {
+						std::cout << "msg recived" << std::endl;
+						std::cout << c.in << std::endl;
+						c.in.append(buff, static_cast<size_t>(n));
+						continue;
 					}
-					else {
-						if (errno == EAGAIN || errno == EWOULDBLOCK) break;
-						if (errno == EINTR) continue;
-						close_it = true;
+					if (n == 0) {
+						_ev.delFd(fd); close(fd); conns.erase(fd);
 						break;
 					}
+					if (n == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+						break;
+					}
+					if (n == -1 && errno == EINTR) continue;
+					_ev.delFd(fd); close(fd); conns.erase(fd);
+					break;
 				}
 				if (close_it) {
 					_ev.delFd(fd);

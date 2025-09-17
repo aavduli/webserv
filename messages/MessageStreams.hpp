@@ -8,12 +8,11 @@
 
 class s_msgStream {
 	protected:
-		std::string simplerequest;
-		bool reqFinsh;
+		std::string acc;
 	public:
 		s_msgStream();
 		~s_msgStream();
-		std::string reqHandler(std::string request);
+		std::vector<std::string> feed(const char* data, size_t n);
 };
 
 #endif
