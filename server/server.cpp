@@ -107,16 +107,12 @@ void server::serverManager() {
 				while (true) {
 					ssize_t n = recv(fd, buff, sizeof(buff), 0);
 					tmp.append(buff, n);
-					if (n == 0) {
-						MessageParser *request;
-						request->_raw_data = tmp;
-						close_it = true;
-					}
+					std::cout << GREEN << tmp << RESET << std::endl;
 					bool ready = true;
 					if (ready) {
-						ssize_t sent = 0;
+						size_t sent = 0;
 						while (sent < sizeof(buff) - 1) {
-							ssize_t s = send(fd, tmp + sent, (sizeof(tmp) - 1) - sent, MSG_NOSIGNAL);
+							ssize_t s = send(fd, buff + sent, (sizeof(tmp) - 1) - sent, MSG_NOSIGNAL);
 							if (s > 0) sent += (size_t)s;
 							else if (s == - 1 && (errno == EAGAIN || errno == EWOULDBLOCK)) break;
 							else  {close_it = true; break ;}
