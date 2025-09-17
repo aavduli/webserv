@@ -22,7 +22,7 @@ int main(int ac, char **av) {
 		return 1;
 	}else{
 		console::log("config loaded succeffulsy", INFO);
-		config.printConfig();
+		//config.printConfig();
 	}
 
 
