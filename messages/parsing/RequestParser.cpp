@@ -83,7 +83,6 @@ HttpRequest* RequestParser::parse_request(std::string raw_request) {
 		return NULL;
 	}
 	console::log("Parsing completed successfully", DEBUG);
-	//print_request(_request);
 	return request;
 }
 
@@ -272,7 +271,9 @@ bool RequestParser::parse_body() {
 		std::string body = _raw_data.substr(_current_pos);
 		_request->setBody(body);
 	}
-	else
+	else {
+		_request->setBody("");
 		console::log("No body found", DEBUG);
+	}
 	return true;
 }

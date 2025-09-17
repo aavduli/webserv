@@ -3,6 +3,28 @@
 
 #include "HttpMessage.hpp"
 
+/* 
+
+<request-target>["?"<query>]
+
+1.2 Extract and Validate URI
+Parse the URI from request line
+URL decode special characters (%20, etc.)
+Validate against malicious paths (../, etc.)
+Split path from query string
+ */
+struct s_request_uri {
+
+	std::string		raw_uri;
+	std::string		host;
+	std::string		target;
+	std::string		query;
+	bool			is_valid;
+	bool			is_absolute_path;
+	bool			is_absolute_url;
+};
+
+
 class HttpRequest : public HttpMessage {
 
 	private:

@@ -8,25 +8,35 @@
 #include "../data/HttpRequest.hpp"
 #include "../data/HttpResponse.hpp"
 
+/* 
+GET: Retrieves a resource from the server.
+ */
  class MessageHandler {
 
 	private:
-		const HttpRequest*	_request;
+		Error				_error;
+		State				_state;
+		HttpRequest*		_request;	// make const
 		HttpResponse*		_response;
 
 	public:
-		MessageHandler(const HttpRequest* request);
+		MessageHandler(HttpRequest* request);
 		MessageHandler(const MessageHandler& rhs);
 		MessageHandler& operator=(const MessageHandler& rhs);
 		~MessageHandler();
 
-		const HttpRequest*	getRequest() const;
-		HttpResponse*		getResponse() const;
+		HttpRequest*	getRequest() const;
+		HttpResponse*	getResponse() const;
 
 		bool		is_valid_request() const;
 		void		process_request();
 		void		generate_response();
 		std::string	serialize_response();
+
+		void		handle_get();
+		void		handle_post();
+		void		handle_delete();
+		void		handle_head();
 };
 
 #endif //MESSAGEHANDLER_HPP

@@ -62,16 +62,22 @@ enum State {
 	s_msg_init,
 		
 	/* REQUEST CHECKS */
-	s_req_incomplete = 4,
+	s_req_incomplete,
 	s_req_invalid_content_length,
 	
 	/* REQUEST PARSING */
-	s_req_start = 6, 
+	s_req_start, 
 	s_req_line,
 	s_req_done, 
 
+	/* REQUEST PROCESS */
+	s_req_invalid_get, 
+	s_req_invalid_post, 
+	s_req_invalid_delete, 
+	s_req_invalid_head, 
+
 	/* RESPONSE */
-	s_res_start = 9,
+	s_res_start,
 	s_res_protocol,
 	s_res_version,
 	s_res_status,
@@ -79,22 +85,23 @@ enum State {
 	s_res_done,
 
 	/* HEADERS PARSING */
-	s_head_start = 15,
+	s_head_start,
 	s_head_fields,
 	s_head_done,
 
 	/* BODY */
-	s_body_start = 18,
+	s_body_start,
 	s_body_content,
 	s_body_done,
 
-	s_msg_done = 21
+	s_msg_done
 };
 
 // PARENT CLASS = State manager, Line by line processing, Error handling
 class MessageParser {
 
 	protected:
+		Error			_error;
 		State			_state;			// monitor for parsing
 		std::string		_raw_data;		// raw_request
 		size_t			_current_pos;	// pos in raw_data string
