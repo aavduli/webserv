@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/08 16:24:01 by jim               #+#    #+#             */
-/*   Updated: 2025/09/16 13:38:40 by jim              ###   ########.fr       */
+/*   Updated: 2025/09/17 19:23:45 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,7 @@
 # include "ConfigParser.hpp"
 # include "ConfigLocation.hpp"
 # include "FileReader.hpp"
-# include "config_data.hpp"
+# include "ConfigData.hpp"
 # include "ConfigValidator.hpp"
 
 class WebservConfig{

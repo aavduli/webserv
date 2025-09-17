@@ -6,13 +6,13 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/15 14:45:23 by jim               #+#    #+#             */
-/*   Updated: 2025/09/16 11:23:11 by jim              ###   ########.fr       */
+/*   Updated: 2025/09/17 19:23:23 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef CONFIGVALIDATOR_HPP
 # define CONFIGVALIDATOR_HPP
-# include "config_data.hpp"
+# include "ConfigData.hpp"
 
 class ConfigValidator{
 	private :

@@ -19,7 +19,7 @@
 # include <sys/stat.h>
 
 # include "ConfigLocation.hpp"
-# include "config_data.hpp"
+# include "ConfigData.hpp"
 
 class ConfigParser{
 	private:

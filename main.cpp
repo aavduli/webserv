@@ -2,6 +2,8 @@
 #include "server/server.hpp"
 #include "config/WebservConfig.hpp"
 
+const bool PRINTCONFIG = false;
+
 int main(int ac, char **av) {
 	console::setDebug(true);
 	if (ac != 2){
@@ -22,10 +24,8 @@ int main(int ac, char **av) {
 		return 1;
 	}else{
 		console::log("config loaded succeffulsy", INFO);
-		//config.printConfig();
+		if (PRINTCONFIG) config.printConfig();
 	}
-
-
 
 	server serv(8080);
 	while (1) {
