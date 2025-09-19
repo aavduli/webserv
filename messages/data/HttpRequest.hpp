@@ -29,7 +29,7 @@ class HttpRequest : public HttpMessage {
 
 	private:
 		HttpMethod	_method;
-		std::string	_uri;		// needs to be a class?
+		std::string	_uri;
 		
 	public:
 		HttpRequest();

@@ -44,6 +44,4 @@ class HttpMessage {
 		void		setBody(const std::string& body);
 };
 
-const char*	get_response(std::string raw_request);
-
 #endif // HTTPMESSAGE_HPP

@@ -2,16 +2,11 @@
 #include "../data/HttpRequest.hpp"
 #include "../data/HttpResponse.hpp"
 
-MessageParser::MessageParser() : _state(s_msg_init), _current_pos(0), _content_length(0) {
-	console::log("MessageParser Constructor", DEBUG);
-}
+MessageParser::MessageParser() : _state(s_msg_init), _current_pos(0), _content_length(0) {}
 
-MessageParser::MessageParser(const MessageParser& rhs) : _state(rhs._state), _raw_data(rhs._raw_data), _current_pos(rhs._current_pos), _content_length(rhs._content_length) {
-	console::log("MessageParser copy constructor", DEBUG);
-}
+MessageParser::MessageParser(const MessageParser& rhs) : _state(rhs._state), _raw_data(rhs._raw_data), _current_pos(rhs._current_pos), _content_length(rhs._content_length) {}
 
 MessageParser& MessageParser::operator=(const MessageParser& rhs) {
-	console::log("MessageParser assignment operator", DEBUG);
 	if (this != &rhs) {
 		_state = rhs._state;
 		_raw_data = rhs._raw_data;
@@ -21,9 +16,7 @@ MessageParser& MessageParser::operator=(const MessageParser& rhs) {
 	return *this;
 }
 
-MessageParser::~MessageParser() {
-	console::log("MessageParser destructor", DEBUG);
-}
+MessageParser::~MessageParser() {}
 
 State	MessageParser::getState() const {
 	return _state;

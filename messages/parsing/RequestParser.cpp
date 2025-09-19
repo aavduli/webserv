@@ -3,12 +3,9 @@
 #include <iostream>
 #include <sstream>
 
-RequestParser::RequestParser() : MessageParser(), _request(NULL) {
-	console::log("RequestParser Constructor", DEBUG);
-}
+RequestParser::RequestParser() : MessageParser(), _request(NULL) {}
 
 RequestParser::RequestParser(const RequestParser& rhs) : MessageParser(rhs) {
-	console::log("RequestParser copy constructor", DEBUG);
 	if (rhs._request)
 		_request = new HttpRequest(*rhs._request);
 	else
@@ -16,7 +13,6 @@ RequestParser::RequestParser(const RequestParser& rhs) : MessageParser(rhs) {
 }
 
 RequestParser& RequestParser::operator=(const RequestParser& rhs) {
-	console::log("RequestParser assignment operator", DEBUG);
 	if (this != &rhs) {
 		MessageParser::operator=(rhs);
 		delete _request;
@@ -29,13 +25,11 @@ RequestParser& RequestParser::operator=(const RequestParser& rhs) {
 }
 
 RequestParser::~RequestParser() {
-	console::log("RequestParser destructor", DEBUG);
 	if (_request)
 		delete _request;
 }
 
 HttpRequest* RequestParser::parse_request(std::string raw_request) {
-	console::log("RequestParser parse_request", DEBUG);
 
 	_state = s_req_start;
 	_raw_data = raw_request;
@@ -82,13 +76,11 @@ HttpRequest* RequestParser::parse_request(std::string raw_request) {
 		delete request;
 		return NULL;
 	}
-	console::log("Parsing completed successfully", DEBUG);
 	return request;
 }
 
 // Request-Line = Method SP Request-URI SP HTTP-Version CRLF
 bool RequestParser::parse_request_line() {
-	console::log("RequestParser parse_request_line", DEBUG);
 
 	_state = s_req_line;
 	size_t line_end = _raw_data.find("\r\n", _current_pos);
@@ -139,7 +131,6 @@ HttpMethod	string_to_method(std::string str) {
 }
 
 bool RequestParser::parse_method(std::string request_line) {
-	console::log("RequestParser parse_method", DEBUG);
 
 	size_t method_end = request_line.find(" ", _current_pos);
 	if (method_end == std::string::npos) {
@@ -161,9 +152,8 @@ bool RequestParser::parse_method(std::string request_line) {
 	return true;
 }
 
-// needs uri validation
+// TODO uri validation
 bool RequestParser::parse_uri(std::string request_line) {
-	console::log("RequestParser parse_uri", DEBUG);
 
 	size_t uri_end = request_line.find(" ", _current_pos);
 	if (uri_end == std::string::npos) {
@@ -181,7 +171,6 @@ bool RequestParser::parse_uri(std::string request_line) {
 }
 
 bool RequestParser::parse_version(std::string request_line) {
-	console::log("RequestParser parse_version", DEBUG);
 
 	size_t version = request_line.find("HTTP/", _current_pos);
 	if (version != std::string::npos) {
@@ -197,7 +186,6 @@ bool RequestParser::parse_version(std::string request_line) {
 }
 
 bool RequestParser::parse_headers() {
-	console::log("RequestParser parse_headers", DEBUG);
 
 	_state = s_head_fields;
 	std::map<std::string, std::vector<std::string> > headers;
@@ -210,10 +198,8 @@ bool RequestParser::parse_headers() {
 		}
 		std::string header_line = _raw_data.substr(_current_pos, line_end - _current_pos);
 		_current_pos = line_end + 2; // Move past \r\n
-		if (header_line.empty()) {
-			console::log("End of headers found", DEBUG);
+		if (header_line.empty())
 			break;
-		}
 		std::string name = parse_header_name(header_line);
 		if (name.empty()) {
 			console::log("Empty header name", DEBUG);
@@ -230,9 +216,9 @@ bool RequestParser::parse_headers() {
 	return true;
 }
 
+// Parse header: "Name: Value"
 std::string	RequestParser::parse_header_name(std::string line) {
 
-	// Parse header: "Name: Value"
 	size_t colon_pos = line.find(':');
 	if (colon_pos == std::string::npos) {
 		console::log("Missing colon in header line: ", ERROR);
@@ -262,18 +248,17 @@ std::vector<std::string>	RequestParser::parse_header_values(std::string line) {
 	return values;
 }
 
+// For HTTP requests, body parsing depends on Content-Length or Transfer-Encoding
+// For now, read the remaining data as body
 bool RequestParser::parse_body() {
-	console::log("RequestParser parse_body", DEBUG);
 	
-	// For HTTP requests, body parsing depends on Content-Length or Transfer-Encoding
-	// For now, read the remaining data as body
 	if (_current_pos < _raw_data.length()) {
 		std::string body = _raw_data.substr(_current_pos);
 		_request->setBody(body);
 	}
 	else {
 		_request->setBody("");
-		console::log("No body found", DEBUG);
+		console::log("Empty body", WARNING);
 	}
 	return true;
 }

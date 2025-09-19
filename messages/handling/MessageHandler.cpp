@@ -55,19 +55,19 @@ bool	MessageHandler::is_valid_request() const {
 void	MessageHandler::process_request() {
 	
 	switch (_request->getMethod()) {
-		case 0:	// GET
+		case 0:
 			console::log("GET method", INFO);
 			handle_get();
 			break;
-		case 1:	// POST
+		case 1:
 			console::log("POST method", INFO);
 			handle_post();
 			break;
-		case 2:	// DELETE
+		case 2:
 			console::log("DELETE method", INFO);
 			handle_delete();
 			break;
-		case 3:	// HEAD
+		case 3:
 			console::log("HEAD method", INFO);
 			handle_head();
 			break;
@@ -92,17 +92,24 @@ Absolute URL in requests to proxies (e.g., http://www.example.com/path/to/file.h
 Often used to carry identifying information in the form of key=value pairs.
 */
 
+/* 
+Parse the URI from request line
+URL decode special characters (%20, etc.)
+Validate against malicious paths (../, etc.)
+Split path from query string
+ */
+
 void	MessageHandler::handle_get() {
 
 	if (!(_request->getBody().empty())) {
 		console::log("GET request shouldn't have a body", ERROR);
 		_state = s_req_invalid_get;
-		// set response status code and clean exit
+		// TODO set response status code and clean exit
 		return ;
 	}
 	// if here, URI should not be empty
 	std::string uri = _request->getUri();
-	std::cout << YELLOW << "[INFO] GET request URI: " << uri << RESET << std::endl;
+	std::cout << YELLOW << "[INFO] URI: " << uri << RESET << std::endl;
 }
 
 void	MessageHandler::handle_post() {}
@@ -118,4 +125,36 @@ void	MessageHandler::generate_response() {
 
 std::string	MessageHandler::serialize_response() {
 	return "coucou";
+}
+
+void	handle_request(const std::string &raw) {
+
+	if (raw.empty()) {
+		// return status code? return error/bool?
+		console::log("Empty request", WARNING);
+		return ;
+	}
+
+	const char*		resp;
+	RequestParser	parser;
+
+	if (parser.is_complete_request(raw)) {
+
+		HttpRequest* request = parser.parse_request(raw);
+		if (parser.getState() == s_msg_done) {
+			console::log("Request parsing success", INFO);
+			MessageHandler handler(request);
+			if (handler.is_valid_request()) {
+				handler.process_request();
+				handler.generate_response();
+			}
+			resp = (handler.serialize_response()).c_str();
+			std::cout << "RESPONSE: " << resp << std::endl;
+		}
+		else
+			console::log("Request parsing failed", ERROR);
+		delete request;
+	}
+	else
+		console::log("Incomplete request", ERROR);
 }

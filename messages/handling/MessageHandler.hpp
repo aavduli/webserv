@@ -7,9 +7,6 @@
 #include "../data/HttpRequest.hpp"
 #include "../data/HttpResponse.hpp"
 
-/* 
-GET: Retrieves a resource from the server.
- */
  class MessageHandler {
 
 	private:
@@ -26,16 +23,18 @@ GET: Retrieves a resource from the server.
 
 		HttpRequest*	getRequest() const;
 		HttpResponse*	getResponse() const;
-
+		
 		bool		is_valid_request() const;
 		void		process_request();
 		void		generate_response();
 		std::string	serialize_response();
-
+		
 		void		handle_get();
 		void		handle_post();
 		void		handle_delete();
 		void		handle_head();
 };
+
+void	handle_request(const std::string &raw);
 
 #endif //MESSAGEHANDLER_HPP
