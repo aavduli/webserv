@@ -45,6 +45,5 @@ class HttpMessage {
 };
 
 const char*	get_response(std::string raw_request);
-void		print_request(HttpRequest* request);
 
 #endif // HTTPMESSAGE_HPP

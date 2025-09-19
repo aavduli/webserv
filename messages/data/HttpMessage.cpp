@@ -104,17 +104,15 @@ void	HttpMessage::setBody(const std::string& body) {
 
 const char* get_response(std::string raw_request) {
 
-	std::cout << "raw_request received: \n" << raw_request << std::endl;
 	if (raw_request.empty()) {
-		console::log("[empty request", WARNING);
+		console::log("empty request", WARNING);
 		return NULL;
 	}
 	else {
 		RequestParser	parser;
 		HttpRequest*	request = parser.parse_request(raw_request);
-		if (request)
-			print_request(request);
+		console::log("request parsed", INFO);
+		(void)request;
 	}
-
 	return "temporary response\n";
 }

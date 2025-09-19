@@ -14,7 +14,6 @@
 #include "../../console/console.hpp"
 #include "../../errors/errors.hpp"
 #include "../../parsing/Parsing.hpp"
-#include "../MessageStreams.hpp"
 
 /* EXAMPLE USAGE FLOW:
 

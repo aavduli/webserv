@@ -44,4 +44,6 @@ class HttpRequest : public HttpMessage {
 		void		setUri(std::string uri);
 };
 
+void		print_request(HttpRequest* request);
+
 #endif // HTTPREQUEST_HPP

@@ -53,7 +53,6 @@ bool	MessageHandler::is_valid_request() const {
 }
 
 void	MessageHandler::process_request() {
-	print_request(_request);
 	
 	switch (_request->getMethod()) {
 		case 0:	// GET
