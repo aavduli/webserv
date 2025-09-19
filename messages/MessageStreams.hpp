@@ -12,7 +12,7 @@ class s_msgStream {
 	public:
 		s_msgStream();
 		~s_msgStream();
-		//std::vector<std::string> feed(const char* data, size_t n);
+		std::vector<std::string> feed(const char* data, size_t n);
 };
 
 #endif

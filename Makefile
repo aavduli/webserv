@@ -4,6 +4,7 @@ CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -g
 
 SRCS =	main.cpp \
 		server/server.cpp \
+		server/onConnection.cpp \
 		event/eventManager.cpp \
 		console/console.cpp \
 		config/config.cpp \
@@ -21,6 +22,14 @@ SRCS =	main.cpp \
 		parsing/Normalization.cpp \
 		parsing/Conversion.cpp \
 		parsing/Validation.cpp
+		messages/data/HttpMessage.cpp \
+		messages/data/HttpResponse.cpp \
+		messages/data/HttpRequest.cpp \
+		messages/handling/MessageHandler.cpp \
+		messages/parsing/MessageParser.cpp \
+		messages/parsing/RequestParser.cpp \
+		messages/utils_print.cpp \
+		parsing/Normalization.cpp
 		
 OBJDIR = obj
 
@@ -34,7 +43,6 @@ $(NAME): $(OBJS)
 
 $(OBJDIR)/%.o: %.cpp | $(OBJDIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
-
 
 $(OBJDIR)/%.o:
 	$(CXX) $(CXXFLAGS) -c $(filter %/$*.cpp,$(SRCS)) -o $@

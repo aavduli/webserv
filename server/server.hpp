@@ -8,6 +8,7 @@
 # include <netinet/in.h>
 # include "../console/console.hpp"
 # include "../event/eventManager.hpp"
+# include "onConnection.hpp"
 # include <cstring>
 # include <fcntl.h>
 # include <csignal>
@@ -17,12 +18,15 @@
 #include "../messages/handling/MessageHandler.hpp"
 #include "../messages/MessageStreams.hpp"
 
+
 class server {
 	private:
 		struct sockaddr_in	_address;
 		int					_port;
 		int 				_serverfd;
 		eventManager		_ev;
+		std::map<int, Conn> _conns;
+
 	private:
 		void setServer();
 		void setSockaddr();
@@ -34,5 +38,7 @@ class server {
 
 		void serverManager();
 };
+
+
 
 #endif

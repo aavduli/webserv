@@ -1,6 +1,14 @@
 #include "server.hpp"
 #include "../messages/MessageStreams.hpp"
 
+static void give_to_angela(const std::string &raw) {
+	std::cout << GREEN << "===BEGIN RAW TEST====" << std::endl;
+	std::cout << raw;
+	if (!raw.empty() && raw[raw.size() - 1] != '\n') 
+		std::cout << std::endl;
+	std::cout << "====END OF RAW====" << RESET << std::endl;
+}
+
 server::server(int port) : _port(port), _serverfd(-1), _ev(1024)  {}
 
 server::~server() {
@@ -54,26 +62,24 @@ void server::serverManager() {
 	ignore_sigpipe();
 	setServer();
 	setSockaddr();
-	//s_msg_streams msg();
 
-	if (bind(_serverfd, (struct sockaddr *)&_address, sizeof(_address)) < 0) {
-		std::cerr << RED << "failed to bind: " << std::strerror(errno) << RESET << std::endl;
+	if (bind(_serverfd, (struct sockaddr*)&_address, sizeof(_address)) < 0) {
+		console::log("failed to bind", ERROR);
 		exit(1);
 	}
 	if (listen(_serverfd, SOMAXCONN) < 0) {
-		std::cerr << RED << "failed to listen: " << std::strerror(errno) << RESET << std::endl;
+		console::log("failed to listen", ERROR);
 		exit(1);
 	}
 	std::cout << GREEN << "server listening on: " << _port << RESET << std::endl;
 
 	_ev.addFd(_serverfd, EPOLLIN);
-
 	while (true) {
 		int nfds = _ev.wait(-1);
 		if (nfds < 0) {
-			if (errno == EINTR)  continue;
-			std::cerr << RED << "epoll_wait: " << std::strerror(errno) << RESET << std::endl;
-			break;
+			if (errno == EINTR) continue;
+			console::log("epoll_wait: ", ERROR); std::cout << std::strerror(errno) << std::endl;
+			break ;
 		}
 		for (int i = 0; i < nfds; ++i) {
 			int fd = _ev[i].data.fd;
@@ -81,75 +87,95 @@ void server::serverManager() {
 			if (fd == _serverfd) {
 				while (true) {
 					struct sockaddr_storage ca;
-					socklen_t cl = sizeof(ca);
+					socklen_t cl =sizeof(ca);
 					int cfd = accept(_serverfd, (struct sockaddr*)&ca, &cl);
 					if (cfd == -1) {
 						if (errno == EAGAIN || errno == EWOULDBLOCK) break;
-						std::cerr << RED << "accept: " << std::strerror(errno) << RESET << std::endl;
+						console::log("ACCEPT: ", ERROR); std::cout << std::strerror(errno) << std::endl;
 						break;
 					}
 					if (make_nonblock(cfd) == -1) {
-						std::cerr << YELLOW << "non block(client)" << std::strerror(errno) << RESET << std::endl;
+						console::log("non block(client)", ERROR); std::cout << std::strerror(errno) << std::endl;
 						close(cfd);
 						continue;
 					}
 					_ev.addFd(cfd, EPOLLIN | EPOLLRDHUP);
+					_conns[cfd] = Conn();
 				}
 				continue;
 			}
 			if (events & (EPOLLHUP | EPOLLERR | EPOLLRDHUP)) {
+				std::cout << "[DEBUG] EPOLLHUP/ERR/RDHUP for fd " << fd << std::endl;
 				_ev.delFd(fd);
+				std::cout << "[DEBUG] Closing fd " << fd << std::endl;
 				close(fd);
+				std::cout << "[DEBUG] Erasing connection for fd " << fd << std::endl;
+				_conns.erase(fd);
 				continue;
 			}
 			if (events & EPOLLIN) {
-				bool close_it = false;
-				char buff[8096];
-				std::string tmp;
-				const char* resp;	// tmp
+				std::cout << "[DEBUG] EPOLLIN for fd " << fd << std::endl;
+				Conn &c = _conns[fd]; // safe: creates if not present
+				char buff[8192];
+				bool alive = true;
+
 				while (true) {
-					// tmp start
-					RequestParser	parser;
-					ssize_t n = recv(fd, buff, sizeof(buff), 0);	// not tmp
-					tmp.append(buff, n);	// not tmp
-					if (n > 0) {	// not tmp
-						if (parser.is_complete_request(tmp)) {
-							HttpRequest* request = parser.parse_request(tmp);
-							MessageHandler handler(request);
-							if (handler.is_valid_request()) {
-								handler.process_request();
-								handler.generate_response();
-							}
-							resp = (handler.serialize_response()).c_str();
-							delete request;
+					ssize_t n = recv(fd, buff, sizeof(buff), 0);
+					if (n > 0) {
+						c.in.append(buff, static_cast<size_t>(n));
+						continue;
+					}
+					if (n == 0) {
+						std::cout << "[DEBUG] recv returned 0 for fd " << fd << std::endl;
+						size_t endpos;
+						while (onConn::update_and_ready(c, endpos)) {
+							give_to_angela(c.in.substr(0, endpos));
+							c.in.erase(0, endpos);
+							c.header_done = false;
+							c.chunked = false;
+							c.content_len = -1;
+							c.body_have = 0;
+							c.headers_end = std::string::npos;
 						}
-						else
-							console::log("Incomplete request", ERROR);
-						// tmp end
-						size_t sent = 0;
-						while (sent < sizeof(resp) -1) {
-							ssize_t s = send(fd, resp + sent, (sizeof(resp) - 1) - sent, MSG_NOSIGNAL);
-							if (s > 0) sent += (size_t)s;
-							else if (s == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) break;
-							else {close_it = true; break; }
-						}
-						close_it = true;
-						break;
-						}
-					else if (n == 0) {
-						close_it = true;
+						_ev.delFd(fd);
+						std::cout << "[DEBUG] Closing fd " << fd << std::endl;
+						close(fd);
+						std::cout << "[DEBUG] Erasing connection for fd " << fd << std::endl;
+						_conns.erase(fd);
+						alive = false;
 						break;
 					}
-					else {
-						if (errno == EAGAIN  || errno == EWOULDBLOCK) break;
-						if (errno == EINTR) continue;
-						close_it = true;
-						break;
-					}
-				}
-				if (close_it) {
+					if (n == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) break;
+					if (n == -1 && errno == EINTR) continue;
+					std::cout << "[DEBUG] recv error for fd " << fd << ", errno: " << errno << std::endl;
 					_ev.delFd(fd);
+					std::cout << "[DEBUG] Closing fd " << fd << std::endl;
 					close(fd);
+					std::cout << "[DEBUG] Erasing connection for fd " << fd << std::endl;
+					_conns.erase(fd);
+					alive = false;
+					break;
+				}
+				if (!alive) continue;
+				size_t endpos;
+				while (onConn::update_and_ready(c, endpos)) {
+					give_to_angela(c.in.substr(0, endpos));
+					c.in.erase(0, endpos);
+					c.header_done = false;
+					c.chunked = false;
+					c.content_len = -1;
+					c.body_have = 0;
+					c.headers_end = std::string::npos;
+				}
+				if (!c.header_done && c.in.size() > onConn::MAX_HEADER_BYTES
+					&& onConn::headers_end_pos(c.in) == std::string::npos) {
+					std::cout << "[DEBUG] Header too large for fd " << fd << std::endl;
+					_ev.delFd(fd);
+					std::cout << "[DEBUG] Closing fd " << fd << std::endl;
+					close(fd);
+					std::cout << "[DEBUG] Erasing connection for fd " << fd << std::endl;
+					_conns.erase(fd);
+					continue;
 				}
 			}
 		}
