@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>webserv • 42</title>
+  <style>
+    :root{
+      --bg:#000;
+      --green:#00ff41;            /* Matrix green */
+      --dim:#0b4;                 /* Dimmer green for tail */
+      --glow:0 0 8px #00ff41;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:#c8ffc8;
+      font:16px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      overflow:hidden;            /* keep the rain inside */
+    }
+
+    /* Center card */
+    .card{
+      position:relative;
+      z-index:2;
+      height:100%;
+      display:grid;
+      place-items:center;
+      pointer-events:none;
+    }
+    .card .inner{
+      backdrop-filter: blur(2px);
+      background: rgba(0,0,0,.35);
+      border:1px solid #0a0;
+      border-radius:14px;
+      padding:24px 28px;
+      text-align:center;
+      box-shadow: var(--glow);
+    }
+    h1{
+      margin:0 0 .25rem;
+      font-weight:800;
+      font-size:clamp(22px, 5vw, 42px);
+      color:var(--green);
+      text-shadow:var(--glow);
+      letter-spacing:.02em;
+    }
+    p{
+      margin:.1rem 0 0;
+      opacity:.9;
+    }
+    .links{
+      display:flex; gap:.75rem; justify-content:center; margin-top:.75rem;
+    }
+    .links a{
+      pointer-events:auto;
+      color:#9effb8;
+      text-decoration:none;
+      border:1px solid #094;
+      padding:.3rem .55rem;
+      border-radius:10px;
+      transition:transform .12s ease;
+    }
+    .links a:hover{ transform:translateY(-1px) }
+
+    /* Matrix rain (CSS only) */
+    .rain{
+      position:fixed; inset:0; z-index:1; overflow:hidden;
+      mask-image: linear-gradient(#0000, #000 10%, #000 90%, #0000); /* soft fade on top/bottom */
+    }
+    .col{
+      position:absolute; top:-120vh;
+      left:calc(var(--x) * 6.25vw);
+      width:1ch;
+      color:var(--green);
+      text-shadow: var(--glow);
+      opacity:.95;
+
+      /* vertical stream of characters */
+      writing-mode: vertical-rl;
+      text-orientation: upright;
+      letter-spacing:.08em;
+      filter: drop-shadow(0 0 2px var(--green));
+
+      /* falling animation */
+      animation: fall var(--dur, 12s) linear infinite;
+      animation-delay: var(--delay, 0s);
+    }
+    /* subtle trailing effect: top brighter > bottom dimmer */
+    .col span{
+      display:inline-block;
+      padding-block: 8vh 0;
+      background: linear-gradient(to bottom, var(--green), var(--dim));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    @keyframes fall{
+      from{ transform: translateY(-110%); }
+      to  { transform: translateY(110%);  }
+    }
+
+    /* Respect reduced motion */
+    @media (prefers-reduced-motion: reduce){
+      .col{ animation: none; top: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Animated Matrix background -->
+  <div class="rain" aria-hidden="true">
+    <!-- Change the number of columns by duplicating/removing these lines.
+         --x controls horizontal position (0..15 here),
+         --dur is speed, --delay staggers starts -->
+    <div class="col" style="--x:0;  --dur:13s; --delay:-2s"><span>01A3F5ZXCVB90QWERTYUIOPLKJHGFDSAMNBVCXZ1234567890-=+[]{}<>/*|</span></div>
+    <div class="col" style="--x:1;  --dur:11s; --delay:-6s"><span>9QW8ER7TY6UI5OP4AS3DF2GH1JK0LZXCVBNM1234567890;:,.?!@#</span></div>
+    <div class="col" style="--x:2;  --dur:14s; --delay:-4s"><span>10100101011010010100110011100010101001101001100101</span></div>
+    <div class="col" style="--x:3;  --dur:10s; --delay:-7s"><span>ABCDEFGHJKLMNPQRSTUVWXYZ23456789</span></div>
+    <div class="col" style="--x:4;  --dur:12s; --delay:-3s"><span>42WEBSE R V 42WEBSE R V 42WEBSE R V 42WEBSE R V</span></div>
+    <div class="col" style="--x:5;  --dur:15s; --delay:-5s"><span>~/usr/bin/cgi-bin/../../etc/passwd?nope</span></div>
+    <div class="col" style="--x:6;  --dur:11.5s; --delay:-1s"><span>const http=1.1 GET / POST / PUT / DELETE 200 404 500</span></div>
+    <div class="col" style="--x:7;  --dur:13.5s; --delay:-8s"><span>アイウエオカキクケコサシスセソ0123456789</span></div>
+    <div class="col" style="--x:8;  --dur:9.8s;  --delay:-2s"><span>010011000101001101001010100101001010010101001010</span></div>
+    <div class="col" style="--x:9;  --dur:12.5s; --delay:-6s"><span>DROP TABLES? nice try. sanitize_inputs();</span></div>
+    <div class="col" style="--x:10; --dur:10.8s; --delay:-3s"><span>ABCDEFGabcdefg1234567890{}[]()&lt;&gt;=+-*/%</span></div>
+    <div class="col" style="--x:11; --dur:14.2s; --delay:-5s"><span>listen:127.0.0.1:8080; server_name webserv;</span></div>
+    <div class="col" style="--x:12; --dur:11.2s; --delay:-1s"><span>PIPE|FORK|EXECVE|SELECT|POLL|EPOLL|KQUEUE|CGI</span></div>
+    <div class="col" style="--x:13; --dur:13.2s; --delay:-7s"><span>while(true){accept();read();parse();route();}</span></div>
+    <div class="col" style="--x:14; --dur:9.9s;  --delay:-4s"><span>REQUEST_METHOD=GET; CONTENT_TYPE=text/html</span></div>
+    <div class="col" style="--x:15; --dur:12.8s; --delay:-6s"><span>42LAUSANNE | webserv | rank05 | bon courage!</span></div>
+  </div>
+
+  <!-- Foreground content -->
+  <div class="card">
+    <div class="inner" role="group" aria-label="Welcome card">
+      <h1>&lt; webserv /&gt;</h1>
+      <p>It works. Serve boldly — green and black, like the Matrix.</p>
+      <div class="links">
+        <a href="/">/</a>
+        <a href="/cgi-bin/">/cgi-bin/</a>
+        <a href="/uploads/">/uploads/</a>
+        <a href="/status">/status</a>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

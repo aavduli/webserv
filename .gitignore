@@ -1,1 +1,7 @@
+concept
+README.txt
 .vscode
+Dockerfile
+Dockerfile.dev
+docker-compose.yml
+messages/messages_structure.txt
