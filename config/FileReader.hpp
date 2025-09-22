@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/15 10:14:53 by jim               #+#    #+#             */
-/*   Updated: 2025/09/16 11:47:56 by jim              ###   ########.fr       */
+/*   Updated: 2025/09/22 17:27:57 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,9 +17,6 @@
 # include <fstream>
 
 class FileReader{
-	private:
-		std::string trim(const std::string& str) const;
-
 	public :
 		std::vector<std::string> readLines(const std::string& filepath) const;
 		bool fileExist(const std::string& filepath) const;

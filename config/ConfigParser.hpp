@@ -18,7 +18,6 @@
 # include <map>
 # include <sys/stat.h>
 
-# include "ConfigLocation.hpp"
 # include "ConfigData.hpp"
 
 class ConfigParser{

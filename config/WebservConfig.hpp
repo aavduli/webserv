@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/08 16:24:01 by jim               #+#    #+#             */
-/*   Updated: 2025/09/22 16:53:43 by jim              ###   ########.fr       */
+/*   Updated: 2025/09/22 17:39:32 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,6 @@
 # include <map>
 # include <iostream>
 # include "ConfigParser.hpp"
-# include "ConfigLocation.hpp"
 # include "FileReader.hpp"
 # include "ConfigData.hpp"
 # include "ConfigValidator.hpp"

@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/15 14:57:26 by jim               #+#    #+#             */
-/*   Updated: 2025/09/22 16:52:52 by jim              ###   ########.fr       */
+/*   Updated: 2025/09/22 17:49:38 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -187,74 +187,6 @@ bool ConfigValidator::validateServerConfig(const ServerConfig& config) {
 }
 
 
-bool ConfigValidator::validatePort(const std::string& port){
-	if (!isValidNumber(port)){
-		setError("invalid port format" + port);
-		console::log(_lastError, WARNING);
-		return (BLOCKINGERROR ? false : true );
-	}
-
-	int portNum = atoi(port.c_str());
-	if (portNum < MIN_PORT || portNum > MAX_PORT){
-		setError("Port of out range " + port);
-		console::log(_lastError, WARNING);
-		return (BLOCKINGERROR ? false : true );
-	}
-	return true;
-}
-
-bool ConfigValidator::validateIP(const std::string& ip){
-	if (ip.empty()){
-		setError("empty adresse ip");
-		console::log(_lastError, WARNING);
-		return (BLOCKINGERROR ? false : true );
-	}
-
-	std::istringstream iss(ip);
-	std::string segment;
-	int count = 0;
-
-	while(std::getline(iss, segment, '.')){
-		if (segment.empty()){
-			setError("Invalid IP format: " + segment);
-			console::log(_lastError, WARNING);
-			return (BLOCKINGERROR ? false : true );
-		}
-
-		if (!isValidNumber(segment)){
-			setError("Invalid IP segemt: "+segment);
-			console::log(_lastError, WARNING);
-			return (BLOCKINGERROR ? false : true );
-		}
-
-		if (segment.length() > 1 && segment[0] =='0'){
-			setError("DO YOU KNOW WHAT AN IP LOOK LIKE? " + segment);
-			console::log(_lastError, WARNING);
-			return (BLOCKINGERROR ? false : true );
-		}
-
-		int num = atoi(segment.c_str());
-		if (num < 0 || num > 255){
-			setError("Ip segment ouf ot range: " + segment);
-			console::log(_lastError, WARNING);
-			return (BLOCKINGERROR ? false : true );
-		}
-		count ++;
-	}
-
-	if (count != 4){
-		setError("Invalid IP format ");
-		console::log(_lastError, WARNING);
-		return (BLOCKINGERROR ? false : true );
-	}
-	return true;
-}
-
-bool ConfigValidator::validateHost(const std::string& host){ //can be localhost or ip
-	if (host == "localhost") return true;
-	return (validateIP(host));
-}
-
 bool ConfigValidator::validateRoot(const std::string& root){
 	if (!isValidPath(root)){
 		setError("Invalid Root directox: " + root);
@@ -415,13 +347,7 @@ bool ConfigValidator::hasWPerm(const std::string& path) const{
 		return access(path.c_str(), W_OK) == 0;
 }
 
-bool ConfigValidator::validateTimeout(const std::string& timeout){ //todo
-	(void) timeout;
-	return true;
-}
-
-
-bool ConfigValidator::validateRedirection(const std::string& redir){ //todo
+bool ConfigValidator::validateRedirection(const std::string& redir){
 	(void) redir;
 	return true;
 }
@@ -431,11 +357,6 @@ bool ConfigValidator::validateIndex(const std::string& index){ //todo
 	return true;
 }
 
-
-bool ConfigValidator::validatePath(const std::string& path){ //todo
-	(void) path;
-	return true;
-}
 
 bool ConfigValidator::isPortUsed(int port) const{ //todo do we need a check for free port?
 	(void) port;
