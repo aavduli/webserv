@@ -49,3 +49,27 @@
 
 - **Ligne 27**: `TODO: Parse incoming HTTP request from buffer`
 - **Ligne 30**: `TODO: Create HTTP response with status code, headers and output body if needed`
+## TODO List
+
+Liste de tous les TODOs trouvés dans les fichiers .cpp/.hpp
+
+### ./config/ConfigParser.cpp
+
+- **Ligne 50**: `case IN_LOCATION_BLOCK: // TODO`
+- **Ligne 86**: `LocationsConfig ConfigParser::parseLocations(const std::vector<std::string> & lines) const{ //TODO : parse locations`
+
+### ./config/ConfigValidator.cpp
+
+- **Ligne 37**: `std::string ConfigValidator::getLastError() const{//todo oo correct this func`
+- **Ligne 242**: `if (codeNum < 400 || codeNum > 599){ // Todo check error code min max, and if we're gonne use them all`
+- **Ligne 302**: `setError("should we accept empty method"+ methods ); //todo maybe accept some empty methods`
+- **Ligne 309**: `if (m != "GET" && m != "POST" && m != "DELETE" ){ // todo can add more if bonuses`
+- **Ligne 320**: `setError("Invalid client max body size format: " +size); //todo ask bebou for MBS`
+- **Ligne 326**: `if (sizeNum <= 0 || sizeNum > 1000000000){ //todo decrease bc 1 gb is kinda overkill see commetn above`
+- **Ligne 355**: `bool ConfigValidator::validateIndex(const std::string& index){ //todo`
+- **Ligne 361**: `bool ConfigValidator::isPortUsed(int port) const{ //todo do we need a check for free port?`
+
+### ./server/onConnection.cpp
+
+- **Ligne 30**: `//todo`
+
