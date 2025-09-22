@@ -4,18 +4,22 @@ CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -g
 
 SRCS =	main.cpp \
 		server/server.cpp \
+		server/onConnection.cpp \
 		event/eventManager.cpp \
 		console/console.cpp \
-		config/ConfigLocation.cpp \
-		config/ConfigParser.cpp \
-		config/ConfigValidator.cpp\
-		config/WebservConfig.cpp \
-		config/FileReader.cpp\
-		messages/HttpMessage.cpp \
-		messages/HttpHeaders.cpp \
-		messages/HttpResponse.cpp \
-		messages/HttpRequest.cpp \
-		parsing/Normalization.cpp
+		config/config.cpp \
+		config/location.cpp \
+		config/parser_config.cpp \
+		config/webserv_config.cpp \
+		messages/data/HttpMessage.cpp \
+		messages/data/HttpResponse.cpp \
+		messages/data/HttpRequest.cpp \
+		messages/handling/MessageHandler.cpp \
+		messages/parsing/MessageParser.cpp \
+		messages/parsing/RequestParser.cpp \
+		parsing/Normalization.cpp \
+		parsing/Conversion.cpp \
+		parsing/Validation.cpp
 
 OBJDIR = obj
 
@@ -29,7 +33,6 @@ $(NAME): $(OBJS)
 
 $(OBJDIR)/%.o: %.cpp | $(OBJDIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
-
 
 $(OBJDIR)/%.o:
 	$(CXX) $(CXXFLAGS) -c $(filter %/$*.cpp,$(SRCS)) -o $@
