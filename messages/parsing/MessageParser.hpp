@@ -10,27 +10,12 @@
 #define CR	'\r'
 #define LF	'\n'
 #define MAX_CONTENT_LENGTH 1000000
+#define MAX_URI_LENGTH 8000
 
 #include "../../console/console.hpp"
 #include "../../config/webserv_config.hpp"
 #include "../../errors/errors.hpp"
 #include "../../parsing/Parsing.hpp"
-
-/* EXAMPLE USAGE FLOW:
-
-// 1. PARSING PHASE
-string raw_request = "GET /index.html HTTP/1.1\r\n...";
-RequestParser parser;
-HttpRequest* request = parser.parse(raw_request);
-
-// 2. HANDLING PHASE  
-RequestHandler handler;
-HttpResponse* response = handler.process_request(request);
-
-// 3. OUTPUT PHASE
-ResponseHandler responder;
-string response_string = responder.serialize(response);
- */
 
  class HttpMessage;
  class HttpRequest;
@@ -70,6 +55,10 @@ enum State {
 	s_req_line,
 	s_req_done, 
 
+	/* URI PARSING */
+	s_uri_invalid,
+	s_uri_done,
+
 	/* REQUEST PROCESS */
 	s_req_invalid_get, 
 	s_req_invalid_post, 
@@ -97,7 +86,6 @@ enum State {
 	s_msg_done
 };
 
-// PARENT CLASS = State manager, Line by line processing, Error handling
 class MessageParser {
 
 	protected:
@@ -123,31 +111,6 @@ class MessageParser {
 		size_t	extract_content_length(const std::string& buffer);
 };
 
-// REQUEST PARSER (inherits from MessageParser)
-class RequestParser : public MessageParser {
-
-	private:
-		HttpRequest*	_request;		// for request parsing
-
-	public:
-		RequestParser(const WebservConfig& config);
-		RequestParser(const RequestParser& rhs);
-		RequestParser& operator=(const RequestParser& rhs);
-		~RequestParser();
-
-		HttpRequest*	parse_request(std::string raw_request);
-		bool			parse_request_line();
-		bool			parse_method(std::string request_line);
-		bool			parse_uri(std::string request_line);
-		s_request_uri	parse_uri_details(std::string raw_uri);
-		bool			parse_version(std::string request_line);
-		bool			parse_headers();
-		std::string		parse_header_name(std::string line);
-		std::vector<std::string>	parse_header_values(std::string line);
-		bool			parse_body();
-};
-
-
 // RESPONSE PARSER (inherits from MessageParser)
 class ResponseParser : public MessageParser {
 
@@ -160,6 +123,5 @@ class ResponseParser : public MessageParser {
 		ResponseParser& operator=(const ResponseParser& rhs);
 		~ResponseParser();
 };
-
 
 #endif //MESSAGEPARSER_HPP

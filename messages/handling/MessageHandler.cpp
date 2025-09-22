@@ -101,7 +101,7 @@ void	MessageHandler::handle_get() {
 		return ;
 	}
 	// if here, URI should not be empty
-	std::string uri = _request->getUri().raw_uri;
+	std::string uri = _request->getUri().getRawUri();
 	std::cout << YELLOW << "[INFO] URI: " << uri << RESET << std::endl;
 }
 
@@ -120,7 +120,7 @@ std::string	MessageHandler::serialize_response() {
 	return "coucou";
 }
 
-void	handle_request(WebservConfig config, const std::string &raw) {
+void	handle_request(const WebservConfig& config, const std::string &raw) {
 
 	if (raw.empty()) {
 		// return status code? return error/bool?

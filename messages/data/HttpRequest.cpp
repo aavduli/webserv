@@ -1,13 +1,7 @@
 #include "HttpRequest.hpp"
 
 HttpRequest::HttpRequest() : _method(UNKNOWN) {
-	_uri.raw_uri = "";
-	_uri.host = "";
-	_uri.target = "";
-	_uri.query = "";
-	_uri.is_valid = false;
-	_uri.is_absolute_path = false;
-	_uri.is_absolute_url = false;
+	// The RequestUri constructor will initialize all values to empty/false
 }
 
 HttpRequest::HttpRequest(const HttpRequest& rhs) : HttpMessage(rhs), _method(rhs._method), _uri(rhs._uri) {}
@@ -31,11 +25,11 @@ void	HttpRequest::setMethod(HttpMethod method) {
 	_method = method;
 }
 
-s_request_uri	HttpRequest::getUri() const {
+RequestUri	HttpRequest::getUri() const {
 	return _uri;
 }
 
-void	HttpRequest::setUri(s_request_uri uri) {
+void	HttpRequest::setUri(const RequestUri& uri) {
 	_uri = uri;
 }
 
@@ -44,7 +38,7 @@ void	print_request(HttpRequest* request) {
 	
 	// Print request line
 	std::cout << "Method:		" << request->getMethod() << std::endl;
-	std::cout << "URI:		" << request->getUri().raw_uri << std::endl;
+	std::cout << "URI:		" << request->getUri().getRawUri() << std::endl;
 	std::cout << "HTTP Version:	" << request->getHttpVersion() << std::endl;
 	std::cout << "Headers:" << std::endl;
 	request->printHeaders();
