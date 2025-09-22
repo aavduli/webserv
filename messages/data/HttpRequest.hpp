@@ -24,12 +24,11 @@ struct s_request_uri {
 	bool			is_absolute_url;
 };
 
-
 class HttpRequest : public HttpMessage {
 
 	private:
-		HttpMethod	_method;
-		std::string	_uri;
+		HttpMethod		_method;
+		s_request_uri	_uri;
 		
 	public:
 		HttpRequest();
@@ -40,8 +39,8 @@ class HttpRequest : public HttpMessage {
 		HttpMethod	getMethod() const;
 		void		setMethod(HttpMethod method);
 
-		std::string	getUri() const;
-		void		setUri(std::string uri);
+		s_request_uri	getUri() const;
+		void			setUri(s_request_uri uri);
 };
 
 void		print_request(HttpRequest* request);
