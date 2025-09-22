@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/08 16:24:01 by jim               #+#    #+#             */
-/*   Updated: 2025/09/17 19:23:45 by jim              ###   ########.fr       */
+/*   Updated: 2025/09/22 15:13:34 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,6 +46,15 @@ class WebservConfig{
 		//srv access
 		const std::map<std::string, std::string> &getServer() const;
 		std::string getDirective(const std::string &directive) const;
+
+		//better getter
+		int getPort() const;
+		std::string getHost() const;
+		size_t getMaxBodySize() const;
+		std::vector<std::string> getAllowedMethods() const;
+		std::string getServerName() const;
+		std::string getRoot() const;
+		std::string getIndex() const;
 
 
 
