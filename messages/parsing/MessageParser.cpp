@@ -1,10 +1,11 @@
 #include "MessageParser.hpp"
 #include "../data/HttpRequest.hpp"
 #include "../data/HttpResponse.hpp"
+#include "../../config/webserv_config.hpp"
 
-MessageParser::MessageParser() : _state(s_msg_init), _current_pos(0), _content_length(0) {}
+MessageParser::MessageParser(const WebservConfig& config) : _config(config), _state(s_msg_init), _current_pos(0), _content_length(0) {}
 
-MessageParser::MessageParser(const MessageParser& rhs) : _state(rhs._state), _raw_data(rhs._raw_data), _current_pos(rhs._current_pos), _content_length(rhs._content_length) {}
+MessageParser::MessageParser(const MessageParser& rhs) : _config(rhs._config), _state(rhs._state), _raw_data(rhs._raw_data), _current_pos(rhs._current_pos), _content_length(rhs._content_length) {}
 
 MessageParser& MessageParser::operator=(const MessageParser& rhs) {
 	if (this != &rhs) {
@@ -73,8 +74,9 @@ size_t	MessageParser::extract_content_length(const std::string& buffer) {
 		return 0;
 	}
 	std::string nb = buffer.substr(len_start, len_end);
-	size_t	content_len = to_size_t(nb.c_str());
-	if (content_len > MAX_CONTENT_LENGTH) {
+	size_t content_len = to_size_t(nb);
+	size_t max_body_size = to_size_t(_config.getDirective("max_body_size"));	// config use correct?
+	if (content_len > max_body_size) {
 		console::log("\"Content-Length\" value > MAX_CONTENT_LENGTH", ERROR);
 		_state = s_req_invalid_content_length;
 		return 0;

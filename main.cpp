@@ -22,7 +22,7 @@ int main(int ac, char **av) {
 	int port = atoi(portStr.c_str());
 	server serv(port);
 	while (1) {
-		serv.serverManager();
+		serv.serverManager(config);
 	}
 	return 0;
 }

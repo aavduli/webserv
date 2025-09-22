@@ -3,7 +3,7 @@
 #include <iostream>
 #include <sstream>
 
-RequestParser::RequestParser() : MessageParser(), _request(NULL) {}
+RequestParser::RequestParser(const WebservConfig& config) : MessageParser(config), _request(NULL) {}
 
 RequestParser::RequestParser(const RequestParser& rhs) : MessageParser(rhs) {
 	if (rhs._request)
@@ -79,7 +79,6 @@ HttpRequest* RequestParser::parse_request(std::string raw_request) {
 	return request;
 }
 
-// Request-Line = Method SP Request-URI SP HTTP-Version CRLF
 bool RequestParser::parse_request_line() {
 
 	_state = s_req_line;
@@ -153,6 +152,25 @@ bool RequestParser::parse_method(std::string request_line) {
 }
 
 // TODO uri validation
+
+/* 
+Parse the URI from request line
+URL decode special characters (%20, etc.)
+Validate against malicious paths (../, etc.)
+Split path from query string
+
+_config.getLocationConfig(uri)
+_config.getLocationConfig(request_uri)
+_config.getDirective("root")
+
+*/
+
+s_request_uri	RequestParser::parse_uri_details(std::string raw) {
+	
+	s_request_uri uri;
+	uri.raw_uri = raw;
+}
+
 bool RequestParser::parse_uri(std::string request_line) {
 
 	size_t uri_end = request_line.find(" ", _current_pos);
@@ -160,11 +178,12 @@ bool RequestParser::parse_uri(std::string request_line) {
 		console::log("No SP found after URI", ERROR);
 		return false;
 	}
-	std::string uri = request_line.substr(_current_pos, uri_end - _current_pos);
-	if (uri.empty()) {
+	std::string tmp_uri = request_line.substr(_current_pos, uri_end - _current_pos);
+	if (tmp_uri.empty()) {
 		console::log("No request URI found", ERROR);
 		return false;
 	}
+	s_request_uri uri = parse_uri_details(tmp_uri);
 	_request->setUri(uri);
 	_current_pos = request_line.find_first_not_of(" ", uri_end);
 	return true;

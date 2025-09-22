@@ -11,7 +11,7 @@
 #include "../errors/errors.hpp"
 
 // CONVERSION
-size_t 						to_size_t(const char *number);
+size_t 						to_size_t(std::string str);
 std::vector<std::string>	str_to_vect(const std::string& str, const std::string& del);
 std::vector<std::string>	str_to_vect_exept_between(const std::string& str, const std::string& del, const std::string& open, const std::string& close);
 

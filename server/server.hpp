@@ -16,6 +16,7 @@
 
 #include "../messages/data/HttpMessage.hpp"
 #include "../messages/handling/MessageHandler.hpp"
+#include "../config/webserv_config.hpp"
 
 
 class server {
@@ -35,7 +36,7 @@ class server {
 		server(int port);
 		~server();
 
-		void serverManager();
+		void serverManager(WebservConfig config);
 };
 
 

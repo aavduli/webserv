@@ -43,10 +43,10 @@ std::vector<std::string>	str_to_vect_exept_between(const std::string& str, const
 	return v;
 }
 
-size_t to_size_t(const char *number) {
+size_t to_size_t(std::string str) {
 
 	size_t st;
-	std::istringstream iss(number);
+	std::istringstream iss(str);
 	iss >> st;
 	if (iss.fail())
 		return std::numeric_limits<size_t>::max();

@@ -12,6 +12,7 @@
 #define MAX_CONTENT_LENGTH 1000000
 
 #include "../../console/console.hpp"
+#include "../../config/webserv_config.hpp"
 #include "../../errors/errors.hpp"
 #include "../../parsing/Parsing.hpp"
 
@@ -100,6 +101,7 @@ enum State {
 class MessageParser {
 
 	protected:
+		const WebservConfig&	_config;
 		Error			_error;
 		State			_state;			// monitor for parsing
 		std::string		_raw_data;		// raw_request
@@ -107,7 +109,7 @@ class MessageParser {
 		size_t			_content_length;
 
 	public:
-		MessageParser();
+		MessageParser(const WebservConfig& config);
 		MessageParser(const MessageParser& rhs);
 		MessageParser& operator=(const MessageParser& rhs);
 		virtual ~MessageParser();
@@ -128,7 +130,7 @@ class RequestParser : public MessageParser {
 		HttpRequest*	_request;		// for request parsing
 
 	public:
-		RequestParser();
+		RequestParser(const WebservConfig& config);
 		RequestParser(const RequestParser& rhs);
 		RequestParser& operator=(const RequestParser& rhs);
 		~RequestParser();
@@ -137,6 +139,7 @@ class RequestParser : public MessageParser {
 		bool			parse_request_line();
 		bool			parse_method(std::string request_line);
 		bool			parse_uri(std::string request_line);
+		s_request_uri	parse_uri_details(std::string raw_uri);
 		bool			parse_version(std::string request_line);
 		bool			parse_headers();
 		std::string		parse_header_name(std::string line);

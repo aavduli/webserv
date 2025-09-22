@@ -49,7 +49,7 @@ void server::setSockaddr() {
 	_address.sin_port = htons(_port);
 }
 
-void server::serverManager() {
+void server::serverManager(WebservConfig config) {
 	ignore_sigpipe();
 	setServer();
 	setSockaddr();
@@ -120,7 +120,7 @@ void server::serverManager() {
 						std::cout << "[DEBUG] recv returned 0 for fd " << fd << std::endl;
 						size_t endpos;
 						while (onConn::update_and_ready(c, endpos)) {
-							handle_request(c.in.substr(0, endpos));
+							handle_request(config, c.in.substr(0, endpos));
 							c.in.erase(0, endpos);
 							c.header_done = false;
 							c.chunked = false;
@@ -150,7 +150,7 @@ void server::serverManager() {
 				if (!alive) continue;
 				size_t endpos;
 				while (onConn::update_and_ready(c, endpos)) {
-					handle_request(c.in.substr(0, endpos));
+					handle_request(config, c.in.substr(0, endpos));
 					c.in.erase(0, endpos);
 					c.header_done = false;
 					c.chunked = false;

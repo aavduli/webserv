@@ -1,10 +1,10 @@
 #include "MessageHandler.hpp"
 
-MessageHandler::MessageHandler(HttpRequest* request) : _request(request), _response(NULL) {
+MessageHandler::MessageHandler(const WebservConfig& config, HttpRequest* request) : _config(config), _request(request), _response(NULL) {
 	console::log("[MessageHandler Default Constructor]", DEBUG);
 }
 
-MessageHandler::MessageHandler(const MessageHandler& rhs) {
+MessageHandler::MessageHandler(const MessageHandler& rhs) : _config(rhs._config) {
 	console::log("[MessageHandler Copy Constructor]", DEBUG);
 	if (rhs._request)
 		_request = new HttpRequest(*rhs._request);
@@ -92,13 +92,6 @@ Absolute URL in requests to proxies (e.g., http://www.example.com/path/to/file.h
 Often used to carry identifying information in the form of key=value pairs.
 */
 
-/* 
-Parse the URI from request line
-URL decode special characters (%20, etc.)
-Validate against malicious paths (../, etc.)
-Split path from query string
- */
-
 void	MessageHandler::handle_get() {
 
 	if (!(_request->getBody().empty())) {
@@ -108,7 +101,7 @@ void	MessageHandler::handle_get() {
 		return ;
 	}
 	// if here, URI should not be empty
-	std::string uri = _request->getUri();
+	std::string uri = _request->getUri().raw_uri;
 	std::cout << YELLOW << "[INFO] URI: " << uri << RESET << std::endl;
 }
 
@@ -127,7 +120,7 @@ std::string	MessageHandler::serialize_response() {
 	return "coucou";
 }
 
-void	handle_request(const std::string &raw) {
+void	handle_request(WebservConfig config, const std::string &raw) {
 
 	if (raw.empty()) {
 		// return status code? return error/bool?
@@ -136,14 +129,14 @@ void	handle_request(const std::string &raw) {
 	}
 
 	const char*		resp;
-	RequestParser	parser;
+	RequestParser	parser(config);
 
 	if (parser.is_complete_request(raw)) {
 
 		HttpRequest* request = parser.parse_request(raw);
 		if (parser.getState() == s_msg_done) {
 			console::log("Request parsing success", INFO);
-			MessageHandler handler(request);
+			MessageHandler handler(config, request);
 			if (handler.is_valid_request()) {
 				handler.process_request();
 				handler.generate_response();

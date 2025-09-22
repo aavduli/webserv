@@ -6,17 +6,19 @@
 #include "../data/HttpMessage.hpp"
 #include "../data/HttpRequest.hpp"
 #include "../data/HttpResponse.hpp"
+#include "../../config/webserv_config.hpp"
 
  class MessageHandler {
 
 	private:
-		Error				_error;
-		State				_state;
-		HttpRequest*		_request;	// make const
-		HttpResponse*		_response;
+		const WebservConfig&	_config;
+		Error					_error;
+		State					_state;
+		HttpRequest*			_request;	// make const
+		HttpResponse*			_response;
 
 	public:
-		MessageHandler(HttpRequest* request);
+		MessageHandler(const WebservConfig& config, HttpRequest* request);
 		MessageHandler(const MessageHandler& rhs);
 		MessageHandler& operator=(const MessageHandler& rhs);
 		~MessageHandler();
