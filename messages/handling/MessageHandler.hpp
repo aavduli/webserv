@@ -3,6 +3,7 @@
 
 #include "../../errors/errors.hpp"
 #include "../parsing/MessageParser.hpp"
+#include "../parsing/RequestParser.hpp"
 #include "../data/HttpMessage.hpp"
 #include "../data/HttpRequest.hpp"
 #include "../data/HttpResponse.hpp"
@@ -37,6 +38,6 @@
 		void		handle_head();
 };
 
-void	handle_request(const std::string &raw);
+void	handle_request(const WebservConfig& config, const std::string &raw);
 
 #endif //MESSAGEHANDLER_HPP
