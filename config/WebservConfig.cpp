@@ -11,6 +11,7 @@
 /* ************************************************************************** */
 
 #include "WebservConfig.hpp"
+#include <cstdlib>
 
 WebservConfig::WebservConfig(): _isValid(false){}
 
@@ -125,4 +126,70 @@ std::map<std::string, std::map<std::string, std::string> > WebservConfig::conver
 
 std::string WebservConfig::getLastError() const{
 	return _validator.getLastError();
+}
+
+
+//better getter
+int WebservConfig::getPort() const {
+	std::string listen = getDirective("listen");
+	if (listen.empty()) return 80; //default port
+
+	//if format is x.x.x.:8080
+	size_t colonPos = listen.find(':');
+	if (colonPos != std::string::npos){
+		listen = listen.substr(colonPos +1);
+	}
+	int port = std::atoi(listen.c_str());
+	return (port > 0 && port <= 65535) ? port : 80;
+}
+
+std::string WebservConfig::getHost() const {
+	std::string host = getDirective("host");
+	if (!host.empty()) return host;
+
+	std::string listen = getDirective("listen");
+	size_t colonPos = listen.find(':');
+	if (colonPos != std::string::npos){
+		return listen.substr(0, colonPos);
+	}
+	return "127.0.0.1"; // default
+}
+
+size_t WebservConfig::getMaxBodySize() const{
+	std::string maxSize = getDirective("max_size_body");
+	if (maxSize.empty()) return 1048576; // 1MB by default
+
+	size_t value = std::atoi(maxSize.c_str());
+	char unit = maxSize[maxSize.size() - 1];
+
+	switch(unit){
+		case 'K' : case 'k' : return value * 1024;
+		case 'M' : case 'm' : return value * 1024 * 1024;
+		case 'G' : case 'g' : return value * 1024 * 1024 * 1024;
+		default: return value ; // octet
+	}
+}
+
+std::vector<std::string> WebservConfig::getAllowedMethods() const{
+	std::vector<std::string> methods;
+	std::string allowMethods = getDirective("allow_methods");
+
+	if (allowMethods.empty()){
+		methods.push_back("GET");
+		return methods;
+	}
+
+	return methods;
+}
+
+std::string WebservConfig::getServerName() const{
+	return getDirective("server_name");
+}
+
+std::string WebservConfig::getRoot() const{
+	return getDirective("root");
+}
+
+std::string WebservConfig::getIndex() const {
+	return getDirective("index");
 }
