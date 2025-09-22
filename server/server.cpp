@@ -130,13 +130,11 @@ void server::serverManager() {
 							);
 							if (s > 0) sent += (size_t)s;
 							else if (s == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) break;
-							else {close_it = true; break; }
+							else { break; }
 						}
-						close_it = true;
 						break;
 						}
 					else if (n == 0) {
-						close_it = true;
 						c.in.append(buff, static_cast<size_t>(n));
 						continue;
 					}

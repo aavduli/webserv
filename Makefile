@@ -7,10 +7,11 @@ SRCS =	main.cpp \
 		server/onConnection.cpp \
 		event/eventManager.cpp \
 		console/console.cpp \
-		config/config.cpp \
-		config/location.cpp \
-		config/parser_config.cpp \
-		config/webserv_config.cpp \
+		config/ConfigLocation.cpp \
+		config/ConfigParser.cpp \
+		config/ConfigValidator.cpp \
+		config/FileReader.cpp \
+		config/WebservConfig.cpp \
 		messages/data/HttpMessage.cpp \
 		messages/data/HttpResponse.cpp \
 		messages/data/HttpRequest.cpp \
