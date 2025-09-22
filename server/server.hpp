@@ -14,7 +14,6 @@
 # include <csignal>
 # include <vector>
 
-#include "../messages/data/HttpMessage.hpp"
 #include "../messages/handling/MessageHandler.hpp"
 #include "../config/webserv_config.hpp"
 

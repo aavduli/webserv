@@ -19,7 +19,7 @@ class HttpMessage {
 
 	protected:
 		State			_state;
-		double			_version_major;	// HTTP version in <major>.<minor> format
+		double			_version_major;
 		double			_version_minor;
 		std::map<std::string, std::vector<std::string> >	_headers;
 		std::string		_body;
