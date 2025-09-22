@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/08 16:24:01 by jim               #+#    #+#             */
-/*   Updated: 2025/09/22 15:13:34 by jim              ###   ########.fr       */
+/*   Updated: 2025/09/22 16:53:43 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,6 +22,7 @@
 # include "FileReader.hpp"
 # include "ConfigData.hpp"
 # include "ConfigValidator.hpp"
+# include "ParsingUtils.hpp"
 
 class WebservConfig{
 	private:
@@ -31,6 +32,7 @@ class WebservConfig{
 		std::string		_configFile;
 		bool			_isValid;
 		ConfigValidator	_validator;
+		ParsingUtils 	_utils;
 
 	public:
 		WebservConfig();

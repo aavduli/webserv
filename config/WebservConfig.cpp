@@ -12,6 +12,8 @@
 
 #include "WebservConfig.hpp"
 #include <cstdlib>
+#include <sstream>
+#include "ParsingUtils.hpp"
 
 WebservConfig::WebservConfig(): _isValid(false){}
 
@@ -49,7 +51,6 @@ std::map<std::string, std::string> WebservConfig::getLocationConfig(const std::s
 void WebservConfig::printConfig() const {
 	std::cout << "=== SERVER CONFIG ===" << std::endl;
 
-	// Parcourir TOUTES les directives dynamiquement
 	for (std::map<std::string, std::string>::const_iterator it = _server.begin();
 		it != _server.end(); ++it) {
 		std::cout << it->first << ": " << it->second << std::endl;
@@ -60,7 +61,6 @@ void WebservConfig::printConfig() const {
 		it != _locations.end(); ++it) {
 		std::cout << "Location " << it->first << ":" << std::endl;
 
-		// Parcourir toutes les directives de cette location
 		for (std::map<std::string, std::string>::const_iterator param = it->second.begin();
 			param != it->second.end(); ++param) {
 			std::cout << "  " << param->first << " = " << param->second << std::endl;
@@ -129,58 +129,59 @@ std::string WebservConfig::getLastError() const{
 }
 
 
-//better getter
+//getter being better harder faster stronger (lol)
 int WebservConfig::getPort() const {
 	std::string listen = getDirective("listen");
-	if (listen.empty()) return 80; //default port
+	if (listen.empty()) return 80;
 
-	//if format is x.x.x.:8080
-	size_t colonPos = listen.find(':');
-	if (colonPos != std::string::npos){
-		listen = listen.substr(colonPos +1);
+	// if form.  "host:port"
+	std::vector<std::string> parts = _utils.split(listen, ':');
+	if (parts.size() == 2) {
+		return std::atoi(parts[1].c_str());
 	}
+
+	// if format is port onlz
 	int port = std::atoi(listen.c_str());
 	return (port > 0 && port <= 65535) ? port : 80;
 }
+
 
 std::string WebservConfig::getHost() const {
 	std::string host = getDirective("host");
 	if (!host.empty()) return host;
 
+	// Fallback: extract listen
 	std::string listen = getDirective("listen");
-	size_t colonPos = listen.find(':');
-	if (colonPos != std::string::npos){
-		return listen.substr(0, colonPos);
+	std::vector<std::string> parts = _utils.split(listen, ':');
+	if (parts.size() == 2) {
+		return parts[0];
 	}
+
 	return "127.0.0.1"; // default
 }
 
+
 size_t WebservConfig::getMaxBodySize() const{
 	std::string maxSize = getDirective("max_size_body");
-	if (maxSize.empty()) return 1048576; // 1MB by default
+	if (maxSize.empty()) return 1048576; // 1MB default
 
-	size_t value = std::atoi(maxSize.c_str());
-	char unit = maxSize[maxSize.size() - 1];
-
-	switch(unit){
-		case 'K' : case 'k' : return value * 1024;
-		case 'M' : case 'm' : return value * 1024 * 1024;
-		case 'G' : case 'g' : return value * 1024 * 1024 * 1024;
-		default: return value ; // octet
-	}
+	size_t size = _utils.parseSize(maxSize);
+	return (size > 0) ? size : 1048576;
 }
 
+
 std::vector<std::string> WebservConfig::getAllowedMethods() const{
-	std::vector<std::string> methods;
 	std::string allowMethods = getDirective("allow_methods");
 
 	if (allowMethods.empty()){
+		std::vector<std::string> methods;
 		methods.push_back("GET");
 		return methods;
 	}
 
-	return methods;
+	return _utils.split(allowMethods, ' ');
 }
+
 
 std::string WebservConfig::getServerName() const{
 	return getDirective("server_name");

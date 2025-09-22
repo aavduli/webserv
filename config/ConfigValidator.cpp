@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/15 14:57:26 by jim               #+#    #+#             */
-/*   Updated: 2025/09/22 13:13:21 by jim              ###   ########.fr       */
+/*   Updated: 2025/09/22 16:52:52 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,7 @@
 #include <sys/stat.h>
 #include "ConfigValidator.hpp"
 #include "../console/console.hpp"
+#include "ParsingUtils.hpp"
 
 const int ConfigValidator::MIN_PORT;
 const int ConfigValidator::MAX_PORT;
@@ -33,7 +34,7 @@ void ConfigValidator::setError(const std::string& error){
 	_lastError = error;
 }
 
-std::string ConfigValidator::getLastError() const{
+std::string ConfigValidator::getLastError() const{//todo oo correct this func
 	return _lastError;
 }
 
@@ -43,7 +44,7 @@ void ConfigValidator::clearError(){
 
 /// validation
 
-bool ConfigValidator::validateBraces(const std::vector<std::string>& lines){ //todo oo correct this func
+bool ConfigValidator::validateBraces(const std::vector<std::string>& lines){
 	int braceCount = 0;
 	size_t lineCounter = 0;
 
@@ -128,29 +129,63 @@ std::string ConfigValidator::toString(size_t num) const {
 }
 
 //mandatory direcovec
-bool ConfigValidator::validateServerConfig(const ServerConfig& config){
-	if (config.directives.find("listen") == config.directives.end()){
+bool ConfigValidator::validateServerConfig(const ServerConfig& config) {
+	ParsingUtils utils;
+
+	// check mandatory dircrive
+	if (config.directives.find("listen") == config.directives.end()) {
 		setError("Missing required 'listen' directive");
 		console::log(_lastError, WARNING);
-		return (BLOCKINGERROR ? false : true );
+		return (BLOCKINGERROR ? false : true);
 	}
 
-	//validate eache dircetives
+	// validate each directive
 	for (std::map<std::string, std::string>::const_iterator it = config.directives.begin();
-		it != config.directives.end(); ++it){
-			const std::string& key = it->first;
-			const std::string& value = it->second;
+		it != config.directives.end(); ++it) {
 
-			if (key == "listen" && !validatePort(value)) return false;
-			if (key == "host" && !validateHost(value)) return false;
-			if (key == "root" && !validateRoot(value)) return false;
-			if (key == "server_name" && !validateSrvName(value)) return false;
-			if (key == "error_page" && !validateErrorParge(value)) return false;
-			if (key == "client_max_body_size" && !validateMBS(value)) return false;
+		const std::string& key = it->first;
+		const std::string& value = it->second;
+
+		if (key == "listen") {
+			std::vector<std::string> parts = utils.split(value, ':');
+			std::string portStr = (parts.size() == 2) ? parts[1] : value;
+			if (!utils.isValidPort(portStr)) {
+				_lastError = "Invalid port: " + portStr;
+				return false;
+			}
 		}
+		else if (key == "host") {
+			if (!utils.isValidIP(value)) {
+				_lastError = "Invalid IP address: " + value;
+				return false;
+			}
+		}
+		else if (key == "allow_methods") {
+			std::vector<std::string> methods = utils.split(value, ' ');
+			for (size_t i = 0; i < methods.size(); i++) {
+				if (!utils.isValidMethod(methods[i])) {
+					_lastError = "Invalid HTTP method: " + methods[i];
+					return false;
+				}
+			}
+		}
+		else if (key == "root" && !validateRoot(value)) {
+			return false;
+		}
+		else if (key == "server_name" && !validateSrvName(value)) {
+			return false;
+		}
+		else if (key == "error_page" && !validateErrorParge(value)) {
+			return false;
+		}
+		else if (key == "client_max_body_size" && !validateMBS(value)) {
+			return false;
+		}
+	}
 
-		return true;
+	return true;
 }
+
 
 bool ConfigValidator::validatePort(const std::string& port){
 	if (!isValidNumber(port)){

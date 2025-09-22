@@ -12,6 +12,7 @@ SRCS =	main.cpp \
 		config/ConfigValidator.cpp \
 		config/FileReader.cpp \
 		config/WebservConfig.cpp \
+		config/ParsingUtils.cpp \
 		messages/data/HttpMessage.cpp \
 		messages/data/HttpResponse.cpp \
 		messages/data/HttpRequest.cpp \

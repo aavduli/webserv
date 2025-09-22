@@ -25,6 +25,14 @@ int main(int ac, char **av) {
 	}else{
 		console::log("config loaded succeffulsy", INFO);
 		if (PRINTCONFIG) config.printConfig();
+
+		// int port = config.getPort();
+		// std::string hsot = config.getHost();
+		// size_t maxbodysize = config.getMaxBodySize();
+		// std::vector<std::string> allowedMethods = config.getAllowedMethods();
+		// std::string serverName = config.getServerName();
+		// std::string root = config.getRoot();
+		// std::string index = config.getIndex();
 	}
 	std::string portStr = config.getDirective("listen");
 	int port = atoi(portStr.c_str());
