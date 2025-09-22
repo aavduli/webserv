@@ -2,16 +2,11 @@
 #include "../data/HttpRequest.hpp"
 #include "../data/HttpResponse.hpp"
 
-MessageParser::MessageParser() : _state(s_msg_init), _current_pos(0), _content_length(0) {
-	console::log("MessageParser Constructor", DEBUG);
-}
+MessageParser::MessageParser(const WebservConfig& config) : _config(config), _state(s_msg_init), _current_pos(0), _content_length(0) {}
 
-MessageParser::MessageParser(const MessageParser& rhs) : _state(rhs._state), _raw_data(rhs._raw_data), _current_pos(rhs._current_pos), _content_length(rhs._content_length) {
-	console::log("MessageParser copy constructor", DEBUG);
-}
+MessageParser::MessageParser(const MessageParser& rhs) : _config(rhs._config), _state(rhs._state), _raw_data(rhs._raw_data), _current_pos(rhs._current_pos), _content_length(rhs._content_length) {}
 
 MessageParser& MessageParser::operator=(const MessageParser& rhs) {
-	console::log("MessageParser assignment operator", DEBUG);
 	if (this != &rhs) {
 		_state = rhs._state;
 		_raw_data = rhs._raw_data;
@@ -21,9 +16,7 @@ MessageParser& MessageParser::operator=(const MessageParser& rhs) {
 	return *this;
 }
 
-MessageParser::~MessageParser() {
-	console::log("MessageParser destructor", DEBUG);
-}
+MessageParser::~MessageParser() {}
 
 State	MessageParser::getState() const {
 	return _state;
@@ -80,8 +73,9 @@ size_t	MessageParser::extract_content_length(const std::string& buffer) {
 		return 0;
 	}
 	std::string nb = buffer.substr(len_start, len_end);
-	size_t	content_len = to_size_t(nb.c_str());
-	if (content_len > MAX_CONTENT_LENGTH) {
+	size_t content_len = to_size_t(nb);
+	size_t max_body_size = to_size_t(_config.getDirective("max_body_size"));	// config use correct?
+	if (content_len > max_body_size) {
 		console::log("\"Content-Length\" value > MAX_CONTENT_LENGTH", ERROR);
 		_state = s_req_invalid_content_length;
 		return 0;

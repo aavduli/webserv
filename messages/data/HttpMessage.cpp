@@ -2,19 +2,15 @@
 #include "HttpRequest.hpp"
 
 HttpMessage::HttpMessage() {
-	console::log("[HttpMessage Default Constructor]", DEBUG);
 	_state = s_msg_dead;
 	_version_major = 0;
 	_version_minor = 0;
 	_body = "";
 }
 
-HttpMessage::HttpMessage(const HttpMessage& rhs) : _state(rhs._state), _version_major(rhs._version_major), _version_minor(rhs._version_minor), _headers(rhs._headers), _body(rhs._body) {
-	console::log("[HttpMessage Copy Constructor]", DEBUG);
-}
+HttpMessage::HttpMessage(const HttpMessage& rhs) : _state(rhs._state), _version_major(rhs._version_major), _version_minor(rhs._version_minor), _headers(rhs._headers), _body(rhs._body) {}
 
 HttpMessage& HttpMessage::operator=(const HttpMessage& rhs) {
-	console::log("[HttpMessage Assignment Operator]", DEBUG);
 	if (this != &rhs) {
 		_state = rhs._state;
 		_version_major = rhs._version_major;
@@ -25,9 +21,7 @@ HttpMessage& HttpMessage::operator=(const HttpMessage& rhs) {
 	return *this;
 }
 
-HttpMessage::~HttpMessage() {
-	console::log("[HttpMessage Destructor]", DEBUG);
-}
+HttpMessage::~HttpMessage() {}
 
 State	HttpMessage::getState() const {
 	return _state;
@@ -62,7 +56,7 @@ void	HttpMessage::addHeader(const std::string& key, const std::vector<std::strin
 				if (*it == *new_it)
 					return ;
 			}
-			_headers.at(key).push_back(trim_whitespaces(*new_it));
+			_headers.at(key).push_back(trim_lws(*new_it));
 		}
 	}
 	else
@@ -100,19 +94,4 @@ std::string	HttpMessage::getBody() const {
 
 void	HttpMessage::setBody(const std::string& body) {
 	_body = body;
-}
-
-const char* get_response(std::string raw_request) {
-
-	if (raw_request.empty()) {
-		console::log("empty request", WARNING);
-		return NULL;
-	}
-	else {
-		RequestParser	parser;
-		HttpRequest*	request = parser.parse_request(raw_request);
-		console::log("request parsed", INFO);
-		(void)request;
-	}
-	return "temporary response\n";
 }

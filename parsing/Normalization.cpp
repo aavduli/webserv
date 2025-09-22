@@ -1,6 +1,13 @@
 #include "Parsing.hpp"
 #include "../console/console.hpp"
 
+bool	move_past_char(size_t* pos, const std::string& str, const std::string del) {
+	if (*pos >= str.size() || str[*pos] != del[0])
+		return false;
+	(*pos)++;
+	return true;
+}
+
 std::string	lower(const std::string& str) {
 	if (str.empty())
 		return str;
@@ -9,7 +16,16 @@ std::string	lower(const std::string& str) {
 	return normalized;
 }
 
-std::string	trim_whitespaces(const std::string& str) {
+std::string trim_whitespaces(const std::string& str) {
+	std::string whitespaces = " \t\r\n\v\f";
+	size_t start = str.find_first_not_of(whitespaces);
+	if (start == std::string::npos)
+		return "";
+	size_t end = str.find_last_not_of(whitespaces);
+	return str.substr(start, end - start + 1);
+}
+
+std::string	trim_lws(const std::string& str) {
 	
 	if (str.empty())
 		return str;

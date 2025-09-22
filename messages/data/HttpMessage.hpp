@@ -19,7 +19,7 @@ class HttpMessage {
 
 	protected:
 		State			_state;
-		double			_version_major;	// HTTP version in <major>.<minor> format
+		double			_version_major;
 		double			_version_minor;
 		std::map<std::string, std::vector<std::string> >	_headers;
 		std::string		_body;
@@ -43,7 +43,5 @@ class HttpMessage {
 		std::string	getBody() const;
 		void		setBody(const std::string& body);
 };
-
-const char*	get_response(std::string raw_request);
 
 #endif // HTTPMESSAGE_HPP

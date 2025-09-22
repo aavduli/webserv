@@ -15,6 +15,7 @@ SRCS =	main.cpp \
 		messages/data/HttpMessage.cpp \
 		messages/data/HttpResponse.cpp \
 		messages/data/HttpRequest.cpp \
+		messages/data/RequestUri.cpp \
 		messages/handling/MessageHandler.cpp \
 		messages/parsing/MessageParser.cpp \
 		messages/parsing/RequestParser.cpp \
