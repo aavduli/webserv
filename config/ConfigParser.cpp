@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/15 10:45:14 by jim               #+#    #+#             */
-/*   Updated: 2025/09/16 13:20:09 by jim              ###   ########.fr       */
+/*   Updated: 2025/09/23 13:10:18 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,12 +39,23 @@ ServerConfig ConfigParser::parseServer(const std::vector<std::string>& lines) co
 					skipBlock(i, lines);
 					continue;
 				}
-
-					std::pair<std::string, std::string>  directive = parseDirective(line);
-					if (!directive.first.empty()){
+				std::pair<std::string, std::string> directive = parseDirective(line);
+				if (!directive.first.empty()){
+					if (directive.first == "error_page"){
+						std::istringstream iss (directive.second);
+						std::string code;
+						std::string filepath;
+						if (iss >> code >> filepath){
+							std::string key = "error_page_"+code;
+							config.directives[key] = filepath;
+						}
+						else{
+							config.directives[directive.first] = directive.second;
+						}
+					}else{
 						config.directives[directive.first] = directive.second;
 					}
-				break;
+				}
 			}
 
 			case IN_LOCATION_BLOCK: // TODO

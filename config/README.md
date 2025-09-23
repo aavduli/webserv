@@ -11,7 +11,9 @@
 | **index** | serveur | `std::string index = config.getIndex();` |
 | **allow_methods** | serveur | `std::vector<std::string> methods = config.getAllowedMethods();` |
 | **max_size_body** | serveur | `size_t size = config.getMaxBodySize();` |
-| **error_page** | serveur | `std::string error = config.getDirective("error_page");` |
+| **error_page** | serveur | `std::string error = config.getErrorPage(404);` |
+| **max_content_length** | serveur | `size_t maxContent = config.getMaxContentLength();` |
+| **location_exists** | serveur | `bool exists = config.hasLocation("/api");` |
 | **methods** | location | `std::string methods = config.getLocationConfig("/api")["methods"];` |
 | **autoindex** | location | `std::string autoindex = config.getLocationConfig("/files")["autoindex"];` |
 | **return** | location | `std::string redirect = config.getLocationConfig("/redirect")["return"];` |
@@ -39,7 +41,29 @@ int port = config.getPort();                           // 8080
 std::string host = config.getHost();                   // "127.0.0.1"
 std::vector<std::string> methods = config.getAllowedMethods(); // ["GET", "POST"]
 size_t maxSize = config.getMaxBodySize();              // 1048576 ressort la valeur en octets
+size_t maxContent = config.getMaxContentLength();      // 1048576 limite requête
+std::string errorPage = config.getErrorPage(404);      // "/error404.html"
+bool hasApi = config.hasLocation("/api");              // true si location existe
+
 ```
+
+```cpp
+// Pour MessageParser - limite de contenu
+size_t maxContent = config.getMaxContentLength();
+
+// Pour MessageHandler - pages d'erreur
+std::string page404 = config.getErrorPage(404);  // "./www/errors/404.html"
+std::string page403 = config.getErrorPage(403);  // "./www/errors/403.html"
+std::string page500 = config.getErrorPage(500);  // "./www/errors/500.html"
+
+
+// Pour le routing
+if (config.hasLocation("/api")) {
+    // Traiter requête API
+} else {
+    // Route par défaut
+}
+
 
 ### Récupérer config location
 ```cpp
@@ -251,6 +275,7 @@ std::string getRoot() const;                 // Parse "root /var/www"
 std::string getIndex() const;                // Parse "index index.html"
 size_t getMaxBodySize() const;               // Parse "max_size_body 1M" → 1048576
 std::vector<std::string> getAllowedMethods() const; // Parse "allow_methods GET POST"
+std::string getErrorPage(int code) const;       // Parse "error_page 404 /404.html" → "/404.html"
 ```
 
 ### Locations
@@ -280,7 +305,10 @@ server {
 	index index.html;                        # Page par défaut
 	allow_methods GET POST DELETE;           # Méthodes HTTP
 	max_size_body 1M;                        # Taille max body
-	error_page 404 /error404.html;           # Pages d'erreur
+	error_page 404 /error404.html;           # Pages d'erreur spécifiques
+	error_page 403 /error403.html;           # Plusieurs codes supportés
+	error_page 500 /error500.html;           # Format: code filepath
+
 
 	location /api {                          # Bloc location
 		methods GET POST;                    # Méthodes pour cette route
