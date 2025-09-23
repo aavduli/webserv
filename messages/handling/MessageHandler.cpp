@@ -1,10 +1,10 @@
 #include "MessageHandler.hpp"
 
-MessageHandler::MessageHandler(HttpRequest* request) : _request(request), _response(NULL) {
+MessageHandler::MessageHandler(const WebservConfig& config, HttpRequest* request) : _config(config), _request(request), _response(NULL) {
 	console::log("[MessageHandler Default Constructor]", DEBUG);
 }
 
-MessageHandler::MessageHandler(const MessageHandler& rhs) {
+MessageHandler::MessageHandler(const MessageHandler& rhs) : _config(rhs._config) {
 	console::log("[MessageHandler Copy Constructor]", DEBUG);
 	if (rhs._request)
 		_request = new HttpRequest(*rhs._request);
@@ -55,19 +55,19 @@ bool	MessageHandler::is_valid_request() const {
 void	MessageHandler::process_request() {
 	
 	switch (_request->getMethod()) {
-		case 0:	// GET
+		case 0:
 			console::log("GET method", INFO);
 			handle_get();
 			break;
-		case 1:	// POST
+		case 1:
 			console::log("POST method", INFO);
 			handle_post();
 			break;
-		case 2:	// DELETE
+		case 2:
 			console::log("DELETE method", INFO);
 			handle_delete();
 			break;
-		case 3:	// HEAD
+		case 3:
 			console::log("HEAD method", INFO);
 			handle_head();
 			break;
@@ -97,12 +97,12 @@ void	MessageHandler::handle_get() {
 	if (!(_request->getBody().empty())) {
 		console::log("GET request shouldn't have a body", ERROR);
 		_state = s_req_invalid_get;
-		// set response status code and clean exit
+		// TODO set response status code and clean exit
 		return ;
 	}
 	// if here, URI should not be empty
-	std::string uri = _request->getUri();
-	std::cout << YELLOW << "[INFO] GET request URI: " << uri << RESET << std::endl;
+	std::string uri = _request->getUri().getRawUri();
+	std::cout << YELLOW << "[INFO] URI: " << uri << RESET << std::endl;
 }
 
 void	MessageHandler::handle_post() {}
@@ -118,4 +118,36 @@ void	MessageHandler::generate_response() {
 
 std::string	MessageHandler::serialize_response() {
 	return "coucou";
+}
+
+void	handle_request(const WebservConfig& config, const std::string &raw) {
+
+	if (raw.empty()) {
+		// return status code? return error/bool?
+		console::log("Empty request", WARNING);
+		return ;
+	}
+
+	const char*		resp;
+	RequestParser	parser(config);
+
+	if (parser.is_complete_request(raw)) {
+
+		HttpRequest* request = parser.parse_request(raw);
+		if (parser.getState() == s_msg_done) {
+			console::log("Request parsing success", INFO);
+			MessageHandler handler(config, request);
+			if (handler.is_valid_request()) {
+				handler.process_request();
+				handler.generate_response();
+			}
+			resp = (handler.serialize_response()).c_str();
+			std::cout << "RESPONSE: " << resp << std::endl;
+		}
+		else
+			console::log("Request parsing failed", ERROR);
+		delete request;
+	}
+	else
+		console::log("Incomplete request", ERROR);
 }
