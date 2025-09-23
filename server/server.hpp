@@ -33,6 +33,9 @@ class server {
 		~server();
 
 		void serverManager(WebservConfig config);
+
+	public:
+	int getPort();
 };
 
 

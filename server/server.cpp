@@ -186,3 +186,8 @@ void server::serverManager(WebservConfig config) {
 		}
 	}
 }
+
+
+int server::getPort() {
+	return _port;
+}
