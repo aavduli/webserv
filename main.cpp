@@ -3,6 +3,7 @@
 #include "config/WebservConfig.hpp"
 
 const bool PRINTCONFIG = false;
+const bool DEBBUGPRINT = false;
 
 int main(int ac, char **av) {
 	console::setDebug(true);
@@ -25,14 +26,34 @@ int main(int ac, char **av) {
 	}else{
 		console::log("config loaded succeffulsy", INFO);
 		if (PRINTCONFIG) config.printConfig();
+		//exemple of usage
+		if (DEBBUGPRINT){
+			  std::cout << "\n=== INTEGRATION TESTS ===" << std::endl;
 
-		// int port = config.getPort();
-		// std::string hsot = config.getHost();
-		// size_t maxbodysize = config.getMaxBodySize();
-		// std::vector<std::string> allowedMethods = config.getAllowedMethods();
-		// std::string serverName = config.getServerName();
-		// std::string root = config.getRoot();
-		// std::string index = config.getIndex();
+			// for MessageParser
+			size_t maxContent = config.getMaxContentLength();
+			std::cout << "Max Content Length: " << maxContent << std::endl;
+
+			// for MessageHandler - error page
+			std::string page404 = config.getErrorPage(404);
+			std::string page403 = config.getErrorPage(403);
+			std::string page500 = config.getErrorPage(500);
+			std::cout << "Error 404 page: " << page404 << std::endl;
+			std::cout << "Error 403 page: " << page403 << std::endl;
+			std::cout << "Error 500 page: " << page500 << std::endl;
+
+			// for the routing
+			bool hasApi = config.hasLocation("/api");
+			bool hasUploads = config.hasLocation("/uploads");
+			std::cout << "Has /api location: " << (hasApi ? "yes" : "no") << std::endl;
+			std::cout << "Has /uploads location: " << (hasUploads ? "yes" : "no") << std::endl;
+
+			// basic srv config
+			std::cout << "Server: " << config.getHost() << ":" << config.getPort() << std::endl;
+			std::cout << "=========================\n" << std::endl;
+
+		}
+
 	}
 	std::string portStr = config.getDirective("listen");
 	int port = atoi(portStr.c_str());
