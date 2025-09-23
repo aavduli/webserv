@@ -19,7 +19,7 @@ std::vector<std::string> FileReader::readLines(const std::string& filepath) cons
 	std::vector<std::string> lines;
 	std::ifstream file(filepath.c_str());
 
-	console::log(filepath.c_str(), WARNING);
+	console::log(filepath.c_str(), WARNING, JR);
 	
 	if (!file.is_open()){
 		std::cerr << " Error, cant open fille " <<filepath << std::endl;

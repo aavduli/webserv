@@ -63,7 +63,7 @@ bool ConfigValidator::validateBraces(const std::vector<std::string>& lines){ //t
 					std::ostringstream oss117;
 					oss117 << "Extra '}' here :" << lineCounter;
 					setError(oss117.str());
-					console::log(_lastError, WARNING);
+					console::log(_lastError, WARNING, JR);
 					return (BLOCKINGERROR ? false : true );
 				}
 			}
@@ -74,7 +74,7 @@ bool ConfigValidator::validateBraces(const std::vector<std::string>& lines){ //t
 		std::ostringstream oss117;
 		oss117 << braceCount << " missing '}' int config file";
 		setError(oss117.str());
-		console::log(_lastError, WARNING);
+		console::log(_lastError, WARNING, JR);
 		return (BLOCKINGERROR ? false : true );
 	}
 	return true;
@@ -87,7 +87,7 @@ bool ConfigValidator::validateSyntax(const std::vector<std::string>& lines) {
 		it != lines.end(); ++it) {
 		if (it->length() > MAX_DIRECTIVE_LEN) {
 			setError("Line too long, max: " + toString(MAX_DIRECTIVE_LEN) + " chars");
-			console::log(_lastError, WARNING);
+			console::log(_lastError, WARNING, JR);
 			return (BLOCKINGERROR ? false : true );
 		}
 	}
@@ -131,7 +131,7 @@ std::string ConfigValidator::toString(size_t num) const {
 bool ConfigValidator::validateServerConfig(const ServerConfig& config){
 	if (config.directives.find("listen") == config.directives.end()){
 		setError("Missing required 'listen' directive");
-		console::log(_lastError, WARNING);
+		console::log(_lastError, WARNING, JR);
 		return (BLOCKINGERROR ? false : true );
 	}
 
@@ -155,14 +155,14 @@ bool ConfigValidator::validateServerConfig(const ServerConfig& config){
 bool ConfigValidator::validatePort(const std::string& port){
 	if (!isValidNumber(port)){
 		setError("invalid port format" + port);
-		console::log(_lastError, WARNING);
+		console::log(_lastError, WARNING, JR);
 		return (BLOCKINGERROR ? false : true );
 	}
 
 	int portNum = atoi(port.c_str());
 	if (portNum < MIN_PORT || portNum > MAX_PORT){
 		setError("Port of out range " + port);
-		console::log(_lastError, WARNING);
+		console::log(_lastError, WARNING, JR);
 		return (BLOCKINGERROR ? false : true );
 	}
 	return true;
@@ -171,7 +171,7 @@ bool ConfigValidator::validatePort(const std::string& port){
 bool ConfigValidator::validateIP(const std::string& ip){
 	if (ip.empty()){
 		setError("empty adresse ip");
-		console::log(_lastError, WARNING);
+		console::log(_lastError, WARNING, JR);
 		return (BLOCKINGERROR ? false : true );
 	}
 
@@ -182,26 +182,26 @@ bool ConfigValidator::validateIP(const std::string& ip){
 	while(std::getline(iss, segment, '.')){
 		if (segment.empty()){
 			setError("Invalid IP format: " + segment);
-			console::log(_lastError, WARNING);
+			console::log(_lastError, WARNING, JR);
 			return (BLOCKINGERROR ? false : true );
 		}
 
 		if (!isValidNumber(segment)){
 			setError("Invalid IP segemt: "+segment);
-			console::log(_lastError, WARNING);
+			console::log(_lastError, WARNING, JR);
 			return (BLOCKINGERROR ? false : true );
 		}
 
 		if (segment.length() > 1 && segment[0] =='0'){
 			setError("DO YOU KNOW WHAT AN IP LOOK LIKE? " + segment);
-			console::log(_lastError, WARNING);
+			console::log(_lastError, WARNING, JR);
 			return (BLOCKINGERROR ? false : true );
 		}
 
 		int num = atoi(segment.c_str());
 		if (num < 0 || num > 255){
 			setError("Ip segment ouf ot range: " + segment);
-			console::log(_lastError, WARNING);
+			console::log(_lastError, WARNING, JR);
 			return (BLOCKINGERROR ? false : true );
 		}
 		count ++;
@@ -209,7 +209,7 @@ bool ConfigValidator::validateIP(const std::string& ip){
 
 	if (count != 4){
 		setError("Invalid IP format ");
-		console::log(_lastError, WARNING);
+		console::log(_lastError, WARNING, JR);
 		return (BLOCKINGERROR ? false : true );
 	}
 	return true;
@@ -223,13 +223,13 @@ bool ConfigValidator::validateHost(const std::string& host){ //can be localhost 
 bool ConfigValidator::validateRoot(const std::string& root){
 	if (!isValidPath(root)){
 		setError("Invalid Root directox: " + root);
-		console::log(_lastError, WARNING);
+		console::log(_lastError, WARNING, JR);
 		return (BLOCKINGERROR ? false : true );
 	}
 
 	if (!hasRPerm(root)){
 		setError("Can read the directoy: " + root);
-		console::log(_lastError, WARNING);
+		console::log(_lastError, WARNING, JR);
 		return (BLOCKINGERROR ? false : true );
 	}
 	return true;
@@ -246,7 +246,7 @@ bool ConfigValidator::validateSrvName(const std::string& serverName){
 		char c = serverName[i];
 		if (!isalnum(c) && c != '.' && c != '-' && c != '_'){
 			setError("invalid char in srv name: " + std::string(1, c));
-			console::log(_lastError, WARNING);
+			console::log(_lastError, WARNING, JR);
 			return (BLOCKINGERROR ? false : true );
 		}
 	}
@@ -261,26 +261,26 @@ bool ConfigValidator::validateErrorParge(const std::string& errorPageLine){
 
 	if (!(iss>>code>>filepath)){
 		setError("Invalid error_page format: Expcetd : 'code filepath'");
-		console::log(_lastError, WARNING);
+		console::log(_lastError, WARNING, JR);
 		return (BLOCKINGERROR ? false : true );
 	}
 
 	if (!isValidNumber(code)){
 		setError("Invalide error code: " + code);
-		console::log(_lastError, WARNING);
+		console::log(_lastError, WARNING, JR);
 		return (BLOCKINGERROR ? false : true );
 	}
 
 	int codeNum = atoi(code.c_str());
 	if (codeNum < 400 || codeNum > 599){ // Todo check error code min max, and if we're gonne use them all
 		setError("Error code out of range (MIN -> MAX to define): " + code);
-		console::log(_lastError, WARNING);
+		console::log(_lastError, WARNING, JR);
 		return (BLOCKINGERROR ? false : true );
 	}
 
 	if (!isValidFile(filepath)){
 		setError("Error page not found: "+ filepath);
-		console::log(_lastError, WARNING);
+		console::log(_lastError, WARNING, JR);
 		return (BLOCKINGERROR ? false : true );
 	}
 
@@ -318,13 +318,13 @@ bool ConfigValidator::validateLocationConfig(const LocationConfig& config){
 bool ConfigValidator::validateLocationPath(const std::string& path){
 	if (path.empty()){
 		setError("Empty location path");
-		console::log(_lastError, WARNING);
+		console::log(_lastError, WARNING, JR);
 		return (BLOCKINGERROR ? false : true );
 	}
 
 	if (path[0] != '/'){
 		setError("Location path must start with /: "+ path);
-		console::log(_lastError, WARNING);
+		console::log(_lastError, WARNING, JR);
 		return (BLOCKINGERROR ? false : true );
 	}
 	return true;
@@ -341,7 +341,7 @@ bool ConfigValidator::validateHTTPMethods(const std::string& methods){
 	while(iss>>m){
 		if (m != "GET" && m != "POST" && m != "DELETE" ){ // todo can add more if bonuses
 			setError("Invalid method: "+ m);
-			console::log(_lastError, WARNING);
+			console::log(_lastError, WARNING, JR);
 			return (BLOCKINGERROR ? false : true );
 		}
 	}
@@ -351,14 +351,14 @@ bool ConfigValidator::validateHTTPMethods(const std::string& methods){
 bool ConfigValidator::validateMBS(const std::string& size){
 	if (!isValidNumber(size)){
 		setError("Invalid client max body size format: " +size); //todo ask bebou for MBS
-		console::log(_lastError, WARNING);
+		console::log(_lastError, WARNING, JR);
 		return (BLOCKINGERROR ? false : true );
 	}
 
 	long sizeNum = atol(size.c_str());
 	if (sizeNum <= 0 || sizeNum > 1000000000){ //todo decrease bc 1 gb is kinda overkill see commetn above
 		setError("Client MBS out of range: " + size);
-		console::log(_lastError, WARNING);
+		console::log(_lastError, WARNING, JR);
 		return (BLOCKINGERROR ? false : true );
 	}
 	return true;

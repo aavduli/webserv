@@ -69,6 +69,7 @@ void server::serverManager(WebservConfig &config) {
 	ignore_sigpipe();
 	setServer();
 	setSockaddr();
+	(void)config;
 
 	if (bind(_serverfd, (struct sockaddr*)&_address, sizeof(_address)) < 0) {
 		console::log("failed to bind", ERROR, AA);
@@ -132,7 +133,7 @@ void server::serverManager(WebservConfig &config) {
 						c.in.append(buff, static_cast<size_t>(n));
 						size_t endpos;
 						while (onConn::update_and_ready(c, endpos)) {
-							handle_request(config, c.in.substr(0, endpos));
+							// handle_request(config, c.in.substr(0, endpos));
 							std::string response = build_http_response(200, "ok, Hello World!", "text/plain");
 							size_t sent = 0;
 							while (sent < response.size()) {

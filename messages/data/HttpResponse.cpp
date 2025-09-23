@@ -1,15 +1,15 @@
 #include "HttpResponse.hpp"
 
 HttpResponse::HttpResponse() : _status_code(0), _reason_phrase("") {
-	console::log("[HttpResponse Default Constructor]", DEBUG);
+	console::log("[HttpResponse Default Constructor]", INFO, AH);
 }
 
 HttpResponse::HttpResponse(const HttpResponse& rhs) : HttpMessage(rhs), _status_code(rhs._status_code), _reason_phrase(rhs._reason_phrase) {
-	console::log("[HttpResponse Copy Constructor]", DEBUG);
+	console::log("[HttpResponse Copy Constructor]", INFO, AH);
 }
 
 HttpResponse& HttpResponse::operator=(const HttpResponse& rhs) {
-	console::log("[HttpResponse Assignment Operator]", DEBUG);
+	console::log("[HttpResponse Assignment Operator]", INFO, AH);
 	if (this != &rhs) {
 		HttpMessage::operator=(rhs);
 		_status_code = rhs._status_code;
@@ -19,7 +19,7 @@ HttpResponse& HttpResponse::operator=(const HttpResponse& rhs) {
 }
 
 HttpResponse::~HttpResponse() {
-	console::log("[HttpResponse Destructor]", DEBUG);
+	console::log("[HttpResponse Destructor]", INFO, AH);
 }
 
 int	HttpResponse::getStatus() const {
