@@ -13,8 +13,7 @@
 enum Level {
 	INFO,
 	WARNING,
-	ERROR,
-	DEBUG
+	ERROR
 };
 
 enum Worker {
@@ -28,7 +27,7 @@ class console {
 private:
 	console();
 public:
-	void console::log(const std::string& msg, Level level, Worker who);
+	static void log(const std::string& msg, Level level, Worker who);
 };
 
 #endif

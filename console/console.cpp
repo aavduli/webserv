@@ -5,13 +5,14 @@
 void console::log(const std::string& msg, Level level, Worker who) {
 	switch (level) {
 		case INFO:
-			GREEN;
+			std::cout << GREEN;
+			break;
 		case WARNING:
-			YELLOW;
+			std::cout << YELLOW;
+			break;
 		case ERROR:
-			RED;
-		case DEBUG:
-			BLUE;
+			std::cout << RED;
+			break;
 	}
 	if (who == AA) {
 		std::cout << "[SERVER] " << msg << std::endl;
@@ -22,5 +23,5 @@ void console::log(const std::string& msg, Level level, Worker who) {
 	} else if (who == ALL) {
 		std::cout << "[ALL] " << msg << std::endl;
 	}
-	RESET;
+	std::cout << RESET;
 }
