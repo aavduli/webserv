@@ -200,7 +200,16 @@ std::string WebservConfig::getErrorPage(int code) const {
 	oss << code;
 	std::string codeStr = oss.str();
 
-	std::map<std::string, std::string>::const_iterator it = _server.find("error_page");
+	//adding getter for multiple error code page
+	std::string keyPrefixe = "error_page_" + codeStr;
+	std::map<std::string, std::string>::const_iterator it = _server.find(keyPrefixe);
+
+	if (it != _server.end()){
+		return it->second; //return filepath
+	}
+	else{
+		std::cout << "keyPrefix: "<< keyPrefixe << std::endl;
+	}
 
 	if (it != _server.end()){
 		//parsing "404 /error404.html"
@@ -212,7 +221,7 @@ std::string WebservConfig::getErrorPage(int code) const {
 			return filepath;
 		}
 	}
-	return ""; //default
+	return ""; //not found
 }
 
 size_t WebservConfig::getMaxContentLength() const{
