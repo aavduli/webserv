@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/08 16:24:01 by jim               #+#    #+#             */
-/*   Updated: 2025/09/22 16:53:43 by jim              ###   ########.fr       */
+/*   Updated: 2025/09/23 12:25:31 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,7 +58,9 @@ class WebservConfig{
 		std::string getRoot() const;
 		std::string getIndex() const;
 
-
+		std::string getErrorPage(int code) const;
+		size_t getMaxContentLength() const;
+		bool hasLocation(const std::string& path) const;
 
 		//locations access
 		const std::map<std::string, std::map<std::string, std::string> > &getAllLocations() const;

@@ -194,3 +194,38 @@ std::string WebservConfig::getRoot() const{
 std::string WebservConfig::getIndex() const {
 	return getDirective("index");
 }
+
+std::string WebservConfig::getErrorPage(int code) const {
+	std::ostringstream oss;
+	oss << code;
+	std::string codeStr = oss.str();
+
+	std::map<std::string, std::string>::const_iterator it = _server.find("error_page");
+
+	if (it != _server.end()){
+		//parsing "404 /error404.html"
+		std::istringstream iss(it->second);
+		std::string pageCode;
+		std::string filepath;
+
+		if (iss >> pageCode >> filepath && pageCode == codeStr){
+			return filepath;
+		}
+	}
+	return ""; //default
+}
+
+size_t WebservConfig::getMaxContentLength() const{
+	//for MessageParser.hpp MAX_CONTENT_LENGTH
+	//return max_size_body or default
+	ParsingUtils utils;
+	std::map<std::string, std::string>::const_iterator it = _server.find("client_max_body_size");
+	if (it != _server.end()){
+		return utils.parseSize(it->second);
+	}
+	return 1000000; // like Default MEssage parser todo asking bebou for what to do
+}
+
+bool WebservConfig::hasLocation(const std::string& path) const{
+	return _locations.find(path) != _locations.end();
+}
