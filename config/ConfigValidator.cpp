@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/15 14:57:26 by jim               #+#    #+#             */
-/*   Updated: 2025/09/22 17:49:38 by jim              ###   ########.fr       */
+/*   Updated: 2025/09/23 10:53:51 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -347,15 +347,64 @@ bool ConfigValidator::hasWPerm(const std::string& path) const{
 		return access(path.c_str(), W_OK) == 0;
 }
 
-bool ConfigValidator::validateRedirection(const std::string& redir){
-	(void) redir;
+bool ConfigValidator::validateIndex(const std::string& index) {
+	if (index.empty()) {
+		setError("Empty index file");
+		console::log(_lastError, WARNING);
+		return (BLOCKINGERROR ? false : true);
+	}
+
+	if (index.find('.') == std::string::npos) {
+		setError("Index file must have extension: " + index);
+		console::log(_lastError, WARNING);
+		return (BLOCKINGERROR ? false : true);
+	}
+
+	if (index.find("..") != std::string::npos ||
+		index.find('/') == 0) {
+		setError("Invalid index file path: " + index);
+		console::log(_lastError, WARNING);
+		return (BLOCKINGERROR ? false : true);
+	}
+
 	return true;
 }
 
-bool ConfigValidator::validateIndex(const std::string& index){ //todo
-	(void) index;
+
+bool ConfigValidator::validateRedirection(const std::string& redir) {
+	ParsingUtils utils;
+
+	std::vector<std::string> parts = utils.split(redir, ' ');
+	if (parts.size() != 2) {
+		setError("Invalid redirection format: expected 'code url'");
+		console::log(_lastError, WARNING);
+		return (BLOCKINGERROR ? false : true);
+	}
+
+	// redirection arrives only when code
+	if (!isValidNumber(parts[0])) {
+		setError("Invalid redirection code: " + parts[0]);
+		console::log(_lastError, WARNING);
+		return (BLOCKINGERROR ? false : true);
+	}
+
+	int code = std::atoi(parts[0].c_str());
+	if (code != 301 && code != 302) {
+		setError("Unsupported redirection code (only 301, 302): " + parts[0]);
+		console::log(_lastError, WARNING);
+		return (BLOCKINGERROR ? false : true);
+	}
+
+	// url cant be mepty
+	if (parts[1].empty()) {
+		setError("Empty redirection URL");
+		console::log(_lastError, WARNING);
+		return (BLOCKINGERROR ? false : true);
+	}
+
 	return true;
 }
+
 
 
 bool ConfigValidator::isPortUsed(int port) const{ //todo do we need a check for free port?
