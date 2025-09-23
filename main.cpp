@@ -30,7 +30,7 @@ int main(int ac, char **av) {
 	int port = atoi(portStr.c_str());
 	server serv(port);
 	while (1) {
-		serv.serverManager(config);
+		serv.serverManager();
 	}
 	return 0;
 }
