@@ -26,11 +26,9 @@ enum Worker {
 
 class console {
 private:
-	static bool _debug;
-	
+	console();
 public:
-	void setDebug(bool enable);
-	void log(const std::string &msg, Level level = INFO, Worker who);
+	void console::log(const std::string& msg, Level level, Worker who);
 };
 
 #endif

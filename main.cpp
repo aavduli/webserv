@@ -5,13 +5,9 @@
 const bool PRINTCONFIG = false;
 
 int main(int ac, char **av) {
-	console::setDebug(true);
 	if (ac != 2){
-		console::log("Config file error ", ERROR);
+		console::log("Config file error ", ERROR, ALL);
 		return 1;
-	}
-	if (ac == 3) {
-		console console(av[3]);
 	}
 	std::string filename = av[1];
 	std::string fn = "./config/" + filename;
@@ -27,7 +23,7 @@ int main(int ac, char **av) {
 		return 1;
 	} 
 	else {
-		console.log("config loaded succeffulsy", INFO, ALL);
+		console::log("config loaded succeffulsy", INFO, ALL);
 		if (PRINTCONFIG) config.printConfig();
 	}
 	std::string portStr = config.getDirective("listen");

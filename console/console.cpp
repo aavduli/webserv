@@ -1,74 +1,26 @@
+
 #include "console.hpp"
+#include <iostream>
 
-bool console::_debug = false;
-
-void console::setDebug(bool enable) {
-	_debug = enable;
-}
-
-void console::log(const std::string &msg, Level level, const Worker who) {
-	if (_debug == true) {
-		switch (who) {
-			case JR: {
-				switch(level) {
-					case INFO:
-						std::cout << GREEN << "[INFO] " << msg << RESET << std::endl;
-						break;
-					case WARNING:
-						std::cout << YELLOW << "[WARNING] " << msg << RESET << std::endl;
-						break;
-					case ERROR:
-						std::cerr << RED << "[ERROR] " << msg << RESET << std::endl;
-						break;
-					case DEBUG:
-						std::cout << BLUE << "[DEBUG] " << msg << RESET <<std::endl;
-				}
-			}
-			case AH: {
-				switch(level) {
-					case INFO:
-						std::cout << GREEN << "[INFO] " << msg << RESET << std::endl;
-						break;
-					case WARNING:
-						std::cout << YELLOW << "[WARNING] " << msg << RESET << std::endl;
-						break;
-					case ERROR:
-						std::cerr << RED << "[ERROR] " << msg << RESET << std::endl;
-						break;
-					case DEBUG:
-						std::cout << BLUE << "[DEBUG] " << msg << RESET <<std::endl;
-				}
-			}
-			case AA: {
-				switch(level) {
-					case INFO:
-						std::cout << GREEN << "[INFO] " << msg << RESET << std::endl;
-						break;
-					case WARNING:
-						std::cout << YELLOW << "[WARNING] " << msg << RESET << std::endl;
-						break;
-					case ERROR:
-						std::cerr << RED << "[ERROR] " << msg << RESET << std::endl;
-						break;
-					case DEBUG:
-						std::cout << BLUE << "[DEBUG] " << msg << RESET <<std::endl;
-				}
-			}
-			case ALL: {
-				switch(level) {
-					case INFO:
-						std::cout << GREEN << "[INFO] " << msg << RESET << std::endl;
-						break;
-					case WARNING:
-						std::cout << YELLOW << "[WARNING] " << msg << RESET << std::endl;
-						break;
-					case ERROR:
-						std::cerr << RED << "[ERROR] " << msg << RESET << std::endl;
-						break;
-					case DEBUG:
-						std::cout << BLUE << "[DEBUG] " << msg << RESET <<std::endl;
-				}
-			}
-		}
+void console::log(const std::string& msg, Level level, Worker who) {
+	switch (level) {
+		case INFO:
+			GREEN;
+		case WARNING:
+			YELLOW;
+		case ERROR:
+			RED;
+		case DEBUG:
+			BLUE;
 	}
+	if (who == AA) {
+		std::cout << "[SERVER] " << msg << std::endl;
+	} else if (who == JR) {
+		std::cout << "[CONFIG] " << msg << std::endl;
+	} else if (who == AH) {
+		std::cout << "[MESSAGES] " << msg << std::endl;
+	} else if (who == ALL) {
+		std::cout << "[ALL] " << msg << std::endl;
+	}
+	RESET;
 }
