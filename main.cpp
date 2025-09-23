@@ -3,6 +3,7 @@
 #include "config/WebservConfig.hpp"
 
 const bool PRINTCONFIG = false;
+const bool DEBBUGPRINT = false;
 
 int main(int ac, char **av) {
 	console::openFile();
