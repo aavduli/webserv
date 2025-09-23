@@ -17,16 +17,20 @@ enum Level {
 	DEBUG
 };
 
+enum Worker {
+	AH,
+	JR,
+	AA,
+	ALL
+};
+
 class console {
 private:
-	console();
 	static bool _debug;
-
+	
 public:
-
-	static void setDebug(bool enable);
-	static void log(const std::string &msg, Level level = INFO);
-
+	void setDebug(bool enable);
+	void log(const std::string &msg, Level level = INFO, Worker who);
 };
 
 #endif

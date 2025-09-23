@@ -46,7 +46,7 @@ void server::setServer() {
 		std::cerr << RED << "invalid port: " << YELLOW << _port << RESET << std::endl;
 	_serverfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (_serverfd < 0)
-		console::log("failed to create socket", ERROR);
+		console::log("failed to create socket", ERROR, AA);
 	int yes = 1;
 	setsockopt(_serverfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
 	#ifdef SO_REUSEPORT
@@ -65,17 +65,17 @@ void server::setSockaddr() {
 	_address.sin_port = htons(_port);
 }
 
-void server::serverManager() {
+void server::serverManager(WebservConfig &config) {
 	ignore_sigpipe();
 	setServer();
 	setSockaddr();
 
 	if (bind(_serverfd, (struct sockaddr*)&_address, sizeof(_address)) < 0) {
-		console::log("failed to bind", ERROR);
+		console::log("failed to bind", ERROR, AA);
 		exit(1);
 	}
 	if (listen(_serverfd, SOMAXCONN) < 0) {
-		console::log("failed to listen", ERROR);
+		console::log("failed to listen", ERROR, AA);
 		exit(1);
 	}
 	std::cout << GREEN << "server listening on: " << _port << RESET << std::endl;
@@ -85,7 +85,7 @@ void server::serverManager() {
 		int nfds = _ev.wait(-1);
 		if (nfds < 0) {
 			if (errno == EINTR) continue;
-			console::log("epoll_wait: ", ERROR); std::cout << std::strerror(errno) << std::endl;
+			console::log("epoll_wait: ", ERROR, AA); std::cout << std::strerror(errno) << std::endl;
 			break ;
 		}
 		for (int i = 0; i < nfds; ++i) {
@@ -98,11 +98,11 @@ void server::serverManager() {
 					int cfd = accept(_serverfd, (struct sockaddr*)&ca, &cl);
 					if (cfd == -1) {
 						if (errno == EAGAIN || errno == EWOULDBLOCK) break;
-						console::log("ACCEPT: ", ERROR); std::cout << std::strerror(errno) << std::endl;
+						console::log("ACCEPT: ", ERROR, AA); std::cout << std::strerror(errno) << std::endl;
 						break;
 					}
 					if (make_nonblock(cfd) == -1) {
-						console::log("non block(client)", ERROR); std::cout << std::strerror(errno) << std::endl;
+						console::log("non block(client)", ERROR, AA); std::cout << std::strerror(errno) << std::endl;
 						close(cfd);
 						continue;
 					}
@@ -132,7 +132,7 @@ void server::serverManager() {
 						c.in.append(buff, static_cast<size_t>(n));
 						size_t endpos;
 						while (onConn::update_and_ready(c, endpos)) {
-							// handle_request(config, c.in.substr(0, endpos));
+							handle_request(config, c.in.substr(0, endpos));
 							std::string response = build_http_response(200, "ok, Hello World!", "text/plain");
 							size_t sent = 0;
 							while (sent < response.size()) {
@@ -168,7 +168,6 @@ void server::serverManager() {
 					if (!alive) continue;
 					size_t endpos;
 					while (onConn::update_and_ready(c, endpos)) {
-						// handle_request(config, c.in.substr(0, endpos));
 						c.in.erase(0, endpos);
 						c.header_done = false;
 						c.chunked = false;

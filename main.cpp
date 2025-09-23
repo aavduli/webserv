@@ -10,6 +10,9 @@ int main(int ac, char **av) {
 		console::log("Config file error ", ERROR);
 		return 1;
 	}
+	if (ac == 3) {
+		console console(av[3]);
+	}
 	std::string filename = av[1];
 	std::string fn = "./config/" + filename;
 
@@ -18,19 +21,20 @@ int main(int ac, char **av) {
 	}
 	WebservConfig config;
 	if (!config.loadConfig(fn)){
-		console::log("config file error", ERROR);
-		console::log(fn, WARNING);
-		console::log("Detail: " + config.getLastError(), INFO);
+		console::log("config file error", ERROR, JR);
+		console::log(fn, WARNING, JR);
+		console::log("Detail: " + config.getLastError(), INFO, ALL);
 		return 1;
-	}else{
-		console::log("config loaded succeffulsy", INFO);
+	} 
+	else {
+		console.log("config loaded succeffulsy", INFO, ALL);
 		if (PRINTCONFIG) config.printConfig();
 	}
 	std::string portStr = config.getDirective("listen");
 	int port = atoi(portStr.c_str());
 	server serv(port);
 	while (1) {
-		serv.serverManager();
+		serv.serverManager(config);
 	}
 	return 0;
 }
