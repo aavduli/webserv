@@ -113,79 +113,76 @@ void server::serverManager(WebservConfig config) {
 				while (true) {
 					ssize_t n = recv(fd, buff, sizeof(buff), 0);
 					if (n > 0) {
-						size_t sent = 0;
-						while (sent < sizeof(buff) -1) {
-							ssize_t s = send(fd, buff + sent, (sizeof(buff) - 1) - sent, 0
-#ifdef MSG_NOSIGNAL
-							| MSG_NOSIGNAL
-#endif
-							);
-							if (s > 0) sent += (size_t)s;
-							else if (s == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) break;
-							else { break; }
-						}
-						break;
-						}
-					else if (n == 0) {
 						c.in.append(buff, static_cast<size_t>(n));
-						continue;
-					}
-					if (n == 0) {
-						std::cout << "[DEBUG] recv returned 0 for fd " << fd << std::endl;
 						size_t endpos;
 						while (onConn::update_and_ready(c, endpos)) {
-							handle_request(config, c.in.substr(0, endpos));
-							c.in.erase(0, endpos);
-							c.header_done = false;
-							c.chunked = false;
-							c.content_len = -1;
-							c.body_have = 0;
-							c.headers_end = std::string::npos;
+							std::string forTest = handle_request(config, c.in.substr(0, endpos));
+							std::cout << GREEN << forTest << RESET << std::endl;
+							std::string response = "HTTP/1.1 OK 200 SUCCESS\n ready to send response\n";
+							size_t sent = 0;
+							while (sent < response.size()) {
+								ssize_t s = send(fd, response.data() + sent, response.size() - sent, 0
+								#ifdef MSG_NOSIGNAL
+								| MSG_NOSIGNAL
+								#endif
+							);
 						}
+						if (s > 0) sent += (size_t)s;
+						else break;
+						}
+						c.in.erase(0, endpos);
+						c.header_done = false;
+						c.chunked = false;
+						c.content_len = -1;
+						c.body_have = 0;
+						c.headers_end = std::string::npos;
+					}
+					if (n == 0) {
 						_ev.delFd(fd);
 						std::cout << "[DEBUG] Closing fd " << fd << std::endl;
 						close(fd);
 						std::cout << "[DEBUG] Erasing connection for fd " << fd << std::endl;
 						_conns.erase(fd);
 						alive = false;
-						break;
+						break;	
 					}
-					if (n == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) break;
-					if (n == -1 && errno == EINTR) continue;
-					std::cout << "[DEBUG] recv error for fd " << fd << ", errno: " << errno << std::endl;
-					_ev.delFd(fd);
-					std::cout << "[DEBUG] Closing fd " << fd << std::endl;
-					close(fd);
-					std::cout << "[DEBUG] Erasing connection for fd " << fd << std::endl;
-					_conns.erase(fd);
-					alive = false;
-					break;
 				}
-				if (!alive) continue;
-				size_t endpos;
-				while (onConn::update_and_ready(c, endpos)) {
-					handle_request(config, c.in.substr(0, endpos));
-					c.in.erase(0, endpos);
-					c.header_done = false;
-					c.chunked = false;
-					c.content_len = -1;
-					c.body_have = 0;
-					c.headers_end = std::string::npos;
-				}
-				if (!c.header_done && c.in.size() > onConn::MAX_HEADER_BYTES
-					&& onConn::headers_end_pos(c.in) == std::string::npos) {
-					std::cout << "[DEBUG] Header too large for fd " << fd << std::endl;
-					_ev.delFd(fd);
-					std::cout << "[DEBUG] Closing fd " << fd << std::endl;
-					close(fd);
-					std::cout << "[DEBUG] Erasing connection for fd " << fd << std::endl;
-					_conns.erase(fd);
-					continue;
-				}
+				if (n == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) break;
+				if (n == -1 && errno == EINTR) continue;
+				std::cout << "[DEBUG] recv error for fd " << fd << ", errno: " << errno << std::endl;
+				_ev.delFd(fd);
+				std::cout << "[DEBUG] Closing fd " << fd << std::endl;
+				close(fd);
+				std::cout << "[DEBUG] Erasing connection for fd " << fd << std::endl;
+				_conns.erase(fd);
+				alive = false;
+				break;
+			}
+			if (!alive) continue;
+			size_t endpos;
+			while (onConn::update_and_ready(c, endpos)) {
+				handle_request(config, c.in.substr(0, endpos));
+				c.in.erase(0, endpos);
+				c.header_done = false;
+				c.chunked = false;
+				c.content_len = -1;
+				c.body_have = 0;
+				c.headers_end = std::string::npos;
+			}
+			if (!c.header_done && c.in.size() > onConn::MAX_HEADER_BYTES
+				&& onConn::headers_end_pos(c.in) == std::string::npos) {
+				std::cout << "[DEBUG] Header too large for fd " << fd << std::endl;
+				_ev.delFd(fd);
+				std::cout << "[DEBUG] Closing fd " << fd << std::endl;
+				close(fd);
+				std::cout << "[DEBUG] Erasing connection for fd " << fd << std::endl;
+				_conns.erase(fd);
+				continue;
 			}
 		}
 	}
 }
+
 
 
 int server::getPort() {
