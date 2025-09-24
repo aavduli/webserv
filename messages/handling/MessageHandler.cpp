@@ -51,23 +51,23 @@ void	MessageHandler::process_request() {
 	
 	switch (_request->getMethod()) {
 		case 0:
-			// console::log("GET method", INFO, AH);
+			console::log("GET method", MSG);
 			handle_get();
 			break;
 		case 1:
-			// console::log("POST method", INFO, AH);
+			console::log("POST method", MSG);
 			handle_post();
 			break;
 		case 2:
-			// console::log("DELETE method", INFO, AH);
+			console::log("DELETE method", MSG);
 			handle_delete();
 			break;
 		case 3:
-			// console::log("HEAD method", INFO, AH);
+			console::log("HEAD method", MSG);
 			handle_head();
 			break;
 		default:
-			// console::log("Unkown method", INFO, AH);
+			console::log("Unkown method", MSG);
 			break;
 	}
 }
@@ -90,7 +90,7 @@ Often used to carry identifying information in the form of key=value pairs.
 void	MessageHandler::handle_get() {
 
 	if (!(_request->getBody().empty())) {
-		// console::log("GET request shouldn't have a body", ERROR, ALL);
+		console::log("GET request shouldn't have a body", ERROR);
 		_state = s_req_invalid_get;
 		// TODO set response status code and clean exit
 		return ;
@@ -119,26 +119,24 @@ void	handle_request(const WebservConfig& config, const std::string &raw) {
 
 	if (raw.empty()) {
 		// return status code? return error/bool?
-		// console::log("Empty request", WARNING, AH);
-		std::cout << "[AH] Empty request in handle_request" << std::endl;
+		console::log("Empty request", MSG);
 		return ;
 	}
 
-	const char*		resp;
+	// const char*		resp;
 	RequestParser	parser(config);
 
 	if (parser.is_complete_request(raw)) {
 
 		HttpRequest* request = parser.parse_request(raw);
 		if (parser.getState() == s_msg_done) {
-			// console::log("Request parsing success", INFO, AH);
+			console::log("Request parsing success", MSG);
 			MessageHandler handler(config, request);
 			if (handler.is_valid_request()) {
 				handler.process_request();
 				handler.generate_response();
 			}
-			resp = (handler.serialize_response()).c_str();
-			std::cout << "TMP RESPONSE: " << resp << std::endl;
+			// resp = (handler.serialize_response()).c_str();
 		}
 		else
 			std::cout << "[DEBUG] Request parsing failed" << std::endl;

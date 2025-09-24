@@ -30,6 +30,9 @@ public:
 	static void openFile();
 	static void closeFile();
 
-	static void log(std::string log, Typelog type);
+	static void log(const std::string& log, Typelog type);
+	static void log(const std::string& log, const char* errStr, Typelog type);
+	static void log(const std::string& log, int nbr, Typelog type);
 };
+
 #endif
