@@ -13,6 +13,20 @@ onConn::onConn() {}
 
 onConn::~onConn() {}
 
+bool onConn::onDiscon(Conn& c,bool alive, size_t endpos) {
+	if (!alive) {
+		c.in.erase(0, endpos);
+		c.header_done = false;
+		c.chunked = false;
+		c.content_len = -1;
+		c.body_have = 0;
+		c.headers_end = std::string::npos;
+		console::log("Disconnected:", INFO, ALL);
+		return true;
+	}
+	return false;
+}
+
 static std::string to_lower(std::string s) {
 	for (size_t i = 0; i < s.size(); ++i)
 		s[i] = static_cast<char>(std::tolower(s[i]));

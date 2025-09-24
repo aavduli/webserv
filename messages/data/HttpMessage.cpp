@@ -56,7 +56,7 @@ void	HttpMessage::addHeader(const std::string& key, const std::vector<std::strin
 				if (*it == *new_it)
 					return ;
 			}
-			_headers.at(key).push_back(trim_whitespaces(*new_it));
+			_headers.at(key).push_back(trim_lws(*new_it));
 		}
 	}
 	else

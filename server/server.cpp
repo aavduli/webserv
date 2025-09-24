@@ -2,8 +2,24 @@
 
 server::server(int port) : _port(port), _serverfd(-1), _ev(1024)  {}
 
+std::string build_http_response(
+    int status_code,
+    const std::string& status_text,
+    const std::string& body,
+    const std::string& content_type = "text/plain"
+) {
+    std::ostringstream oss;
+    oss << "HTTP/1.1 " << status_code << " " << status_text << "\r\n"
+        << "Content-Type: " << content_type << "\r\n"
+        << "Content-Length: " << body.size() << "\r\n"
+        << "Connection: close\r\n"
+        << "\r\n"
+        << body;
+    return oss.str();
+}
+
 server::~server() {
-	if (_serverfd != -1) 
+	if (_serverfd != -1)
 		close(_serverfd);
 }
 
@@ -18,7 +34,7 @@ int server::make_nonblock(int fd) {
 	return 0;
 }
 
-void server::ignore_sigpipe() { 
+void server::ignore_sigpipe() {
 	struct sigaction sa;
 	std::memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = SIG_IGN;
@@ -30,7 +46,7 @@ void server::setServer() {
 		std::cerr << RED << "invalid port: " << YELLOW << _port << RESET << std::endl;
 	_serverfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (_serverfd < 0)
-		console::log("failed to create socket", ERROR);
+		console::log("failed to create socket", ERROR, AA);
 	int yes = 1;
 	setsockopt(_serverfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
 	#ifdef SO_REUSEPORT
@@ -49,17 +65,19 @@ void server::setSockaddr() {
 	_address.sin_port = htons(_port);
 }
 
-void server::serverManager() {
+void server::serverManager(WebservConfig &config) {
 	ignore_sigpipe();
 	setServer();
 	setSockaddr();
-
+	(void)config;
+	int msgSend = 0;
+	
 	if (bind(_serverfd, (struct sockaddr*)&_address, sizeof(_address)) < 0) {
-		console::log("failed to bind", ERROR);
+		console::log("failed to bind", ERROR, AA);
 		exit(1);
 	}
 	if (listen(_serverfd, SOMAXCONN) < 0) {
-		console::log("failed to listen", ERROR);
+		console::log("failed to listen", ERROR, AA);
 		exit(1);
 	}
 	std::cout << GREEN << "server listening on: " << _port << RESET << std::endl;
@@ -69,7 +87,7 @@ void server::serverManager() {
 		int nfds = _ev.wait(-1);
 		if (nfds < 0) {
 			if (errno == EINTR) continue;
-			console::log("epoll_wait: ", ERROR); std::cout << std::strerror(errno) << std::endl;
+			console::log("epoll_wait: ", ERROR, AA); std::cout << std::strerror(errno) << std::endl;
 			break ;
 		}
 		for (int i = 0; i < nfds; ++i) {
@@ -82,11 +100,11 @@ void server::serverManager() {
 					int cfd = accept(_serverfd, (struct sockaddr*)&ca, &cl);
 					if (cfd == -1) {
 						if (errno == EAGAIN || errno == EWOULDBLOCK) break;
-						console::log("ACCEPT: ", ERROR); std::cout << std::strerror(errno) << std::endl;
+						console::log("ACCEPT: ", ERROR, AA); std::cout << std::strerror(errno) << std::endl;
 						break;
 					}
 					if (make_nonblock(cfd) == -1) {
-						console::log("non block(client)", ERROR); std::cout << std::strerror(errno) << std::endl;
+						console::log("non block(client)", ERROR, AA); std::cout << std::strerror(errno) << std::endl;
 						close(cfd);
 						continue;
 					}
@@ -109,32 +127,37 @@ void server::serverManager() {
 				Conn &c = _conns[fd]; // safe: creates if not present
 				char buff[8192];
 				bool alive = true;
-
 				while (true) {
 					ssize_t n = recv(fd, buff, sizeof(buff), 0);
 					if (n > 0) {
 						c.in.append(buff, static_cast<size_t>(n));
-						continue;
+						size_t endpos;
+						handle_request(config, c.in.substr(0, endpos));
+						while (onConn::update_and_ready(c, endpos)) {
+							std::string response = build_http_response(200, "ok, Hello World!", "text/plain");
+							size_t sent = 0;
+							while (sent < response.size()) {
+								ssize_t s = send(fd, response.data() + sent, response.size() - sent, 0
+#ifdef MSG_NOSIGNAL
+				| MSG_NOSIGNAL
+#endif
+			);
+								msgSend++;
+								if (s > 0) sent += (size_t)s;
+								else break;
+							}
+							std::cout << RED << msgSend << RESET << std::endl;
+							break;
+						}
 					}
 					if (n == 0) {
-						std::cout << "[DEBUG] recv returned 0 for fd " << fd << std::endl;
-						size_t endpos;
-						while (onConn::update_and_ready(c, endpos)) {
-							handle_request(c.in.substr(0, endpos));
-							c.in.erase(0, endpos);
-							c.header_done = false;
-							c.chunked = false;
-							c.content_len = -1;
-							c.body_have = 0;
-							c.headers_end = std::string::npos;
-						}
 						_ev.delFd(fd);
 						std::cout << "[DEBUG] Closing fd " << fd << std::endl;
 						close(fd);
 						std::cout << "[DEBUG] Erasing connection for fd " << fd << std::endl;
 						_conns.erase(fd);
 						alive = false;
-						break;
+						break;	
 					}
 					if (n == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) break;
 					if (n == -1 && errno == EINTR) continue;
@@ -146,29 +169,27 @@ void server::serverManager() {
 					_conns.erase(fd);
 					alive = false;
 					break;
-				}
-				if (!alive) continue;
-				size_t endpos;
-				while (onConn::update_and_ready(c, endpos)) {
-					handle_request(c.in.substr(0, endpos));
-					c.in.erase(0, endpos);
-					c.header_done = false;
-					c.chunked = false;
-					c.content_len = -1;
-					c.body_have = 0;
-					c.headers_end = std::string::npos;
-				}
-				if (!c.header_done && c.in.size() > onConn::MAX_HEADER_BYTES
+					if (!alive) continue;
+					size_t endpos;
+					while (!onConn::onDiscon(c, alive, endpos)) {
+						continue;
+					}
+					if (!c.header_done && c.in.size() > onConn::MAX_HEADER_BYTES
 					&& onConn::headers_end_pos(c.in) == std::string::npos) {
-					std::cout << "[DEBUG] Header too large for fd " << fd << std::endl;
-					_ev.delFd(fd);
-					std::cout << "[DEBUG] Closing fd " << fd << std::endl;
-					close(fd);
-					std::cout << "[DEBUG] Erasing connection for fd " << fd << std::endl;
-					_conns.erase(fd);
-					continue;
+						std::cout << "[DEBUG] Header too large for fd " << fd << std::endl;
+						_ev.delFd(fd);
+						std::cout << "[DEBUG] Closing fd " << fd << std::endl;
+						close(fd);
+						std::cout << "[DEBUG] Erasing connection for fd " << fd << std::endl;
+						_conns.erase(fd);
+						continue;
+					}
 				}
 			}
 		}
 	}
+}
+
+int server::getPort() {
+	return _port;
 }

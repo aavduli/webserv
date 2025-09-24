@@ -1,6 +1,8 @@
 #include "HttpRequest.hpp"
 
-HttpRequest::HttpRequest() : _method(UNKNOWN), _uri("") {}
+HttpRequest::HttpRequest() : _method(UNKNOWN) {
+	// The RequestUri constructor will initialize all values to empty/false
+}
 
 HttpRequest::HttpRequest(const HttpRequest& rhs) : HttpMessage(rhs), _method(rhs._method), _uri(rhs._uri) {}
 
@@ -23,11 +25,11 @@ void	HttpRequest::setMethod(HttpMethod method) {
 	_method = method;
 }
 
-std::string HttpRequest::getUri() const {
+RequestUri	HttpRequest::getUri() const {
 	return _uri;
 }
 
-void	HttpRequest::setUri(std::string uri) {
+void	HttpRequest::setUri(const RequestUri& uri) {
 	_uri = uri;
 }
 
@@ -36,7 +38,7 @@ void	print_request(HttpRequest* request) {
 	
 	// Print request line
 	std::cout << "Method:		" << request->getMethod() << std::endl;
-	std::cout << "URI:		" << request->getUri() << std::endl;
+	std::cout << "URI:		" << request->getUri().getRawUri() << std::endl;
 	std::cout << "HTTP Version:	" << request->getHttpVersion() << std::endl;
 	std::cout << "Headers:" << std::endl;
 	request->printHeaders();
