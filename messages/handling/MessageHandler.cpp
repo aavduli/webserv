@@ -87,17 +87,17 @@ Absolute URL in requests to proxies (e.g., http://www.example.com/path/to/file.h
 Often used to carry identifying information in the form of key=value pairs.
 */
 
+// TODO set response status code and clean exit
 void	MessageHandler::handle_get() {
 
 	if (!(_request->getBody().empty())) {
 		// console::log("GET request shouldn't have a body", ERROR, ALL);
 		_state = s_req_invalid_get;
-		// TODO set response status code and clean exit
 		return ;
 	}
 	// if here, URI should not be empty
 	std::string uri = _request->getUri().getRawUri();
-	// std::cout << YELLOW << "[INFO] URI: " << uri << RESET << std::endl;
+	std::cout << YELLOW << "[INFO] URI: " << uri << RESET << std::endl;
 }
 
 void	MessageHandler::handle_post() {}

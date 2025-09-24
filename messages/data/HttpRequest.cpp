@@ -34,7 +34,7 @@ void	HttpRequest::setUri(const RequestUri& uri) {
 }
 
 void	print_request(HttpRequest* request) {
-	std::cout << "\n=== HTTP REQUEST ===" << std::endl;
+	std::cout << "\n\n=== HTTP REQUEST ===" << std::endl;
 	
 	// Print request line
 	std::cout << "Method:		" << request->getMethod() << std::endl;
@@ -49,5 +49,5 @@ void	print_request(HttpRequest* request) {
 	} else {
 		std::cout << "Body: (empty)" << std::endl;
 	}
-	std::cout << "===================" << std::endl;
+	std::cout << "===================\n\n" << std::endl;
 }

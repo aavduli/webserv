@@ -154,10 +154,9 @@ bool RequestParser::parse_uri(std::string request_line) {
 		return false;
 	}
 
-	RequestUri uri(raw_uri);
-	if (uri.parse()) {
+	RequestUri uri(raw_uri, _config);
+	if (uri._is_valid) {
 		_request->setUri(uri);
-		// uri.print();
 		_current_pos = request_line.find_first_not_of(" ", uri_end);
 		return true;
 	}
@@ -180,7 +179,7 @@ bool RequestParser::parse_version(std::string request_line) {
 	// console::log("Invalid HTTP version in request", ERROR, ALL);
 	return false;
 }
-
+ 
 bool RequestParser::parse_headers() {
 
 	std::map<std::string, std::vector<std::string> > headers;

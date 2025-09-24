@@ -6,6 +6,7 @@
 
 #include "../../console/console.hpp"
 #include "../../parsing/Parsing.hpp"
+#include "../../config/WebservConfig.hpp"
 
 class RequestUri {
 
@@ -18,10 +19,9 @@ class RequestUri {
 		std::string		_path;			// blog/posts + ?
 		std::string		_query;			// (optional) order=newest + #
 		std::string		_fragment;		// (optional) top
-		bool			_is_valid_uri;
 		bool			_is_absolute_uri;
 		bool			_is_abs_path;
-
+		
 		std::string		extract_uri_component(size_t* pos, const std::string& str, const std::string& del);
 		bool			is_absolute_uri(const std::string& uri);
 		void			clear_uri();
@@ -29,18 +29,22 @@ class RequestUri {
 		bool			parse_uri_authority(const std::string& raw);
 		RequestUri		parse_absolute_uri(const std::string& raw);
 		RequestUri		parse_abs_path(const std::string& raw);
-
+		
 	public:
 		RequestUri();
-		RequestUri(const std::string& raw_uri);
+		RequestUri(const std::string& raw_uri, const WebservConfig& config);
 		RequestUri(const RequestUri& rhs);
 		RequestUri& operator=(const RequestUri& rhs);
 		~RequestUri();
-
-		bool			parse();
+		
+		bool			_is_valid;
+		bool			parse(const WebservConfig& config);
 		void			print() const;
+		bool			validate_with_config(const WebservConfig& config);
+
 		void			setRawUri(const std::string& raw_uri);
 		std::string		getRawUri() const;
+
 };
 
 #endif // REQUESTURI_HPP

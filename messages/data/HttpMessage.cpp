@@ -81,7 +81,7 @@ void	HttpMessage::printHeaders() const {
 	std::vector<std::string>::const_iterator	vector_it;
 
 	for (map_it = _headers.begin(); map_it != _headers.end(); map_it++) {
-		std::cout << "		" << map_it->first << ": ";
+		std::cout << map_it->first << ": ";
 		for (vector_it = map_it->second.begin(); vector_it != map_it->second.end(); vector_it++)
 			std::cout << *vector_it << " / ";
 		std::cout << std::endl;
