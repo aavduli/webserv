@@ -7,7 +7,7 @@ RequestUri::RequestUri() : _raw_uri(""), _scheme(""), _userinfo(""), _host(""), 
 
 RequestUri::RequestUri(const std::string& raw_uri) : _raw_uri(raw_uri), _scheme(""), _userinfo(""), _host(""), _port(""),
 	_path(""), _query(""), _fragment(""), _is_valid_uri(false), _is_absolute_uri(false), _is_abs_path(false) {
-	parse(raw_uri);
+	parse();
 }
 
 RequestUri::RequestUri(const RequestUri& rhs) : _raw_uri(rhs._raw_uri), _scheme(rhs._scheme),
@@ -40,25 +40,18 @@ TODO: URL decode special characters (%20, etc.)
 TODO: Validate against malicious paths (../, etc.)
 */
 
-bool	RequestUri::parse(const std::string& raw_uri) {
+bool	RequestUri::parse() {
 
-	_raw_uri = trim_whitespaces(raw_uri);
-	if (_raw_uri.empty()) {
-		console::log("Empty request URI", ERROR, ALL);
-		return false;
-	}
-	if (_raw_uri.length() > MAX_URI_LENGTH) {
-		console::log("Request URI too long", ERROR, ALL);
-		return false;
-	}
 	clear_uri();
+
 	if (is_absolute_uri(_raw_uri)) {
 		*this = parse_absolute_uri(_raw_uri);
 	}
 	else if (_raw_uri[0] == '/')
 		*this = parse_abs_path(_raw_uri);
 	else {
-		console::log("Invalid URI format", ERROR, ALL);
+		std::cout << "[AH] Invalid URI format" << std::endl;
+		// console::log("Invalid URI format", ERROR, ALL);
 		return false;
 	}
 	_is_valid_uri = true;
@@ -96,7 +89,6 @@ bool RequestUri::is_absolute_uri(const std::string& uri) {
 }
 
 void RequestUri::clear_uri() {
-
 	_scheme = "";
 	_userinfo = "";
 	_host = "";
@@ -152,7 +144,8 @@ RequestUri	RequestUri::parse_absolute_uri(const std::string& raw) {
 	if (raw.find(":") != std::string::npos) {
 		uri._scheme = extract_uri_component(&pos, raw, ":");
 		if (uri._scheme != "http" && uri._scheme != "https") {
-			console::log("Unsupported URI scheme: " + uri._scheme, ERROR, ALL);
+			std::cout << "[AH] Unsupported URI scheme: " << uri._scheme << std::endl;
+			// console::log("Unsupported URI scheme: " + uri._scheme, ERROR, ALL);
 			uri.clear_uri();
 			return uri;
 		}
@@ -200,4 +193,8 @@ void	RequestUri::print() const {
 
 std::string	RequestUri::getRawUri() const {
 	return _raw_uri;
+}
+
+void	RequestUri::setRawUri(const std::string& raw) {
+	_raw_uri = raw;
 }

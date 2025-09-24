@@ -3,8 +3,8 @@
 
 HttpMessage::HttpMessage() {
 	_state = s_msg_dead;
-	_version_major = 0;
-	_version_minor = 0;
+	_version_major = "";
+	_version_minor = "";
 	_body = "";
 }
 
@@ -31,11 +31,11 @@ void	HttpMessage::setState(State state) {
 	_state = state;
 }
 
-double	HttpMessage::getHttpVersion() const {
-	return (_version_major + (_version_minor * 0.1));
+std::string	HttpMessage::getHttpVersion() const {
+	return (_version_major + "." + _version_minor);
 }
 
-void	HttpMessage::setHttpVersion(double major, double minor) {
+void	HttpMessage::setHttpVersion(std::string major, std::string minor) {
 	_version_major = major;
 	_version_minor = minor;
 }
