@@ -23,8 +23,8 @@ RequestParser& RequestParser::operator=(const RequestParser& rhs) {
 }
 
 RequestParser::~RequestParser() {
-	if (_request)
-		delete _request;
+	// if (_request)
+	// 	delete _request;
 }
 
 HttpRequest* RequestParser::parse_request(std::string raw_request) {

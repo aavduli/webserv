@@ -126,14 +126,14 @@ void server::serverManager(WebservConfig &config) {
 				Conn &c = _conns[fd]; // safe: creates if not present
 				char buff[8192];
 				bool alive = true;
-
+				int msgSend;
 				while (true) {
 					ssize_t n = recv(fd, buff, sizeof(buff), 0);
 					if (n > 0) {
 						c.in.append(buff, static_cast<size_t>(n));
 						size_t endpos;
 						while (onConn::update_and_ready(c, endpos)) {
-							// handle_request(config, c.in.substr(0, endpos));
+							handle_request(config, c.in.substr(0, endpos));
 							std::string response = build_http_response(200, "ok, Hello World!", "text/plain");
 							size_t sent = 0;
 							while (sent < response.size()) {
@@ -142,9 +142,11 @@ void server::serverManager(WebservConfig &config) {
 				| MSG_NOSIGNAL
 #endif
 			);
+								msgSend++;
 								if (s > 0) sent += (size_t)s;
 								else break;
 							}
+							std::cout << RED << msgSend << RESET << std::endl;
 							break;
 						}
 						break;

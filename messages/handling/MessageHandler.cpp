@@ -146,7 +146,7 @@ void	handle_request(const WebservConfig& config, const std::string &raw) {
 		}
 		else
 			console::log("Request parsing failed", ERROR, ALL);
-		delete request;
+		// delete request;
 	}
 	else
 		console::log("Incomplete request", ERROR, ALL);
