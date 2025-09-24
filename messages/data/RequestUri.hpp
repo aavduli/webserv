@@ -37,8 +37,9 @@ class RequestUri {
 		RequestUri& operator=(const RequestUri& rhs);
 		~RequestUri();
 
-		bool			parse(const std::string& raw_uri);
+		bool			parse();
 		void			print() const;
+		void			setRawUri(const std::string& raw_uri);
 		std::string		getRawUri() const;
 };
 

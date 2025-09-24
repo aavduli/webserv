@@ -120,6 +120,7 @@ void	handle_request(const WebservConfig& config, const std::string &raw) {
 	if (raw.empty()) {
 		// return status code? return error/bool?
 		// console::log("Empty request", WARNING, AH);
+		std::cout << "[AH] Empty request in handle_request" << std::endl;
 		return ;
 	}
 
