@@ -1,11 +1,8 @@
 #include "MessageHandler.hpp"
 
-MessageHandler::MessageHandler(const WebservConfig& config, HttpRequest* request) : _config(config), _request(request), _response(NULL) {
-	console::log("[MessageHandler Default Constructor]", INFO, AH);
-}
+MessageHandler::MessageHandler(const WebservConfig& config, HttpRequest* request) : _config(config), _request(request), _response(NULL) {}
 
 MessageHandler::MessageHandler(const MessageHandler& rhs) : _config(rhs._config) {
-	console::log("[MessageHandler Copy Constructor]", INFO, AH);
 	if (rhs._request)
 		_request = new HttpRequest(*rhs._request);
 	else
@@ -17,7 +14,6 @@ MessageHandler::MessageHandler(const MessageHandler& rhs) : _config(rhs._config)
 }
 
 MessageHandler& MessageHandler::operator=(const MessageHandler& rhs) {
-	console::log("[MessageHandler Assignement Operator]", INFO, AH);
 	if (this != &rhs) {
 		if (rhs._request)
 			_request = new HttpRequest(*rhs._request);
@@ -32,7 +28,6 @@ MessageHandler& MessageHandler::operator=(const MessageHandler& rhs) {
 }
 
 MessageHandler::~MessageHandler() {
-	console::log("[MessageHandler Destructor]", INFO, AH);
 	if (_request)
 		delete _request;
 	if (_response)
@@ -102,7 +97,7 @@ void	MessageHandler::handle_get() {
 	}
 	// if here, URI should not be empty
 	std::string uri = _request->getUri().getRawUri();
-	std::cout << YELLOW << "[INFO] URI: " << uri << RESET << std::endl;
+	// std::cout << YELLOW << "[INFO] URI: " << uri << RESET << std::endl;
 }
 
 void	MessageHandler::handle_post() {}
@@ -142,7 +137,7 @@ void	handle_request(const WebservConfig& config, const std::string &raw) {
 				handler.generate_response();
 			}
 			resp = (handler.serialize_response()).c_str();
-			std::cout << "RESPONSE: " << resp << std::endl;
+			std::cout << "TMP RESPONSE: " << resp << std::endl;
 		}
 		else
 			std::cout << "[DEBUG] Request parsing failed" << std::endl;

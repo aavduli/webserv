@@ -20,8 +20,7 @@ SRCS =	main.cpp \
 		messages/parsing/MessageParser.cpp \
 		messages/parsing/RequestParser.cpp \
 		parsing/Normalization.cpp \
-		parsing/Conversion.cpp \
-		parsing/Validation.cpp
+		parsing/Conversion.cpp
 
 OBJDIR = obj
 
