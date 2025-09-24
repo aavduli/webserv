@@ -7,7 +7,7 @@
 #include "../data/HttpMessage.hpp"
 #include "../data/HttpRequest.hpp"
 #include "../data/HttpResponse.hpp"
-#include "../../config/webserv_config.hpp"
+#include "../../config/WebservConfig.hpp"
 
  class MessageHandler {
 

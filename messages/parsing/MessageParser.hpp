@@ -13,7 +13,7 @@
 #define MAX_URI_LENGTH 8000
 
 #include "../../console/console.hpp"
-#include "../../config/webserv_config.hpp"
+#include "../../config/WebservConfig.hpp"
 #include "../../errors/errors.hpp"
 #include "../../parsing/Parsing.hpp"
 
