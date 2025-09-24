@@ -9,3 +9,4 @@ messages/messages_structure.txt
 *.a
 *.so
 *.dSYM
+*.log

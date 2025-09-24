@@ -33,34 +33,34 @@ HttpRequest* RequestParser::parse_request(std::string raw_request) {
 	
 	while (_state != s_req_parsing_done && _state != s_msg_error) {
 		switch (_state) {
-			case s_req_parsing_start:
-				if (!parse_request_line()) {
-					// console::log("Failed to parse request line", ERROR, ALL);
+			case s_req_start:
+				if (!parse_request_line() && _state != s_req_done) {
+					console::log("Failed to parse request line", ERROR);
 					_state = s_msg_error;
 				}
 				_state = s_req_parsing_headers;
 				break;
-			case s_req_parsing_headers:
-				if (!parse_headers()) {
-					// console::log("Failed to parse headers", ERROR, ALL);
+			case s_head_start:
+				if (!parse_headers() && _state != s_head_done) {
+					console::log("Failed to parse headers", ERROR);
 					_state = s_msg_error;
 				}
 				_state = s_req_parsing_body;
 				break;
-			case s_req_parsing_body:
-				if (!parse_body()) {
-					// console::log("Failed to parse body", ERROR, ALL);
+			case s_body_start:
+				if (!parse_body() && _state != s_body_done) {
+					console::log("Failed to parse body", ERROR);
 					_state = s_msg_error;
 				}
 				_state = s_req_parsing_done;
 				break;
 			default:
-				// console::log("Unknown parsing state", ERROR, ALL);
+				console::log("Unknown parsing state", ERROR);
 				_state = s_msg_error;
 		}
 	}
 	if (_state == s_msg_error) {
-		// console::log("Parsing failed", ERROR, ALL);
+		console::log("Parsing failed", ERROR);
 		delete request;
 		return NULL;
 	}
@@ -71,7 +71,7 @@ bool RequestParser::parse_request_line() {
 
 	size_t line_end = _raw_data.find("\r\n", _current_pos);
 	if (line_end == std::string::npos) {
-		// console::log("No CRLF found in request line", ERROR, ALL);
+		console::log("No CRLF found in request line", ERROR);
 		return false;
 	}
 	std::string request_line = _raw_data.substr(_current_pos, line_end - _current_pos);
@@ -112,20 +112,17 @@ bool RequestParser::parse_method(std::string request_line) {
 
 	size_t method_end = request_line.find(" ", _current_pos);
 	if (method_end == std::string::npos) {
-		std::cout << "[AH] No SP found after method" << std::endl;
-		// console::log("No SP found after method", ERROR, ALL);
+		console::log("No SP found after method", ERROR);
 		return false;
 	}
 	std::string method = request_line.substr(_current_pos, method_end - _current_pos);
 	if (method.empty()) {
-		std::cout << "[AH] No request method found" << std::endl;
-		// console::log("No request method found", ERROR, ALL);
+		console::log("No request method found", ERROR);
 		return false;
 	}
 	HttpMethod e_method = string_to_method(method);
 	if (e_method == UNKNOWN) {
-		std::cout << "[AH] Unknown method" << std::endl;
-		// console::log("Unknown method", ERROR, ALL);
+		console::log("Unknown method", ERROR);
 		return false;
 	}
 	_request->setMethod(e_method);
@@ -137,20 +134,17 @@ bool RequestParser::parse_uri(std::string request_line) {
 
 	size_t uri_end = request_line.find(" ", _current_pos);
 	if (uri_end == std::string::npos) {
-		std::cout << "[AH] No SP found after URI" << std::endl;
-		// console::log("No SP found after URI", ERROR, ALL);
+		console::log("No SP found after URI", ERROR);
 		return false;
 	}
 	std::string raw_uri = request_line.substr(_current_pos, uri_end - _current_pos);
 	raw_uri = trim_whitespaces(raw_uri);
 	if (raw_uri.empty()) {
-		std::cout << "[AH] Empty request URI" << std::endl;
-		// console::log("Empty request URI", ERROR, ALL);
+		console::log("Empty request URI", ERROR);
 		return false;
 	}
 	if (raw_uri.length() > MAX_URI_LENGTH) {
-		std::cout << "[AH] Request URI too long" << std::endl;
-		// console::log("Request URI too long", ERROR, ALL);
+		console::log("Request URI too long", ERROR);
 		return false;
 	}
 
@@ -175,8 +169,7 @@ bool RequestParser::parse_version(std::string request_line) {
 		_request->setHttpVersion(major, minor);
 		return true;
 	}
-	std::cout << "[AH] Invalid HTTP version in request" << std::endl;
-	// console::log("Invalid HTTP version in request", ERROR, ALL);
+	console::log("Invalid HTTP version in request", ERROR);
 	return false;
 }
  
@@ -187,8 +180,7 @@ bool RequestParser::parse_headers() {
 	while (_current_pos < _raw_data.length()) {
 		size_t line_end = _raw_data.find("\r\n", _current_pos);
 		if (line_end == std::string::npos) {
-			std::cout << "[AH] No CRLF found in headers" << std::endl;
-			// console::log("No CRLF found in headers", ERROR, ALL);
+			console::log("No CRLF found in headers", ERROR);
 			return false;
 		}
 		std::string header_line = _raw_data.substr(_current_pos, line_end - _current_pos);
@@ -197,14 +189,12 @@ bool RequestParser::parse_headers() {
 			break;
 		size_t colon_pos = header_line.find(':');
 		if (colon_pos == std::string::npos) {
-			std::cout << "[AH] Missing colon in header line: " << header_line << std::endl;
-			// console::log("Missing colon in header line: ", ERROR, ALL);
+			console::log("Missing colon in header line: ", ERROR);
 			return NULL;
 		}
 		std::string name = trim_lws(header_line.substr(0, colon_pos));
 		if (name.empty()) {
-			std::cout << "[AH] Empty header name" << std::endl;
-			// console::log("Empty header name", INFO, AH);
+			console::log("Empty header name", MSG);
 			return false;
 		}
 		std::string value = trim_lws(header_line.substr(colon_pos + 1));
@@ -214,8 +204,7 @@ bool RequestParser::parse_headers() {
 		else
 			values.push_back(trim_lws(value));
 		if (values.empty()) {
-			std::cout << "[AH] Empty header value" << std::endl;
-			// console::log("Empty header value", INFO, AH);
+			console::log("Empty header value", ERROR);
 			return false;
 		}
 		_request->addHeader(name, values);
@@ -233,8 +222,7 @@ bool RequestParser::parse_body() {
 	}
 	else {
 		_request->setBody("");
-		// std::cout << "[AH] Warning: Empty body" << std::endl;
-		// console::log("Empty body", WARNING, ALL);
+		console::log("Empty body", MSG);
 	}
 	return true;
 }

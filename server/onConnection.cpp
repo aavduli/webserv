@@ -21,7 +21,6 @@ bool onConn::onDiscon(Conn& c,bool alive, size_t endpos) {
 		c.content_len = -1;
 		c.body_have = 0;
 		c.headers_end = std::string::npos;
-		console::log("Disconnected:", INFO, ALL);
 		return true;
 	}
 	return false;

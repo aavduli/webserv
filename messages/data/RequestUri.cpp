@@ -92,7 +92,7 @@ bool	RequestUri::parse(const WebservConfig& config) {
 		parse_abs_path(_raw_uri);
 	else {
 		std::cout << "[AH] Invalid URI format" << std::endl;
-		// console::log("Invalid URI format", ERROR, ALL);
+		console::log("Invalid URI format", ERROR);
 		return false;
 	}
 	if (validate_with_config(config))
@@ -144,7 +144,7 @@ RequestUri	RequestUri::parse_absolute_uri(const std::string& raw) {
 		uri._scheme = extract_uri_component(&pos, raw, ":");
 		if (uri._scheme != "http" && uri._scheme != "https") {
 			std::cout << "[AH] Unsupported URI scheme: " << uri._scheme << std::endl;
-			// console::log("Unsupported URI scheme: " + uri._scheme, ERROR, ALL);
+			console::log("Unsupported URI scheme: " + uri._scheme, ERROR);
 			uri.clear_uri();
 			return uri;
 		}

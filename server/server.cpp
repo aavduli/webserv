@@ -46,7 +46,7 @@ void server::setServer() {
 		std::cerr << RED << "invalid port: " << YELLOW << _port << RESET << std::endl;
 	_serverfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (_serverfd < 0)
-		console::log("failed to create socket", ERROR, AA);
+		console::log("failed to create socket", ERROR);
 	int yes = 1;
 	setsockopt(_serverfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
 	#ifdef SO_REUSEPORT
@@ -54,6 +54,7 @@ void server::setServer() {
 	#endif
 	if (make_nonblock(_serverfd) == -1) {
 		std::cerr << RED << "nonblock(listen):" << RESET << std::strerror(errno) << std::endl;
+		console::log("Make nonblock: ", std::strerror(errno), ERROR);
 		exit(1);
 	}
 }
@@ -73,11 +74,11 @@ void server::serverManager(WebservConfig &config) {
 	int msgSend = 0;
 	
 	if (bind(_serverfd, (struct sockaddr*)&_address, sizeof(_address)) < 0) {
-		console::log("failed to bind", ERROR, AA);
+		console::log("failed to bind", ERROR);
 		exit(1);
 	}
 	if (listen(_serverfd, SOMAXCONN) < 0) {
-		console::log("failed to listen", ERROR, AA);
+		console::log("failed to listen", ERROR);
 		exit(1);
 	}
 	std::cout << GREEN << "server listening on: " << _port << RESET << std::endl;
@@ -87,7 +88,7 @@ void server::serverManager(WebservConfig &config) {
 		int nfds = _ev.wait(-1);
 		if (nfds < 0) {
 			if (errno == EINTR) continue;
-			console::log("epoll_wait: ", ERROR, AA); std::cout << std::strerror(errno) << std::endl;
+			console::log("epoll_wait: ", std::strerror(errno), ERROR);
 			break ;
 		}
 		for (int i = 0; i < nfds; ++i) {
@@ -100,12 +101,11 @@ void server::serverManager(WebservConfig &config) {
 					int cfd = accept(_serverfd, (struct sockaddr*)&ca, &cl);
 					if (cfd == -1) {
 						if (errno == EAGAIN || errno == EWOULDBLOCK) break;
-						console::log("ACCEPT: ", ERROR, AA); std::cout << std::strerror(errno) << std::endl;
+						console::log("ACCEPT: ", std::strerror(errno), ERROR);
 						break;
 					}
 					if (make_nonblock(cfd) == -1) {
-						console::log("non block(client)", ERROR, AA); std::cout << std::strerror(errno) << std::endl;
-						close(cfd);
+						console::log("non block(client)", std::strerror(errno), ERROR);
 						continue;
 					}
 					_ev.addFd(cfd, EPOLLIN | EPOLLRDHUP);
@@ -114,21 +114,18 @@ void server::serverManager(WebservConfig &config) {
 				continue;
 			}
 			if (events & (EPOLLHUP | EPOLLERR | EPOLLRDHUP)) {
-				std::cout << "[DEBUG] EPOLLHUP/ERR/RDHUP for fd " << fd << std::endl;
 				_ev.delFd(fd);
-				std::cout << "[DEBUG] Closing fd " << fd << std::endl;
 				close(fd);
-				std::cout << "[DEBUG] Erasing connection for fd " << fd << std::endl;
 				_conns.erase(fd);
 				continue;
 			}
 			if (events & EPOLLIN) {
-				std::cout << "[DEBUG] EPOLLIN for fd " << fd << std::endl;
 				Conn &c = _conns[fd]; // safe: creates if not present
 				char buff[8192];
 				bool alive = true;
 				while (true) {
 					ssize_t n = recv(fd, buff, sizeof(buff), 0);
+					console::log("Something has been received", SRV);
 					if (n > 0) {
 						c.in.append(buff, static_cast<size_t>(n));
 						size_t endpos;
@@ -146,26 +143,21 @@ void server::serverManager(WebservConfig &config) {
 								if (s > 0) sent += (size_t)s;
 								else break;
 							}
-							std::cout << RED << msgSend << RESET << std::endl;
+							console::log("msgSend:", msgSend, SRV);
 							break;
 						}
 					}
 					if (n == 0) {
 						_ev.delFd(fd);
-						std::cout << "[DEBUG] Closing fd " << fd << std::endl;
 						close(fd);
-						std::cout << "[DEBUG] Erasing connection for fd " << fd << std::endl;
 						_conns.erase(fd);
 						alive = false;
 						break;	
 					}
 					if (n == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) break;
 					if (n == -1 && errno == EINTR) continue;
-					std::cout << "[DEBUG] recv error for fd " << fd << ", errno: " << errno << std::endl;
 					_ev.delFd(fd);
-					std::cout << "[DEBUG] Closing fd " << fd << std::endl;
 					close(fd);
-					std::cout << "[DEBUG] Erasing connection for fd " << fd << std::endl;
 					_conns.erase(fd);
 					alive = false;
 					break;
@@ -176,11 +168,8 @@ void server::serverManager(WebservConfig &config) {
 					}
 					if (!c.header_done && c.in.size() > onConn::MAX_HEADER_BYTES
 					&& onConn::headers_end_pos(c.in) == std::string::npos) {
-						std::cout << "[DEBUG] Header too large for fd " << fd << std::endl;
 						_ev.delFd(fd);
-						std::cout << "[DEBUG] Closing fd " << fd << std::endl;
 						close(fd);
-						std::cout << "[DEBUG] Erasing connection for fd " << fd << std::endl;
 						_conns.erase(fd);
 						continue;
 					}
