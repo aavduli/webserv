@@ -44,11 +44,11 @@ bool	RequestUri::parse(const std::string& raw_uri) {
 
 	_raw_uri = trim_whitespaces(raw_uri);
 	if (_raw_uri.empty()) {
-		console::log("Empty request URI", ERROR, ALL);
+		// console::log("Empty request URI", ERROR, ALL);
 		return false;
 	}
 	if (_raw_uri.length() > MAX_URI_LENGTH) {
-		console::log("Request URI too long", ERROR, ALL);
+		// console::log("Request URI too long", ERROR, ALL);
 		return false;
 	}
 	clear_uri();
@@ -58,7 +58,7 @@ bool	RequestUri::parse(const std::string& raw_uri) {
 	else if (_raw_uri[0] == '/')
 		*this = parse_abs_path(_raw_uri);
 	else {
-		console::log("Invalid URI format", ERROR, ALL);
+		// console::log("Invalid URI format", ERROR, ALL);
 		return false;
 	}
 	_is_valid_uri = true;
@@ -152,7 +152,7 @@ RequestUri	RequestUri::parse_absolute_uri(const std::string& raw) {
 	if (raw.find(":") != std::string::npos) {
 		uri._scheme = extract_uri_component(&pos, raw, ":");
 		if (uri._scheme != "http" && uri._scheme != "https") {
-			console::log("Unsupported URI scheme: " + uri._scheme, ERROR, ALL);
+			// console::log("Unsupported URI scheme: " + uri._scheme, ERROR, ALL);
 			uri.clear_uri();
 			return uri;
 		}
