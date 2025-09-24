@@ -1,6 +1,6 @@
 #include "server.hpp"
 
-server::server(int port) : _port(port), _serverfd(-1), _ev(1000000)  {}
+server::server(int port) : _port(port), _serverfd(-1), _ev(1024)  {}
 
 std::string build_http_response(
     int status_code,
