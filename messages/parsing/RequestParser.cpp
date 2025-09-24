@@ -22,10 +22,7 @@ RequestParser& RequestParser::operator=(const RequestParser& rhs) {
 	return *this;
 }
 
-RequestParser::~RequestParser() {
-	// if (_request)
-	// 	delete _request;
-}
+RequestParser::~RequestParser() {}
 
 HttpRequest* RequestParser::parse_request(std::string raw_request) {
 
@@ -175,8 +172,8 @@ bool RequestParser::parse_version(std::string request_line) {
 	if (version != std::string::npos) {
 		_current_pos += 5;
 		size_t dot = request_line.find_first_of('.', _current_pos);
-		double major = atof((request_line.substr(_current_pos, dot - _current_pos)).c_str());
-		double minor = atof((request_line.substr(dot + 1, request_line.size() - (dot + 1))).c_str());
+		std::string major = request_line.substr(_current_pos, dot - _current_pos);
+		std::string minor = request_line.substr(dot + 1, request_line.size() - (dot + 1));
 		_request->setHttpVersion(major, minor);
 		return true;
 	}

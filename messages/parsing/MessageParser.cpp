@@ -1,7 +1,6 @@
 #include "MessageParser.hpp"
 #include "../data/HttpRequest.hpp"
 #include "../data/HttpResponse.hpp"
-#include "../../config/webserv_config.hpp"
 
 MessageParser::MessageParser(const WebservConfig& config) : _config(config), _state(s_msg_init), _current_pos(0), _content_length(0) {}
 
