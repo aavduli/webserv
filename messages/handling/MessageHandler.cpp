@@ -87,13 +87,6 @@ Absolute URL in requests to proxies (e.g., http://www.example.com/path/to/file.h
 Often used to carry identifying information in the form of key=value pairs.
 */
 
-/* 
-Parse the URI from request line
-URL decode special characters (%20, etc.)
-Validate against malicious paths (../, etc.)
-Split path from query string
- */
-
 void	MessageHandler::handle_get() {
 
 	if (!(_request->getBody().empty())) {
