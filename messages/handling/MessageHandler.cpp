@@ -97,7 +97,6 @@ void	MessageHandler::handle_get() {
 	}
 	// if here, URI should not be empty
 	std::string uri = _request->getUri().getRawUri();
-	std::cout << YELLOW << "[INFO] URI: " << uri << RESET << std::endl;
 }
 
 void	MessageHandler::handle_post() {}
@@ -129,7 +128,7 @@ void	handle_request(const WebservConfig& config, const std::string &raw) {
 	if (parser.is_complete_request(raw)) {
 
 		HttpRequest* request = parser.parse_request(raw);
-		if (parser.getState() == s_msg_done) {
+		if (parser.getState() == s_req_parsing_done) {
 			console::log("Request parsing success", MSG);
 			MessageHandler handler(config, request);
 			if (handler.is_valid_request()) {

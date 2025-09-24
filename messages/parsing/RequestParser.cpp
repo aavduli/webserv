@@ -33,29 +33,29 @@ HttpRequest* RequestParser::parse_request(std::string raw_request) {
 	
 	while (_state != s_req_parsing_done && _state != s_msg_error) {
 		switch (_state) {
-			case s_req_start:
-				if (!parse_request_line() && _state != s_req_done) {
+			case s_req_parsing_start:
+				if (!parse_request_line()) {
 					console::log("Failed to parse request line", ERROR);
 					_state = s_msg_error;
 				}
 				_state = s_req_parsing_headers;
 				break;
-			case s_head_start:
-				if (!parse_headers() && _state != s_head_done) {
+			case s_req_parsing_headers:
+				if (!parse_headers()) {
 					console::log("Failed to parse headers", ERROR);
 					_state = s_msg_error;
 				}
 				_state = s_req_parsing_body;
 				break;
-			case s_body_start:
-				if (!parse_body() && _state != s_body_done) {
+			case s_req_parsing_body:
+				if (!parse_body()) {
 					console::log("Failed to parse body", ERROR);
 					_state = s_msg_error;
 				}
 				_state = s_req_parsing_done;
 				break;
 			default:
-				console::log("Unknown parsing state", ERROR);
+				console::log("Unkown parsing state", ERROR);
 				_state = s_msg_error;
 		}
 	}
