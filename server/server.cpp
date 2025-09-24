@@ -1,6 +1,6 @@
 #include "server.hpp"
 
-server::server(int port) : _port(port), _serverfd(-1), _ev(1024)  {}
+server::server(int port) : _port(port), _serverfd(-1), _ev(1000000)  {}
 
 std::string build_http_response(
     int status_code,
@@ -70,7 +70,8 @@ void server::serverManager(WebservConfig &config) {
 	setServer();
 	setSockaddr();
 	(void)config;
-
+	int msgSend = 0;
+	
 	if (bind(_serverfd, (struct sockaddr*)&_address, sizeof(_address)) < 0) {
 		console::log("failed to bind", ERROR, AA);
 		exit(1);
@@ -126,14 +127,13 @@ void server::serverManager(WebservConfig &config) {
 				Conn &c = _conns[fd]; // safe: creates if not present
 				char buff[8192];
 				bool alive = true;
-				int msgSend;
 				while (true) {
 					ssize_t n = recv(fd, buff, sizeof(buff), 0);
 					if (n > 0) {
 						c.in.append(buff, static_cast<size_t>(n));
 						size_t endpos;
+						handle_request(config, c.in.substr(0, endpos));
 						while (onConn::update_and_ready(c, endpos)) {
-							handle_request(config, c.in.substr(0, endpos));
 							std::string response = build_http_response(200, "ok, Hello World!", "text/plain");
 							size_t sent = 0;
 							while (sent < response.size()) {
@@ -149,7 +149,6 @@ void server::serverManager(WebservConfig &config) {
 							std::cout << RED << msgSend << RESET << std::endl;
 							break;
 						}
-						break;
 					}
 					if (n == 0) {
 						_ev.delFd(fd);
