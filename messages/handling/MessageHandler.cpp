@@ -130,7 +130,7 @@ void	handle_request(const WebservConfig& config, const std::string &raw) {
 	if (parser.is_complete_request(raw)) {
 
 		HttpRequest* request = parser.parse_request(raw);
-		if (parser.getState() == s_msg_done) {
+		if (parser.getState() == s_req_parsing_done) {
 			// console::log("Request parsing success", INFO, AH);
 			MessageHandler handler(config, request);
 			if (handler.is_valid_request()) {
@@ -141,9 +141,10 @@ void	handle_request(const WebservConfig& config, const std::string &raw) {
 			std::cout << "TMP RESPONSE: " << resp << std::endl;
 		}
 		else
-			std::cout << "[DEBUG] Request parsing failed" << std::endl;
-		// delete request;
+			std::cout << "[DEBUG] Request parsing failed with state " << parser.getState() << std::endl;
 	}
-	else
+	else {
 		std::cout << "[DEBUG] Incomplete request (in handle_request)" << std::endl;
+		parser.setState(s_req_incomplete);
+	}
 }

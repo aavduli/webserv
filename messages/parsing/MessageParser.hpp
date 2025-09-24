@@ -42,7 +42,7 @@ enum StatusCode {
 };
 
 enum State {
-	s_msg_dead = 1,
+	s_msg_dead,
 	s_msg_error,
 	s_msg_init,
 		
@@ -51,15 +51,12 @@ enum State {
 	s_req_invalid_content_length,
 	
 	/* REQUEST PARSING */
-	s_req_start, 
-	s_req_line,
-	s_req_done, 
+	s_req_parsing_start, 
+	s_req_parsing_headers,
+	s_req_parsing_body,
+	s_req_parsing_done, 
 
-	/* URI PARSING */
-	s_uri_invalid,
-	s_uri_done,
-
-	/* REQUEST PROCESS */
+	/* REQUEST METHODS */
 	s_req_invalid_get, 
 	s_req_invalid_post, 
 	s_req_invalid_delete, 
@@ -72,11 +69,6 @@ enum State {
 	s_res_status,
 	s_res_reason,
 	s_res_done,
-
-	/* HEADERS PARSING */
-	s_head_start,
-	s_head_fields,
-	s_head_done,
 
 	/* BODY */
 	s_body_start,

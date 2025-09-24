@@ -26,33 +26,33 @@ RequestParser::~RequestParser() {}
 
 HttpRequest* RequestParser::parse_request(std::string raw_request) {
 
-	_state = s_req_start;
+	_state = s_req_parsing_start;
 	_raw_data = raw_request;
 	HttpRequest* request = new HttpRequest();
 	_request = request;
 	
-	while (_state != s_msg_done && _state != s_msg_error) {
+	while (_state != s_req_parsing_done && _state != s_msg_error) {
 		switch (_state) {
-			case s_req_start:
-				if (!parse_request_line() && _state != s_req_done) {
+			case s_req_parsing_start:
+				if (!parse_request_line()) {
 					// console::log("Failed to parse request line", ERROR, ALL);
 					_state = s_msg_error;
 				}
-				_state = s_head_start;
+				_state = s_req_parsing_headers;
 				break;
-			case s_head_start:
-				if (!parse_headers() && _state != s_head_done) {
+			case s_req_parsing_headers:
+				if (!parse_headers()) {
 					// console::log("Failed to parse headers", ERROR, ALL);
 					_state = s_msg_error;
 				}
-				_state = s_body_start;
+				_state = s_req_parsing_body;
 				break;
-			case s_body_start:
-				if (!parse_body() && _state != s_body_done) {
+			case s_req_parsing_body:
+				if (!parse_body()) {
 					// console::log("Failed to parse body", ERROR, ALL);
 					_state = s_msg_error;
 				}
-				_state = s_msg_done;
+				_state = s_req_parsing_done;
 				break;
 			default:
 				// console::log("Unknown parsing state", ERROR, ALL);
@@ -69,7 +69,6 @@ HttpRequest* RequestParser::parse_request(std::string raw_request) {
 
 bool RequestParser::parse_request_line() {
 
-	_state = s_req_line;
 	size_t line_end = _raw_data.find("\r\n", _current_pos);
 	if (line_end == std::string::npos) {
 		// console::log("No CRLF found in request line", ERROR, ALL);
@@ -85,7 +84,6 @@ bool RequestParser::parse_request_line() {
 	if (!parse_version(request_line))
 		return false;
 	_current_pos = line_end + 2;
-	_state = s_req_done;
 	return true;
 }
 
@@ -185,7 +183,6 @@ bool RequestParser::parse_version(std::string request_line) {
 
 bool RequestParser::parse_headers() {
 
-	_state = s_head_fields;
 	std::map<std::string, std::vector<std::string> > headers;
 	
 	while (_current_pos < _raw_data.length()) {
@@ -224,7 +221,6 @@ bool RequestParser::parse_headers() {
 		}
 		_request->addHeader(name, values);
 	}
-	_state = s_head_done;
 	return true;
 }
 
