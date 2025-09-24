@@ -10,24 +10,26 @@
 #define YELLOW "\033[33m"
 #define BLUE "\033[34m"
 
-enum Level {
-	INFO,
-	WARNING,
+enum Typelog {
+	SRV,
+	MSG,
+	CONF,
 	ERROR
-};
-
-enum Worker {
-	AH,
-	JR,
-	AA,
-	ALL
 };
 
 class console {
 private:
-	console();
-public:
-	static void log(const std::string& msg, Level level, Worker who);
-};
+console();
 
+public:
+	static std::ofstream _srv;
+	static std::ofstream _msg;
+	static std::ofstream _conf;
+	static std::ofstream _error;
+
+	static void openFile();
+	static void closeFile();
+
+	static void log(std::string log, Typelog type);
+};
 #endif
