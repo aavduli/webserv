@@ -145,7 +145,9 @@ void server::serverManager(WebservConfig &config) {
 								if (s > 0) sent += (size_t)s;
 								else break;
 							}
+							break;
 						}
+						break;
 					}
 					if (n == 0) {
 						_ev.delFd(fd);
@@ -168,13 +170,8 @@ void server::serverManager(WebservConfig &config) {
 					break;
 					if (!alive) continue;
 					size_t endpos;
-					while (onConn::update_and_ready(c, endpos)) {
-						c.in.erase(0, endpos);
-						c.header_done = false;
-						c.chunked = false;
-						c.content_len = -1;
-						c.body_have = 0;
-						c.headers_end = std::string::npos;
+					while (!onConn::onDiscon(c, alive, endpos)) {
+						continue;
 					}
 					if (!c.header_done && c.in.size() > onConn::MAX_HEADER_BYTES
 					&& onConn::headers_end_pos(c.in) == std::string::npos) {
