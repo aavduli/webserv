@@ -47,4 +47,4 @@ class RequestUri {
 
 };
 
-#endif // REQUESTURI_HPP
+#endif //REQUESTURI_HPP
