@@ -26,7 +26,7 @@
 		HttpRequest*	getRequest() const;
 		HttpResponse*	getResponse() const;
 		
-		bool			is_valid_request(const WebservConfig& config) const;
+		bool			is_valid_request(const WebservConfig& config);
 		void			process_request();
 		void			generate_response();
 		std::string		serialize_response();

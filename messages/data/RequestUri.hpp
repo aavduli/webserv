@@ -39,10 +39,32 @@ class RequestUri {
 		
 		bool			parse();
 		void			print() const;
-		bool			validate_with_config(const WebservConfig& config);
 
-		void			setRawUri(const std::string& raw_uri);
+		// Getters
 		std::string		getRawUri() const;
+		std::string		getScheme() const;
+		std::string		getUserinfo() const;
+		std::string		getHost() const;
+		std::string		getPort() const;
+		std::string		getPath() const;
+		std::string		getQuery() const;
+		std::string		getFragment() const;
+		bool			isAbsoluteUri() const;
+		bool			isAbsPath() const;
+
+		// Setters
+		void			setRawUri(const std::string& raw_uri);
+		void			setScheme(const std::string& scheme);
+		void			setUserinfo(const std::string& userinfo);
+		void			setHost(const std::string& host);
+		void			setPort(const std::string& port);
+		void			setPath(const std::string& path);
+		void			setQuery(const std::string& query);
+		void			setFragment(const std::string& fragment);
+		void			setAbsoluteUri(bool is_absolute_uri);
+		void			setAbsPath(bool is_abs_path);
+
+
 };
 
 #endif //REQUESTURI_HPP
