@@ -1,6 +1,6 @@
 #include "HttpRequest.hpp"
 
-HttpRequest::HttpRequest() : _method(UNKNOWN) {
+HttpRequest::HttpRequest() : _method("") {
 	// The RequestUri constructor will initialize all values to empty/false
 }
 
@@ -17,11 +17,11 @@ HttpRequest& HttpRequest::operator=(const HttpRequest& rhs) {
 
 HttpRequest::~HttpRequest() {}
 
-HttpMethod HttpRequest::getMethod() const {
+const std::string& HttpRequest::getMethod() const {
 	return _method;
 }
 
-void	HttpRequest::setMethod(HttpMethod method) {
+void	HttpRequest::setMethod(const std::string& method) {
 	_method = method;
 }
 

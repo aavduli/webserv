@@ -10,7 +10,7 @@ class RequestParser : public MessageParser {
 		HttpRequest*	_request;		// for request parsing
 
 	public:
-		RequestParser(const WebservConfig& config);
+		RequestParser();
 		RequestParser(const RequestParser& rhs);
 		RequestParser& operator=(const RequestParser& rhs);
 		~RequestParser();
@@ -19,7 +19,6 @@ class RequestParser : public MessageParser {
 		bool			parse_request_line();
 		bool			parse_method(std::string request_line);
 		bool			parse_uri(std::string request_line);
-		bool			complete_uri();
 		bool			parse_version(std::string request_line);
 		bool			parse_headers();
 		std::string		parse_header_name(std::string line);

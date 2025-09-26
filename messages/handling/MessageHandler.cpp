@@ -1,8 +1,8 @@
 #include "MessageHandler.hpp"
 
-MessageHandler::MessageHandler(const WebservConfig& config, HttpRequest* request) : _config(config), _request(request), _response(NULL) {}
+MessageHandler::MessageHandler(HttpRequest* request) : _request(request), _response(NULL) {}
 
-MessageHandler::MessageHandler(const MessageHandler& rhs) : _config(rhs._config) {
+MessageHandler::MessageHandler(const MessageHandler& rhs) {
 	if (rhs._request)
 		_request = new HttpRequest(*rhs._request);
 	else
@@ -42,34 +42,66 @@ HttpResponse*	MessageHandler::getResponse() const {
 	return _response;
 }
 
-bool	MessageHandler::is_valid_request() const {
+// bool validateHost(const HttpRequest& request, const ServerConfig& config) {
+// 	std::string request_host = request.getHeader("host");
+// 
+// 	// Extract hostname and port from request
+// 	std::string hostname, port;
+// 	parseHostHeader(request_host, hostname, port);  // "localhost", "8080"
+// 
+// 	// Validate against config
+// 	if (config.server_name != hostname) {
+// 		return false;  // Could be 400 Bad Request or ignore
+// 	}
+// 
+// 	if (config.listen_port != std::atoi(port.c_str())) {
+// 		return false;  // Port mismatch
+// 	}
+// 
+// 	return true;
+// }
+
+bool	MessageHandler::is_valid_request(const WebservConfig& config) const {
+
+	// size_t max_body_size = to_size_t(_config.getDirective("max_body_size"));	// config use correct?
+	// if (_content_length > max_body_size) {
+	// 	console::log("\"Content-Length\" value > MAX_CONTENT_LENGTH", ERROR);
+	// 	_state = s_req_invalid_content_length;
+	// 	return 0;
+	// }
+
 	// check against server config
+
+	// host header value <> server name and listen port
+
+	// match routes
+	// URI <> available server locations, if no match -> root or default index
+
+	RequestUri uri(_request->getUri());
+	if (uri.validate_with_config(config)) {
+		std::cout << YELLOW;
+		uri.print();
+		std::cout << RESET << std::endl;
+	}	
 	return true;
 }
 
 void	MessageHandler::process_request() {
 	
-	switch (_request->getMethod()) {
-		case 0:
-			console::log("GET method", MSG);
-			handle_get();
-			break;
-		case 1:
-			console::log("POST method", MSG);
-			handle_post();
-			break;
-		case 2:
-			console::log("DELETE method", MSG);
-			handle_delete();
-			break;
-		case 3:
-			console::log("HEAD method", MSG);
-			handle_head();
-			break;
-		default:
-			console::log("Unkown method", MSG);
-			break;
+	if (!_request->getMethod().compare("GET")) {
+		console::log("GET method", MSG);
+		handle_get();
 	}
+	else if (!_request->getMethod().compare("POST")) {
+		console::log("POST method", MSG);
+		handle_post();
+	}
+	else if (!_request->getMethod().compare("DELETE")) {
+		console::log("DELETE method", MSG);
+		handle_delete();
+	}
+	else
+		console::log("Unkown method", MSG);
 }
 
 /* 
@@ -123,25 +155,19 @@ void	handle_request(const WebservConfig& config, const std::string &raw) {
 	}
 
 	// const char*		resp;
-	RequestParser	parser(config);
+	RequestParser	parser;
+	HttpRequest* request = parser.parse_request(raw);
 
-	if (parser.is_complete_request(raw)) {
-
-		HttpRequest* request = parser.parse_request(raw);
-		if (parser.getState() == s_req_parsing_done) {
-			console::log("Request parsing success", MSG);
-			MessageHandler handler(config, request);
-			if (handler.is_valid_request()) {
-				handler.process_request();
-				handler.generate_response();
-			}
-			// resp = (handler.serialize_response()).c_str();
+	if (parser.getState() == s_req_parsing_done) {
+		console::log("Request parsing success", MSG);
+		
+		MessageHandler handler(request);
+		if (handler.is_valid_request(config)) {
+			handler.process_request();
+			handler.generate_response();
 		}
-		else
-			std::cout << "[DEBUG] Request parsing failed with state " << parser.getState() << std::endl;
+		// resp = (handler.serialize_response()).c_str();
 	}
-	else {
-		std::cout << "[DEBUG] Incomplete request (in handle_request)" << std::endl;
-		parser.setState(s_req_incomplete);
-	}
+	else
+		std::cout << "[DEBUG] Request parsing failed with state " << parser.getState() << std::endl;
 }

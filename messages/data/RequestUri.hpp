@@ -32,19 +32,17 @@ class RequestUri {
 		
 	public:
 		RequestUri();
-		RequestUri(const std::string& raw_uri, const WebservConfig& config);
+		RequestUri(const std::string& raw_uri);
 		RequestUri(const RequestUri& rhs);
 		RequestUri& operator=(const RequestUri& rhs);
 		~RequestUri();
 		
-		bool			_is_valid;
-		bool			parse(const WebservConfig& config);
+		bool			parse();
 		void			print() const;
 		bool			validate_with_config(const WebservConfig& config);
 
 		void			setRawUri(const std::string& raw_uri);
 		std::string		getRawUri() const;
-
 };
 
-#endif // REQUESTURI_HPP
+#endif //REQUESTURI_HPP

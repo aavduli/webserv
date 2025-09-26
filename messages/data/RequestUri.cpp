@@ -2,16 +2,15 @@
 #include "../parsing/MessageParser.hpp"
 
 RequestUri::RequestUri() : _raw_uri(""), _scheme(""), _userinfo(""), _host(""), _port(""), _path(""),
-	_query(""), _fragment(""), _is_absolute_uri(false), _is_abs_path(false), _is_valid(false) {}
+	_query(""), _fragment(""), _is_absolute_uri(false), _is_abs_path(false) {}
 
-RequestUri::RequestUri(const std::string& raw_uri, const WebservConfig& config) : _raw_uri(raw_uri), _scheme(""), _userinfo(""), _host(""), _port(""),
-	_path(""), _query(""), _fragment(""), _is_absolute_uri(false), _is_abs_path(false), _is_valid(false) {
-	parse(config);
+RequestUri::RequestUri(const std::string& raw_uri) : _raw_uri(raw_uri), _scheme(""), _userinfo(""), _host(""), _port(""),
+	_path(""), _query(""), _fragment(""), _is_absolute_uri(false), _is_abs_path(false) {
 }
 
 RequestUri::RequestUri(const RequestUri& rhs) : _raw_uri(rhs._raw_uri), _scheme(rhs._scheme),
 	_userinfo(rhs._userinfo), _host(rhs._host), _port(rhs._port), _path(rhs._path),
-	_query(rhs._query), _fragment(rhs._fragment), _is_absolute_uri(rhs._is_absolute_uri), _is_abs_path(rhs._is_abs_path), _is_valid(rhs._is_valid) {}
+	_query(rhs._query), _fragment(rhs._fragment), _is_absolute_uri(rhs._is_absolute_uri), _is_abs_path(rhs._is_abs_path) {}
 
 RequestUri& RequestUri::operator=(const RequestUri& rhs) {
 	if (this != &rhs) {
@@ -25,7 +24,6 @@ RequestUri& RequestUri::operator=(const RequestUri& rhs) {
 		_fragment = rhs._fragment;
 		_is_absolute_uri = rhs._is_absolute_uri;
 		_is_abs_path = rhs._is_abs_path;
-		_is_valid = rhs._is_valid;
 	}
 	return *this;
 }
@@ -36,53 +34,53 @@ RequestUri::~RequestUri() {}
 TODO: validate URI against config
 TODO: URL decode special characters (%20, etc.)
 TODO: Validate against malicious paths (../, etc.)
-*/
+
+Match the URI against your configuration routes and validate the HTTP method is allowed.
+
+ */
+
+
 
 bool RequestUri::validate_with_config(const WebservConfig& config) {
 
-	/* config.printConfig();
 	// Check host is valid
-	if (!_host.empty() && !_host.compare(config.getDirective("host"))) {
-		std::cout << "[AH] Invalid host: " << _host << std::endl;
-		std::cout << "[AH] Server host: " << config.getDirective("host") << std::endl;
-		// console::log("Invalid host: " + _host, ERROR);
+	if (!_host.empty() && _host.compare(config.getDirective("host"))) {
+		console::log("Invalid host: " + _host, ERROR);
+		console::log("Server host: " + config.getDirective("pohostrt"), ERROR);
 		return false;
 	}
 
 	// Check port is valid
-	if (!_port.empty() && _port != "80" && !_port.compare(config.getDirective("port"))) {
-		std::cout << "[AH] Invalid port: " << _port << std::endl;
-		// console::log("Invalid port: " + _port, ERROR);
+	if (!_port.empty() && _port != "80" && _port.compare(config.getDirective("port"))) {
+		console::log("Invalid port: " + _port, ERROR);
+		console::log("Server port: " + config.getDirective("port"), ERROR);
 		return false;
-	} */
+	}
 
-/* 
 	// Check path permissions
-	if (!_path.empty() && !_path.compare(config.getLocationConfig("path"))) {
-		std::cout << "[AH] Invalid port: " << _port << std::endl;
-		// console::log("Invalid port: " + _port, ERROR);
+	if (!_path.empty() && (config.getLocationConfig(_path)).empty()) {
+		console::log("Invalid path: " + _path, ERROR);
 		return false;
 	}
-	LocationConfig location = config.getLocationConfig(_path);
-	if (!location.isPathAllowed(_path)) {
-		std::cout << "[AH] Path not allowed: " << _path << std::endl;
-		// console::log("Path not allowed: " + _path, ERROR);
-		return false;
-	}
+	// std::map<std::string, std::string> location = config.getLocationConfig(_path);
+	// if (!location.isPathAllowed(_path)) {
+	// 	std::cout << "[AH] Path not allowed: " << _path << std::endl;
+	// 	// console::log("Path not allowed: " + _path, ERROR);
+	// 	return false;
+	// }
 
 	// Set defaults from config if missing
+	if (_host.empty()) {
+		_host = config.getDirective("host");
+	}
 	if (_port.empty() || _port == "80") {
-		_port = config.getDefaultPort();
+		_port = config.getDirective("port");
 	}
 
-	if (_host.empty()) {
-		_host = config.getDefaultServerName();
-	} */
-	(void)config;
 	return true;
 }
 
-bool	RequestUri::parse(const WebservConfig& config) {
+bool	RequestUri::parse() {
 
 	clear_uri();
 
@@ -91,13 +89,10 @@ bool	RequestUri::parse(const WebservConfig& config) {
 	else if (_raw_uri[0] == '/')
 		parse_abs_path(_raw_uri);
 	else {
-		std::cout << "[AH] Invalid URI format" << std::endl;
 		console::log("Invalid URI format", ERROR);
 		return false;
 	}
-	if (validate_with_config(config))
-		_is_valid = true;
-	return _is_valid;
+	return true;
 }
 
 bool	RequestUri::parse_uri_path_query(const std::string& raw) {
@@ -143,7 +138,6 @@ RequestUri	RequestUri::parse_absolute_uri(const std::string& raw) {
 	if (raw.find(":") != std::string::npos) {
 		uri._scheme = extract_uri_component(&pos, raw, ":");
 		if (uri._scheme != "http" && uri._scheme != "https") {
-			std::cout << "[AH] Unsupported URI scheme: " << uri._scheme << std::endl;
 			console::log("Unsupported URI scheme: " + uri._scheme, ERROR);
 			uri.clear_uri();
 			return uri;
