@@ -1,29 +1,29 @@
-NAME: CI
+name: CI
 
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-  jobs:
-    build-and-test:
-      runs-on: ubuntu-latest
+jobs:
+   build-and-test:
+    runs-on: ubuntu-latest
 
-      steps:
-      - name: Chekout code
-        uses: actions/checkout@v4
-      - name: Install build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential g++ make
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Install build dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential g++ make
       
-      - name: Build Project
-        run: |
-          make all
-      - name: Check if binary files has been created
-        run: |
-          if [ ! -f "./webserv"]; then
-            echo "Error: webserv binary was not created"
-            exit 1
-          fi
-          echo "✓ Binary created successfully"
+    - name: Build Project
+      run: |
+        make all
+    - name: Check if binary files has been created
+      run: |
+        if [ ! -f "./webserv"]; then
+          echo "Error: webserv binary was not created"
+          exit 1
+        fi
+        echo "✓ Binary created successfully"
