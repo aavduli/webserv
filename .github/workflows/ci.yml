@@ -38,10 +38,21 @@ jobs:
           sleep 2
           pkill -f "./webserv" || true
 
-      - name: Install valgrind and test for memory leaks
+      - name: Test for memory leaks with valgrind
         run: |
           sudo apt-get install -y valgrind
-          timeout 10s valgrind --leak-check=yes ./webserv test
+          # Start server with valgrind in background
+          valgrind --leak-check=yes --error-exitcode=1 ./webserv config/def.conf &
+          VALGRIND_PID=$!
+          sleep 5
+          
+          # Make a request to exercise the server
+          curl http://localhost:8080 || true
+          
+          # Stop the server gracefully
+          kill $VALGRIND_PID || true
+          wait $VALGRIND_PID
+          
       - name: Test HTTP request with curl
         run: |
           ./webserv test &
