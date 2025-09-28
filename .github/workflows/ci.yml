@@ -34,17 +34,17 @@ jobs:
       - name: Test config parsing
         run: |
           # Test if server can start with default config
-          timeout 5s ./webserv config/def.conf &
+          timeout 5s ./webserv test &
           sleep 2
           pkill -f "./webserv" || true
 
       - name: Install valgrind and test for memory leaks
         run: |
           sudo apt-get install -y valgrind
-          timeout 10s valgrind --leak-check=yes ./webserv config/def.conf
+          timeout 10s valgrind --leak-check=yes ./webserv test
       - name: Test HTTP request with curl
         run: |
-          ./webserv config/def.conf &
+          ./webserv test &
           SERVER_PID=$!
 
           sleep 3
