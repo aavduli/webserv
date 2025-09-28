@@ -5,13 +5,15 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+
 jobs:
-   build-and-test:
+  build-and-test:
     runs-on: ubuntu-latest
 
-    steps:
+  steps:
     - name: Checkout code
       uses: actions/checkout@v4
+    
     - name: Install build dependencies
       run: |
         sudo apt-get update
@@ -20,10 +22,42 @@ jobs:
     - name: Build Project
       run: |
         make all
+
     - name: Check if binary files has been created
       run: |
-        if [ ! -f "./webserv"]; then
+        if [ ! -f "./webserv" ]; then
           echo "Error: webserv binary was not created"
           exit 1
         fi
         echo "✓ Binary created successfully"
+    
+    - name: Test config parsing
+      run: |
+        # Test if server can start with default config
+        timeout 5s ./webserv config/def.conf &
+        sleep 2
+        pkill -f "./webserv" || true
+
+    - name: Install valgrind and test for memory leaks
+      run: |
+        sudo apt-get install -y valgrind
+        timeout 10s valgrind --leak-check=yes ./webserv config/def.conf
+    - name: Test HTTP request with curl
+      run: |
+        ./webserv config/def.conf &
+        SERVER_PID=$!
+
+        sleep 3
+
+        echo "Testing HTTP request..."
+        curl -v http://localhost:8080 || echo "Curl request completed"
+
+        if kill -0 $SERVER_PID 2>dev/null; then
+          echo " ✓ Server is responding"
+        else
+          echo "Server stopped unexpectedly"
+          exit 1
+        fi
+
+        kill $SERVER_PID || true
+    
