@@ -44,15 +44,13 @@ jobs:
           # Start server with valgrind in background
           valgrind --leak-check=yes --error-exitcode=1 ./webserv config/def.conf &
           VALGRIND_PID=$!
-          sleep 5
+          sleep 2
           
-          # Make a request to exercise the server
           curl http://localhost:8080 || true
           
-          # Stop the server gracefully
           kill $VALGRIND_PID || true
           wait $VALGRIND_PID
-          
+
       - name: Test HTTP request with curl
         run: |
           ./webserv test &
