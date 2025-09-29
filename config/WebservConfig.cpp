@@ -238,3 +238,38 @@ size_t WebservConfig::getMaxContentLength() const{
 bool WebservConfig::hasLocation(const std::string& path) const{
 	return _locations.find(path) != _locations.end();
 }
+
+bool WebservConfig::matchesServerName(const std::string& host) const{
+	std::string serverName = getServerName();
+
+	//exacte match
+	if(host == serverName) return true;
+
+	//with port
+	std::ostringstream oss;
+	oss << getPort();
+	std::string hostWPort = serverName +":"+oss.str();
+	if (host == hostWPort) return true;
+
+	//matching without default port
+	if (getPort() == 80 || getPort() == 443){
+		size_t colonPos = host.find(':');
+		if (colonPos != std::string::npos){
+			std::string hostOnly = host.substr(0, colonPos);
+			if (hostOnly == serverName) return true;
+		}
+	}
+	return false;
+}
+
+//std::vector<std::string> hostValue = _request.getHeaderValues("Host");
+bool WebservConfig::isValidHostHeader(const std::string& host) const{
+	if (host.empty()) return false;
+
+	size_t colonPos = host.find(':');
+	if (colonPos != std::string::npos){
+		std::string portStr = host.substr(colonPos + 1);
+		return _utils.isValidPort(portStr);
+	}
+	return true;
+}
