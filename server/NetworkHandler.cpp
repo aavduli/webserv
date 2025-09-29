@@ -24,9 +24,15 @@ int NetworkHandler::setuptSocketOptions(int fd) {
 }
 
 int NetworkHandler::createServersocket() {
-	getServerFd() = socket(AF_INET, SOCK_STREAM, 0);
+	int fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (getServerFd() < 0)
 		logNetworkError("[NETWORK][SOCKET] ", std::string(errno));
-	setuptSocketOptions(getServerFd());
+	return fd;
 }
 
+void NetworkHandler::bindAndListen(int serverfd, const struct sockaddr_in& address) {
+	if (bind(serverfd, (struct sockaddr*)&address, sizeof(address)) < 0)
+		logNetworkError("[NETWORK][BIND]", std::string(errno));
+	if (listen(serverfd, SOMAXCONN) < 0)
+		logNetworkError("[NETWORK][LISTEN]", std::string(error));
+}
