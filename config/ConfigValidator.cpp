@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/15 14:57:26 by jim               #+#    #+#             */
-/*   Updated: 2025/09/29 19:00:54 by jim              ###   ########.fr       */
+/*   Updated: 2025/09/29 19:07:56 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -217,7 +217,7 @@ bool ConfigValidator::validateSrvName(const std::string& serverName){
 		if (!isalnum(c) && c != '.' && c != '-' && c != '_'){
 			setError("invalid char in srv name: " + std::string(1, c));
 			console::log(_lastError, CONF);
-			if (BLOCKINGERROR) return false;
+			return (BLOCKINGERROR ? false : true);
 		}
 	}
 	return true;
@@ -261,14 +261,17 @@ bool ConfigValidator::validateLocationSConfig(const LocationsConfig& config) {
 	for (std::map<std::string, LocationConfig>::const_iterator it =
 config.locations.begin();
 		it != config.locations.end(); ++it) {
-		if (!validateLocationConfig(it->second)) return false;  // call the singular version
+		if (!validateLocationConfig(it->second)) 
+			if (BLOCKINGERROR) return false;
 	}
 	return true;
 }
 
 
 bool ConfigValidator::validateLocationConfig(const LocationConfig& config){
-	if (!validateLocationPath(config.path)) return false;
+	if (!validateLocationPath(config.path)) {
+		if (BLOCKINGERROR) return false;
+	}
 
 	//each directive
 	for (std::map<std::string, std::string>::const_iterator it = config.directives.begin();
@@ -350,11 +353,11 @@ bool ConfigValidator::validateMBS(const std::string& size){
 	return true;
 }
 
-bool ConfigValidator::validateDirectoryList(const std::string& autoindex){
+bool ConfigValidator::validateDirectoryList(const std::string& autoindex){ // todo setError
 	return (autoindex == "on" || autoindex == "off");
 }
 
-bool ConfigValidator::validateCGIPath(const std::string& cgiPath){
+bool ConfigValidator::validateCGIPath(const std::string& cgiPath){ // todo seterror if invalid path
 	return (isValidPath(cgiPath));
 }
 
