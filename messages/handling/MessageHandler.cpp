@@ -1,11 +1,8 @@
 #include "MessageHandler.hpp"
 
-MessageHandler::MessageHandler(const WebservConfig& config, HttpRequest* request) : _config(config), _request(request), _response(NULL) {
-	console::log("[MessageHandler Default Constructor]", DEBUG);
-}
+MessageHandler::MessageHandler(const WebservConfig& config, HttpRequest* request) : _config(config), _request(request), _response(NULL) {}
 
 MessageHandler::MessageHandler(const MessageHandler& rhs) : _config(rhs._config) {
-	console::log("[MessageHandler Copy Constructor]", DEBUG);
 	if (rhs._request)
 		_request = new HttpRequest(*rhs._request);
 	else
@@ -17,7 +14,6 @@ MessageHandler::MessageHandler(const MessageHandler& rhs) : _config(rhs._config)
 }
 
 MessageHandler& MessageHandler::operator=(const MessageHandler& rhs) {
-	console::log("[MessageHandler Assignement Operator]", DEBUG);
 	if (this != &rhs) {
 		if (rhs._request)
 			_request = new HttpRequest(*rhs._request);
@@ -32,7 +28,6 @@ MessageHandler& MessageHandler::operator=(const MessageHandler& rhs) {
 }
 
 MessageHandler::~MessageHandler() {
-	console::log("[MessageHandler Destructor]", DEBUG);
 	if (_request)
 		delete _request;
 	if (_response)
@@ -56,23 +51,23 @@ void	MessageHandler::process_request() {
 	
 	switch (_request->getMethod()) {
 		case 0:
-			console::log("GET method", INFO);
+			console::log("GET method", MSG);
 			handle_get();
 			break;
 		case 1:
-			console::log("POST method", INFO);
+			console::log("POST method", MSG);
 			handle_post();
 			break;
 		case 2:
-			console::log("DELETE method", INFO);
+			console::log("DELETE method", MSG);
 			handle_delete();
 			break;
 		case 3:
-			console::log("HEAD method", INFO);
+			console::log("HEAD method", MSG);
 			handle_head();
 			break;
 		default:
-			console::log("Unkown method", INFO);
+			console::log("Unkown method", MSG);
 			break;
 	}
 }
@@ -92,17 +87,16 @@ Absolute URL in requests to proxies (e.g., http://www.example.com/path/to/file.h
 Often used to carry identifying information in the form of key=value pairs.
 */
 
+// TODO set response status code and clean exit
 void	MessageHandler::handle_get() {
 
 	if (!(_request->getBody().empty())) {
 		console::log("GET request shouldn't have a body", ERROR);
 		_state = s_req_invalid_get;
-		// TODO set response status code and clean exit
 		return ;
 	}
 	// if here, URI should not be empty
 	std::string uri = _request->getUri().getRawUri();
-	std::cout << YELLOW << "[INFO] URI: " << uri << RESET << std::endl;
 }
 
 void	MessageHandler::handle_post() {}
@@ -124,30 +118,30 @@ void	handle_request(const WebservConfig& config, const std::string &raw) {
 
 	if (raw.empty()) {
 		// return status code? return error/bool?
-		console::log("Empty request", WARNING);
+		console::log("Empty request", MSG);
 		return ;
 	}
 
-	const char*		resp;
+	// const char*		resp;
 	RequestParser	parser(config);
 
 	if (parser.is_complete_request(raw)) {
 
 		HttpRequest* request = parser.parse_request(raw);
-		if (parser.getState() == s_msg_done) {
-			console::log("Request parsing success", INFO);
+		if (parser.getState() == s_req_parsing_done) {
+			console::log("Request parsing success", MSG);
 			MessageHandler handler(config, request);
 			if (handler.is_valid_request()) {
 				handler.process_request();
 				handler.generate_response();
 			}
-			resp = (handler.serialize_response()).c_str();
-			std::cout << "RESPONSE: " << resp << std::endl;
+			// resp = (handler.serialize_response()).c_str();
 		}
 		else
-			console::log("Request parsing failed", ERROR);
-		delete request;
+			std::cout << "[DEBUG] Request parsing failed with state " << parser.getState() << std::endl;
 	}
-	else
-		console::log("Incomplete request", ERROR);
+	else {
+		std::cout << "[DEBUG] Incomplete request (in handle_request)" << std::endl;
+		parser.setState(s_req_incomplete);
+	}
 }

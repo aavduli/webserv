@@ -2,6 +2,22 @@
 
 server::server(int port) : _port(port), _serverfd(-1), _ev(1024)  {}
 
+std::string build_http_response(
+    int status_code,
+    const std::string& status_text,
+    const std::string& body,
+    const std::string& content_type = "text/plain"
+) {
+    std::ostringstream oss;
+    oss << "HTTP/1.1 " << status_code << " " << status_text << "\r\n"
+        << "Content-Type: " << content_type << "\r\n"
+        << "Content-Length: " << body.size() << "\r\n"
+        << "Connection: close\r\n"
+        << "\r\n"
+        << body;
+    return oss.str();
+}
+
 server::~server() {
 	if (_serverfd != -1)
 		close(_serverfd);
@@ -38,6 +54,7 @@ void server::setServer() {
 	#endif
 	if (make_nonblock(_serverfd) == -1) {
 		std::cerr << RED << "nonblock(listen):" << RESET << std::strerror(errno) << std::endl;
+		console::log("Make nonblock: ", std::strerror(errno), ERROR);
 		exit(1);
 	}
 }
@@ -49,11 +66,13 @@ void server::setSockaddr() {
 	_address.sin_port = htons(_port);
 }
 
-void server::serverManager(WebservConfig config) {
+void server::serverManager(WebservConfig &config) {
 	ignore_sigpipe();
 	setServer();
 	setSockaddr();
-
+	(void)config;
+	int msgSend = 0;
+	
 	if (bind(_serverfd, (struct sockaddr*)&_address, sizeof(_address)) < 0) {
 		console::log("failed to bind", ERROR);
 		exit(1);
@@ -69,7 +88,7 @@ void server::serverManager(WebservConfig config) {
 		int nfds = _ev.wait(-1);
 		if (nfds < 0) {
 			if (errno == EINTR) continue;
-			console::log("epoll_wait: ", ERROR); std::cout << std::strerror(errno) << std::endl;
+			console::log("epoll_wait: ", std::strerror(errno), ERROR);
 			break ;
 		}
 		for (int i = 0; i < nfds; ++i) {
@@ -82,12 +101,11 @@ void server::serverManager(WebservConfig config) {
 					int cfd = accept(_serverfd, (struct sockaddr*)&ca, &cl);
 					if (cfd == -1) {
 						if (errno == EAGAIN || errno == EWOULDBLOCK) break;
-						console::log("ACCEPT: ", ERROR); std::cout << std::strerror(errno) << std::endl;
+						console::log("ACCEPT: ", std::strerror(errno), ERROR);
 						break;
 					}
 					if (make_nonblock(cfd) == -1) {
-						console::log("non block(client)", ERROR); std::cout << std::strerror(errno) << std::endl;
-						close(cfd);
+						console::log("non block(client)", std::strerror(errno), ERROR);
 						continue;
 					}
 					_ev.addFd(cfd, EPOLLIN | EPOLLRDHUP);
@@ -96,93 +114,71 @@ void server::serverManager(WebservConfig config) {
 				continue;
 			}
 			if (events & (EPOLLHUP | EPOLLERR | EPOLLRDHUP)) {
-				std::cout << "[DEBUG] EPOLLHUP/ERR/RDHUP for fd " << fd << std::endl;
 				_ev.delFd(fd);
-				std::cout << "[DEBUG] Closing fd " << fd << std::endl;
 				close(fd);
-				std::cout << "[DEBUG] Erasing connection for fd " << fd << std::endl;
 				_conns.erase(fd);
 				continue;
 			}
 			if (events & EPOLLIN) {
-				std::cout << "[DEBUG] EPOLLIN for fd " << fd << std::endl;
 				Conn &c = _conns[fd]; // safe: creates if not present
 				char buff[8192];
 				bool alive = true;
-
 				while (true) {
 					ssize_t n = recv(fd, buff, sizeof(buff), 0);
+					console::log("Something has been received", SRV);
 					if (n > 0) {
-						size_t sent = 0;
-						while (sent < sizeof(buff) -1) {
-							ssize_t s = send(fd, buff + sent, (sizeof(buff) - 1) - sent, 0
-#ifdef MSG_NOSIGNAL
-							| MSG_NOSIGNAL
-#endif
-							);
-							if (s > 0) sent += (size_t)s;
-							else if (s == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) break;
-							else { break; }
-						}
-						break;
-						}
-					else if (n == 0) {
 						c.in.append(buff, static_cast<size_t>(n));
-						continue;
+						size_t endpos;
+						handle_request(config, c.in.substr(0, endpos));
+						while (onConn::update_and_ready(c, endpos)) {
+							std::string response = build_http_response(200, "ok, Hello World!", "text/plain");
+							size_t sent = 0;
+							while (sent < response.size()) {
+								ssize_t s = send(fd, response.data() + sent, response.size() - sent, 0
+#ifdef MSG_NOSIGNAL
+				| MSG_NOSIGNAL
+#endif
+			);
+								msgSend++;
+								if (s > 0) sent += (size_t)s;
+								else break;
+							}
+							console::log("msgSend:", msgSend, SRV);
+							break;
+						}
 					}
 					if (n == 0) {
-						std::cout << "[DEBUG] recv returned 0 for fd " << fd << std::endl;
-						size_t endpos;
-						while (onConn::update_and_ready(c, endpos)) {
-							handle_request(config, c.in.substr(0, endpos));
-							c.in.erase(0, endpos);
-							c.header_done = false;
-							c.chunked = false;
-							c.content_len = -1;
-							c.body_have = 0;
-							c.headers_end = std::string::npos;
-						}
 						_ev.delFd(fd);
-						std::cout << "[DEBUG] Closing fd " << fd << std::endl;
 						close(fd);
-						std::cout << "[DEBUG] Erasing connection for fd " << fd << std::endl;
 						_conns.erase(fd);
 						alive = false;
-						break;
+						break;	
 					}
 					if (n == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) break;
 					if (n == -1 && errno == EINTR) continue;
-					std::cout << "[DEBUG] recv error for fd " << fd << ", errno: " << errno << std::endl;
 					_ev.delFd(fd);
-					std::cout << "[DEBUG] Closing fd " << fd << std::endl;
 					close(fd);
-					std::cout << "[DEBUG] Erasing connection for fd " << fd << std::endl;
 					_conns.erase(fd);
 					alive = false;
 					break;
-				}
-				if (!alive) continue;
-				size_t endpos;
-				while (onConn::update_and_ready(c, endpos)) {
-					handle_request(config, c.in.substr(0, endpos));
-					c.in.erase(0, endpos);
-					c.header_done = false;
-					c.chunked = false;
-					c.content_len = -1;
-					c.body_have = 0;
-					c.headers_end = std::string::npos;
-				}
-				if (!c.header_done && c.in.size() > onConn::MAX_HEADER_BYTES
+					if (!alive) continue;
+					size_t endpos;
+					while (!onConn::onDiscon(c, alive, endpos)) {
+						continue;
+					}
+					if (!c.header_done && c.in.size() > onConn::MAX_HEADER_BYTES
 					&& onConn::headers_end_pos(c.in) == std::string::npos) {
-					std::cout << "[DEBUG] Header too large for fd " << fd << std::endl;
-					_ev.delFd(fd);
-					std::cout << "[DEBUG] Closing fd " << fd << std::endl;
-					close(fd);
-					std::cout << "[DEBUG] Erasing connection for fd " << fd << std::endl;
-					_conns.erase(fd);
-					continue;
+						_ev.delFd(fd);
+						close(fd);
+						_conns.erase(fd);
+						continue;
+					}
 				}
 			}
 		}
 	}
+}
+
+int server::getPort() {
+	return _port;
 }

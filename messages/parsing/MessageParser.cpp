@@ -56,7 +56,7 @@ size_t	MessageParser::extract_content_length(const std::string& buffer) {
 
 	size_t	pos = buffer.find("Content-Length:");
 	if (pos == std::string::npos) {
-		console::log("No \"Content-Length\" header field", WARNING);
+		console::log("No \"Content-Length\" header field", ERROR);
 		return 0;
 	}
 	char const* digits = "0123456789";

@@ -5,3 +5,8 @@ Dockerfile
 Dockerfile.dev
 docker-compose.yml
 messages/messages_structure.txt
+*.o
+*.a
+*.so
+*.dSYM
+*.log

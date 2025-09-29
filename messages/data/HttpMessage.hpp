@@ -19,8 +19,8 @@ class HttpMessage {
 
 	protected:
 		State			_state;
-		double			_version_major;
-		double			_version_minor;
+		std::string		_version_major;
+		std::string		_version_minor;
 		std::map<std::string, std::vector<std::string> >	_headers;
 		std::string		_body;
 		
@@ -32,8 +32,8 @@ class HttpMessage {
 
 		State		getState() const;
 		void		setState(State state);
-		double		getHttpVersion() const;
-		void		setHttpVersion(double major, double minor);
+		std::string	getHttpVersion() const;
+		void		setHttpVersion(std::string major, std::string minor);
 
 		bool		hasHeader(const std::string& key) const;
 		void		addHeader(const std::string& key, const std::vector<std::string>& values);

@@ -32,7 +32,10 @@ class server {
 		server(int port);
 		~server();
 
-		void serverManager(WebservConfig config);
+		void serverManager(WebservConfig &config);
+
+	public:
+	int getPort();
 };
 
 
