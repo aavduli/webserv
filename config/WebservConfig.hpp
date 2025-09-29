@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/08 16:24:01 by jim               #+#    #+#             */
-/*   Updated: 2025/09/23 12:25:31 by jim              ###   ########.fr       */
+/*   Updated: 2025/09/29 12:03:38 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,6 +59,8 @@ class WebservConfig{
 
 		std::string getErrorPage(int code) const;
 		size_t getMaxContentLength() const;
+
+		//location
 		bool hasLocation(const std::string& path) const;
 
 		//locations access

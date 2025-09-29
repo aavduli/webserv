@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/15 14:57:26 by jim               #+#    #+#             */
-/*   Updated: 2025/09/29 11:31:43 by jim              ###   ########.fr       */
+/*   Updated: 2025/09/29 11:33:52 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -135,7 +135,7 @@ bool ConfigValidator::validateServerConfig(const ServerConfig& config) {
 	// check mandatory dircrive
 	if (config.directives.find("listen") == config.directives.end()) {
 		setError("Missing required 'listen' directive");
-		console::log(_lastError, WARNING);
+		console::log(_lastError, CONF);
 		return (BLOCKINGERROR ? false : true);
 	}
 
@@ -350,20 +350,20 @@ bool ConfigValidator::hasWPerm(const std::string& path) const{
 bool ConfigValidator::validateIndex(const std::string& index) {
 	if (index.empty()) {
 		setError("Empty index file");
-		console::log(_lastError, WARNING);
+		console::log(_lastError, CONF);
 		return (BLOCKINGERROR ? false : true);
 	}
 
 	if (index.find('.') == std::string::npos) {
 		setError("Index file must have extension: " + index);
-		console::log(_lastError, WARNING);
+		console::log(_lastError, CONF);
 		return (BLOCKINGERROR ? false : true);
 	}
 
 	if (index.find("..") != std::string::npos ||
 		index.find('/') == 0) {
 		setError("Invalid index file path: " + index);
-		console::log(_lastError, WARNING);
+		console::log(_lastError, CONF);
 		return (BLOCKINGERROR ? false : true);
 	}
 
@@ -377,28 +377,28 @@ bool ConfigValidator::validateRedirection(const std::string& redir) {
 	std::vector<std::string> parts = utils.split(redir, ' ');
 	if (parts.size() != 2) {
 		setError("Invalid redirection format: expected 'code url'");
-		console::log(_lastError, WARNING);
+		console::log(_lastError, CONF);
 		return (BLOCKINGERROR ? false : true);
 	}
 
 	// redirection arrives only when code
 	if (!isValidNumber(parts[0])) {
 		setError("Invalid redirection code: " + parts[0]);
-		console::log(_lastError, WARNING);
+		console::log(_lastError, CONF);
 		return (BLOCKINGERROR ? false : true);
 	}
 
 	int code = std::atoi(parts[0].c_str());
 	if (code != 301 && code != 302) {
 		setError("Unsupported redirection code (only 301, 302): " + parts[0]);
-		console::log(_lastError, WARNING);
+		console::log(_lastError, CONF);
 		return (BLOCKINGERROR ? false : true);
 	}
 
 	// url cant be mepty
 	if (parts[1].empty()) {
 		setError("Empty redirection URL");
-		console::log(_lastError, WARNING);
+		console::log(_lastError, CONF);
 		return (BLOCKINGERROR ? false : true);
 	}
 

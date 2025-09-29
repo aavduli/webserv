@@ -29,8 +29,6 @@ void printdebbug(WebservConfig config){
 
 	// basic srv config
 	std::cout << "Server: " << config.getHost() << ":" << config.getPort() << std::endl;
-	// basic srv config
-	std::cout << "Server: " << config.getHost() << ":" << config.getPort() << std::endl;
 	std::cout << "=========================\n" << std::endl;
 
 	// pprint location detail
@@ -38,20 +36,36 @@ void printdebbug(WebservConfig config){
 	const std::map<std::string, std::map<std::string, std::string> >& locations =
 	config.getAllLocations();
 
+	// 1) "parcour" all location
 	for (std::map<std::string, std::map<std::string, std::string> >::const_iterator it =
 	locations.begin();
 		it != locations.end(); ++it) {
 
 		std::cout << "Location [" << it->first << "]:" << std::endl;
 
-		// print all directive for location
-		for (std::map<std::string, std::string>::const_iterator dir = it->second.begin();
-			dir != it->second.end(); ++dir) {
+		// 2) for each make getlocationConfig
+		std::map<std::string, std::string> currentLocation = config.getLocationConfig(it->first);
+
+		// 3) print all directive for the current location
+		for (std::map<std::string, std::string>::const_iterator dir = currentLocation.begin();
+			dir != currentLocation.end(); ++dir) {
 			std::cout << "  " << dir->first << " = " << dir->second << std::endl;
+
+			//
+			if (dir->first == "methods") {
+				ParsingUtils utils;
+				std::vector<std::string> methodList = utils.split(dir->second, ' ');
+				std::cout << "    -> Methods as vector: ";
+				for (size_t i = 0; i < methodList.size(); i++) {
+					std::cout << "[" << methodList[i] << "] ";
+				}
+				std::cout << std::endl;
+			}
 		}
 		std::cout << std::endl;
 	}
 	std::cout << "=========================\n" << std::endl;
+
 }
 
 int main(int ac, char **av) {
@@ -72,7 +86,7 @@ int main(int ac, char **av) {
 		console::log(fn, CONF);
 		console::log("Detail: " + config.getLastError(), ERROR);
 		return 1;
-	} 
+	}
 	else {
 		console::log("config loaded succeffulsy", CONF);
 		if (PRINTCONFIG) config.printConfig();

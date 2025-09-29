@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/15 11:43:45 by jim               #+#    #+#             */
-/*   Updated: 2025/09/29 11:31:57 by jim              ###   ########.fr       */
+/*   Updated: 2025/09/29 11:47:28 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,12 +23,13 @@ std::vector<std::string> FileReader::readLines(const std::string& filepath) cons
 
 	std::ifstream file(filepath.c_str());
 
-	console::log(filepath.c_str(), WARNING);
+	console::log("Attempting to read config file", CONF);
 
 	if (!file.is_open()){
-		std::cerr << " Error, cant open fille " <<filepath << std::endl;
+		console::log("Failed to read config file", filepath.c_str(), ERROR);
 		return lines;
 	}
+	console::log("Config File opened successfully", CONF);
 
 	std::string line;
 	while(std::getline(file, line)){
