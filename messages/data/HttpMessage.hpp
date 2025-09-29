@@ -23,6 +23,7 @@ class HttpMessage {
 		std::string		_version_minor;
 		std::map<std::string, std::vector<std::string> >	_headers;
 		std::string		_body;
+		size_t			_content_length;
 		
 	public:
 		HttpMessage();
@@ -42,6 +43,9 @@ class HttpMessage {
 
 		std::string	getBody() const;
 		void		setBody(const std::string& body);
+
+		size_t		getContentLength() const;
+		void		setContentLength(size_t content_length);
 };
 
 #endif // HTTPMESSAGE_HPP

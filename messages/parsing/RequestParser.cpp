@@ -1,7 +1,7 @@
 #include "RequestParser.hpp"
 #include "../data/HttpRequest.hpp"
 
-RequestParser::RequestParser(const WebservConfig& config) : MessageParser(config), _request(NULL) {}
+RequestParser::RequestParser() : MessageParser(), _request(NULL) {}
 
 RequestParser::RequestParser(const RequestParser& rhs) : MessageParser(rhs) {
 	if (rhs._request)
@@ -64,6 +64,9 @@ HttpRequest* RequestParser::parse_request(std::string raw_request) {
 		delete request;
 		return NULL;
 	}
+	// std::cout << GREEN;
+	// print_request(request);
+	// std::cout << RESET << std::endl;
 	return request;
 }
 
@@ -120,12 +123,11 @@ bool RequestParser::parse_method(std::string request_line) {
 		console::log("No request method found", ERROR);
 		return false;
 	}
-	HttpMethod e_method = string_to_method(method);
-	if (e_method == UNKNOWN) {
-		console::log("Unknown method", ERROR);
+	if (method.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ") != std::string::npos) {
+		console::log("Invalid method name", ERROR);
 		return false;
 	}
-	_request->setMethod(e_method);
+	_request->setMethod(method);
 	_current_pos = request_line.find_first_not_of(" ", method_end);
 	return true;
 }
@@ -147,15 +149,12 @@ bool RequestParser::parse_uri(std::string request_line) {
 		console::log("Request URI too long", ERROR);
 		return false;
 	}
-
-	RequestUri uri(raw_uri, _config);
-	if (uri._is_valid) {
-		_request->setUri(uri);
-		_current_pos = request_line.find_first_not_of(" ", uri_end);
-		return true;
-	}
-	else
+	RequestUri uri(raw_uri);
+	if (!uri.parse())
 		return false;
+	_request->setUri(uri);
+	_current_pos = request_line.find_first_not_of(" ", uri_end);
+	return true;
 }
 
 bool RequestParser::parse_version(std::string request_line) {
@@ -213,16 +212,36 @@ bool RequestParser::parse_headers() {
 }
 
 // For HTTP requests, body parsing depends on Content-Length or Transfer-Encoding
-// For now, read the remaining data as body
 bool RequestParser::parse_body() {
-	
+
 	if (_current_pos < _raw_data.length()) {
 		std::string body = _raw_data.substr(_current_pos);
 		_request->setBody(body);
+		_request->setContentLength(_request->getBody().size());
 	}
 	else {
 		_request->setBody("");
+		_request->setContentLength(0);
 		console::log("Empty body", MSG);
+	}
+	std::vector<std::string> content_length_value = _request->getHeaderValues("content-length");
+	if (content_length_value.empty())
+		console::log("Missing \"Content-Length\" header field", MSG);
+	else {
+		if (content_length_value.at(0) == "") {
+			console::log("Missing \"Content-Length\" header value", MSG);
+			_state = s_req_invalid_content_length;
+			return false;
+		}
+		size_t content_length = to_size_t(content_length_value.at(0));
+		if (content_length != _request->getContentLength()) {
+			console::log("\"Content-Length\" header value doesn't match body size", MSG);
+			_state = s_req_invalid_content_length;
+			return false;
+		}
+		// 400 (bad request) if it cannot determine the length of the message OR
+		// 411 (length required) if it wishes to insist on receiving a valid Content-Length
+		// console::log("Status 400/411", ERROR);
 	}
 	return true;
 }

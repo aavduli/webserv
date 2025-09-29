@@ -47,7 +47,6 @@ enum State {
 	s_msg_init,
 		
 	/* REQUEST CHECKS */
-	s_req_incomplete,
 	s_req_invalid_content_length,
 	
 	/* REQUEST PARSING */
@@ -81,26 +80,19 @@ enum State {
 class MessageParser {
 
 	protected:
-		const WebservConfig&	_config;
 		Error			_error;
 		State			_state;			// monitor for parsing
 		std::string		_raw_data;		// raw_request
 		size_t			_current_pos;	// pos in raw_data string
-		size_t			_content_length;
 
 	public:
-		MessageParser(const WebservConfig& config);
+		MessageParser();
 		MessageParser(const MessageParser& rhs);
 		MessageParser& operator=(const MessageParser& rhs);
 		virtual ~MessageParser();
 
 		State	getState() const;
 		void	setState(State state);
-
-		size_t	getContentLength() const;
-
-		bool	is_complete_request(const std::string& buffer);
-		size_t	extract_content_length(const std::string& buffer);
 };
 
 // RESPONSE PARSER (inherits from MessageParser)

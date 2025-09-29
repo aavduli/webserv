@@ -7,7 +7,7 @@
 class HttpRequest : public HttpMessage {
 
 	private:
-		HttpMethod		_method;
+		std::string		_method;
 		RequestUri		_uri;
 		
 	public:
@@ -16,11 +16,11 @@ class HttpRequest : public HttpMessage {
 		HttpRequest& operator=(const HttpRequest& rhs);
 		~HttpRequest();
 
-		HttpMethod	getMethod() const;
-		void		setMethod(HttpMethod method);
+		const std::string&	getMethod() const;
+		void				setMethod(const std::string& method);
 
-		RequestUri	getUri() const;
-		void		setUri(const RequestUri& uri);
+		RequestUri			getUri() const;
+		void				setUri(const RequestUri& uri);
 };
 
 void		print_request(HttpRequest* request);

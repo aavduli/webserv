@@ -8,7 +8,7 @@ HttpMessage::HttpMessage() {
 	_body = "";
 }
 
-HttpMessage::HttpMessage(const HttpMessage& rhs) : _state(rhs._state), _version_major(rhs._version_major), _version_minor(rhs._version_minor), _headers(rhs._headers), _body(rhs._body) {}
+HttpMessage::HttpMessage(const HttpMessage& rhs) : _state(rhs._state), _version_major(rhs._version_major), _version_minor(rhs._version_minor), _headers(rhs._headers), _body(rhs._body), _content_length(0) {}
 
 HttpMessage& HttpMessage::operator=(const HttpMessage& rhs) {
 	if (this != &rhs) {
@@ -17,6 +17,7 @@ HttpMessage& HttpMessage::operator=(const HttpMessage& rhs) {
 		_version_minor = rhs._version_minor;
 		_headers = rhs._headers;
 		_body = rhs._body;
+		_content_length = rhs._content_length;
 	}
 	return *this;
 }
@@ -94,4 +95,12 @@ std::string	HttpMessage::getBody() const {
 
 void	HttpMessage::setBody(const std::string& body) {
 	_body = body;
+}
+
+size_t	HttpMessage::getContentLength() const {
+	return _content_length;
+}
+
+void	HttpMessage::setContentLength(size_t content_length) {
+	_content_length = content_length;
 }

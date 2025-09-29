@@ -2,16 +2,15 @@
 #include "../parsing/MessageParser.hpp"
 
 RequestUri::RequestUri() : _raw_uri(""), _scheme(""), _userinfo(""), _host(""), _port(""), _path(""),
-	_query(""), _fragment(""), _is_absolute_uri(false), _is_abs_path(false), _is_valid(false) {}
+	_query(""), _fragment(""), _is_absolute_uri(false), _is_abs_path(false) {}
 
-RequestUri::RequestUri(const std::string& raw_uri, const WebservConfig& config) : _raw_uri(raw_uri), _scheme(""), _userinfo(""), _host(""), _port(""),
-	_path(""), _query(""), _fragment(""), _is_absolute_uri(false), _is_abs_path(false), _is_valid(false) {
-	parse(config);
+RequestUri::RequestUri(const std::string& raw_uri) : _raw_uri(raw_uri), _scheme(""), _userinfo(""), _host(""), _port(""),
+	_path(""), _query(""), _fragment(""), _is_absolute_uri(false), _is_abs_path(false) {
 }
 
 RequestUri::RequestUri(const RequestUri& rhs) : _raw_uri(rhs._raw_uri), _scheme(rhs._scheme),
 	_userinfo(rhs._userinfo), _host(rhs._host), _port(rhs._port), _path(rhs._path),
-	_query(rhs._query), _fragment(rhs._fragment), _is_absolute_uri(rhs._is_absolute_uri), _is_abs_path(rhs._is_abs_path), _is_valid(rhs._is_valid) {}
+	_query(rhs._query), _fragment(rhs._fragment), _is_absolute_uri(rhs._is_absolute_uri), _is_abs_path(rhs._is_abs_path) {}
 
 RequestUri& RequestUri::operator=(const RequestUri& rhs) {
 	if (this != &rhs) {
@@ -25,79 +24,25 @@ RequestUri& RequestUri::operator=(const RequestUri& rhs) {
 		_fragment = rhs._fragment;
 		_is_absolute_uri = rhs._is_absolute_uri;
 		_is_abs_path = rhs._is_abs_path;
-		_is_valid = rhs._is_valid;
 	}
 	return *this;
 }
 
 RequestUri::~RequestUri() {}
 
-/*
-TODO: validate URI against config
-TODO: URL decode special characters (%20, etc.)
-TODO: Validate against malicious paths (../, etc.)
-*/
-
-bool RequestUri::validate_with_config(const WebservConfig& config) {
-
-	/* config.printConfig();
-	// Check host is valid
-	if (!_host.empty() && !_host.compare(config.getDirective("host"))) {
-		std::cout << "[AH] Invalid host: " << _host << std::endl;
-		std::cout << "[AH] Server host: " << config.getDirective("host") << std::endl;
-		// console::log("Invalid host: " + _host, ERROR);
-		return false;
-	}
-
-	// Check port is valid
-	if (!_port.empty() && _port != "80" && !_port.compare(config.getDirective("port"))) {
-		std::cout << "[AH] Invalid port: " << _port << std::endl;
-		// console::log("Invalid port: " + _port, ERROR);
-		return false;
-	} */
-
-/* 
-	// Check path permissions
-	if (!_path.empty() && !_path.compare(config.getLocationConfig("path"))) {
-		std::cout << "[AH] Invalid port: " << _port << std::endl;
-		// console::log("Invalid port: " + _port, ERROR);
-		return false;
-	}
-	LocationConfig location = config.getLocationConfig(_path);
-	if (!location.isPathAllowed(_path)) {
-		std::cout << "[AH] Path not allowed: " << _path << std::endl;
-		// console::log("Path not allowed: " + _path, ERROR);
-		return false;
-	}
-
-	// Set defaults from config if missing
-	if (_port.empty() || _port == "80") {
-		_port = config.getDefaultPort();
-	}
-
-	if (_host.empty()) {
-		_host = config.getDefaultServerName();
-	} */
-	(void)config;
-	return true;
-}
-
-bool	RequestUri::parse(const WebservConfig& config) {
+bool	RequestUri::parse() {
 
 	clear_uri();
 
 	if (is_absolute_uri(_raw_uri))
-		parse_absolute_uri(_raw_uri);
+		*this = parse_absolute_uri(_raw_uri);
 	else if (_raw_uri[0] == '/')
-		parse_abs_path(_raw_uri);
+		*this = parse_abs_path(_raw_uri);
 	else {
-		std::cout << "[AH] Invalid URI format" << std::endl;
-		console::log("Invalid URI format", ERROR);
+		console::log("Invalid URI format: " + _raw_uri, ERROR);
 		return false;
 	}
-	if (validate_with_config(config))
-		_is_valid = true;
-	return _is_valid;
+	return true;
 }
 
 bool	RequestUri::parse_uri_path_query(const std::string& raw) {
@@ -143,8 +88,7 @@ RequestUri	RequestUri::parse_absolute_uri(const std::string& raw) {
 	if (raw.find(":") != std::string::npos) {
 		uri._scheme = extract_uri_component(&pos, raw, ":");
 		if (uri._scheme != "http" && uri._scheme != "https") {
-			std::cout << "[AH] Unsupported URI scheme: " << uri._scheme << std::endl;
-			console::log("Unsupported URI scheme: " + uri._scheme, ERROR);
+			console::log("Unsupported URI scheme: " + uri._scheme, MSG);
 			uri.clear_uri();
 			return uri;
 		}
@@ -161,6 +105,7 @@ RequestUri	RequestUri::parse_absolute_uri(const std::string& raw) {
 			uri.parse_uri_path_query(raw.substr(pos));
 		else
 			uri._path = "/";
+		uri._is_absolute_uri = true;
 	}
 	return uri;
 }
@@ -241,4 +186,78 @@ std::string	RequestUri::getRawUri() const {
 
 void	RequestUri::setRawUri(const std::string& raw) {
 	_raw_uri = raw;
+}
+
+std::string	RequestUri::getPath() const {
+	return _path;
+}
+
+// Additional Getters
+std::string	RequestUri::getScheme() const {
+	return _scheme;
+}
+
+std::string	RequestUri::getUserinfo() const {
+	return _userinfo;
+}
+
+std::string	RequestUri::getHost() const {
+	return _host;
+}
+
+std::string	RequestUri::getPort() const {
+	return _port;
+}
+
+std::string	RequestUri::getQuery() const {
+	return _query;
+}
+
+std::string	RequestUri::getFragment() const {
+	return _fragment;
+}
+
+bool	RequestUri::isAbsoluteUri() const {
+	return _is_absolute_uri;
+}
+
+bool	RequestUri::isAbsPath() const {
+	return _is_abs_path;
+}
+
+// Additional Setters
+void	RequestUri::setScheme(const std::string& scheme) {
+	_scheme = scheme;
+}
+
+void	RequestUri::setUserinfo(const std::string& userinfo) {
+	_userinfo = userinfo;
+}
+
+void	RequestUri::setHost(const std::string& host) {
+	_host = host;
+}
+
+void	RequestUri::setPort(const std::string& port) {
+	_port = port;
+}
+
+void	RequestUri::setPath(const std::string& path) {
+	_path = path;
+}
+
+void	RequestUri::setQuery(const std::string& query) {
+	_query = query;
+}
+
+void	RequestUri::setFragment(const std::string& fragment) {
+	_fragment = fragment;
+}
+
+void	RequestUri::setAbsoluteUri(bool is_absolute_uri) {
+	_is_absolute_uri = is_absolute_uri;
+}
+
+void	RequestUri::setAbsPath(bool is_abs_path) {
+	_is_abs_path = is_abs_path;
 }
