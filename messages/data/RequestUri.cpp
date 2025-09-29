@@ -2,14 +2,14 @@
 #include "../parsing/MessageParser.hpp"
 
 RequestUri::RequestUri() : _raw_uri(""), _scheme(""), _userinfo(""), _host(""), _port(""), _path(""),
-	_query(""), _fragment(""), _is_absolute_uri(false), _is_abs_path(false) {}
+	_full_path(""), _query(""), _fragment(""), _is_absolute_uri(false), _is_abs_path(false) {}
 
 RequestUri::RequestUri(const std::string& raw_uri) : _raw_uri(raw_uri), _scheme(""), _userinfo(""), _host(""), _port(""),
-	_path(""), _query(""), _fragment(""), _is_absolute_uri(false), _is_abs_path(false) {
+	_path(""), _full_path(""), _query(""), _fragment(""), _is_absolute_uri(false), _is_abs_path(false) {
 }
 
 RequestUri::RequestUri(const RequestUri& rhs) : _raw_uri(rhs._raw_uri), _scheme(rhs._scheme),
-	_userinfo(rhs._userinfo), _host(rhs._host), _port(rhs._port), _path(rhs._path),
+	_userinfo(rhs._userinfo), _host(rhs._host), _port(rhs._port), _path(rhs._path), _full_path(rhs._full_path), 
 	_query(rhs._query), _fragment(rhs._fragment), _is_absolute_uri(rhs._is_absolute_uri), _is_abs_path(rhs._is_abs_path) {}
 
 RequestUri& RequestUri::operator=(const RequestUri& rhs) {
@@ -20,6 +20,7 @@ RequestUri& RequestUri::operator=(const RequestUri& rhs) {
 		_host = rhs._host;
 		_port = rhs._port;
 		_path = rhs._path;
+		_full_path = rhs._full_path;
 		_query = rhs._query;
 		_fragment = rhs._fragment;
 		_is_absolute_uri = rhs._is_absolute_uri;
@@ -192,6 +193,10 @@ std::string	RequestUri::getPath() const {
 	return _path;
 }
 
+std::string	RequestUri::getFullPath() const {
+	return _full_path;
+}
+
 // Additional Getters
 std::string	RequestUri::getScheme() const {
 	return _scheme;
@@ -244,6 +249,10 @@ void	RequestUri::setPort(const std::string& port) {
 
 void	RequestUri::setPath(const std::string& path) {
 	_path = path;
+}
+
+void	RequestUri::setFullPath(const std::string& full_path) {
+	_full_path = full_path;
 }
 
 void	RequestUri::setQuery(const std::string& query) {

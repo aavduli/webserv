@@ -1,4 +1,5 @@
 #include "MessageHandler.hpp"
+#include "MessageValidator.hpp"
 
 MessageHandler::MessageHandler(HttpRequest* request) : _request(request), _response(NULL) {}
 
@@ -15,6 +16,8 @@ MessageHandler::MessageHandler(const MessageHandler& rhs) {
 
 MessageHandler& MessageHandler::operator=(const MessageHandler& rhs) {
 	if (this != &rhs) {
+		delete _request;
+		delete _response;
 		if (rhs._request)
 			_request = new HttpRequest(*rhs._request);
 		else
@@ -71,72 +74,14 @@ void	handle_request(const WebservConfig& config, const std::string &raw) {
 		console::log("[ERROR] Request parsing failed with state " + parser.getState(), MSG);
 }
 
-// Host header format: "hostname:port" or just "hostname"
-bool	is_valid_host(RequestUri *uri, const std::vector<std::string>& header_host, const std::string& config_host) {
-
-	if (uri->getHost().empty() && !header_host.empty()) {
-		std::string tmp_host = header_host.at(0);
-		size_t colon = tmp_host.find(":");
-		if (colon != std::string::npos)
-			uri->setHost(tmp_host.substr(0, colon));
-		else
-			uri->setHost(tmp_host);
-	}
-	if (!(uri->getHost()).empty() && (uri->getHost()).compare(config_host)) {
-		console::log("[ERROR] Invalid host: " + (uri->getHost()), MSG);
-		console::log("Expected server host: " + config_host, MSG);
-		return false;
-	}
-	else if ((uri->getHost()).empty())
-		uri->setHost(config_host);
-	return true;
-}
-
-// Host header format: "hostname:port"
-bool	is_valid_port(RequestUri *uri, const std::vector<std::string>& header_port, const std::string& config_port) {
-
-	if (uri->getPort().empty() && !header_port.empty()) {
-		std::string tmp_port = header_port.at(0);
-		size_t colon = tmp_port.find(":");
-		if (colon != std::string::npos)
-			uri->setPort(tmp_port.substr(colon + 1));
-	}
-	// Allow default HTTP port (80) or configured port
-	if (!(uri->getPort()).empty() && (uri->getPort()) != "80" && (uri->getPort()).compare(config_port)) {
-		console::log("[ERROR] Invalid port: " + (uri->getPort()), MSG);
-		console::log("Expected server port: " + config_port, MSG);
-		return false;
-	}
-	else if ((uri->getPort()).empty())
-		uri->setPort(config_port);
-	return true;
-}
-
-bool	is_allowed_method(const std::string& method, std::map<std::string, std::string> loc_config) {
-
-	if (loc_config.empty()) {
-		console::log("[INFO] No location config found", MSG);
-		if (method == "GET" || method == "POST" || method == "DELETE")
-			return true;
-	}
-	else {
-		std::string allowed_methods = loc_config["methods"];
-		std::vector<std::string> methods = str_to_vect(allowed_methods, " ");
-		std::vector<std::string>::iterator it;
-		for (it = methods.begin(); it != methods.end(); it++) {
-			if (method == *it)
-				return true;
-		}
-	}
-	console::log("[ERROR] Invalid method " + method, MSG);
-	// Should return 405 Method Not Allowed
-	return false;
-}
-
 bool	MessageHandler::is_valid_request(const WebservConfig& config) {
 
+	// TODO: Handle case when no specific location matches
+	// Should validate against default server config and root location "/"
+	// This might indicate misconfiguration or need for default handling
+
 	RequestUri uri = _request->getUri();
-	// uri.print();
+	uri.print();
 	if (!is_valid_host(&uri, _request->getHeaderValues("host"), config.getDirective("server_name")))
 		return false;
 
@@ -146,21 +91,22 @@ bool	MessageHandler::is_valid_request(const WebservConfig& config) {
 	if (!is_allowed_method(_request->getMethod(), config.getLocationConfig(uri.getPath())))
 		return false;
 
-	std::string max_body_size = config.getDirective("client_max_body_size");
-	if (!max_body_size.empty()) {
-		size_t max = to_size_t(max_body_size);
-		if (_request->getContentLength() > max) {
-			console::log("[ERROR] Content-Length value > client_max_body_size", MSG);
-			_state = s_req_invalid_content_length;
-			return false;
-		}
-	}
+	if (!is_valid_body_size(_request->getContentLength(), config.getDirective("client_max_body_size")))
+		return false;
 
-	// TODO: Handle case when no specific location matches
-	// Should validate against default server config and root location "/"
-	// This might indicate misconfiguration or need for default handling
+	if (!is_valid_path(&uri, config, config.getLocationConfig(uri.getPath())))
+		return false;
 
 
+/* 	root = locationConfig["root"]
+	fullPath = root + request.getUri().getPath()
+
+	7. RESPONSE GENERATION:
+	if (locationConfig["return"])           → Redirect response
+	else if (isCGI(extension))             → CGI execution
+	else if (isDirectory() && autoindex)   → Directory listing
+	else                                   → Static file serving */
+	
 	// TODO: Validate path access permissions for this location
 	// Check if path is accessible based on location configuration
 	
@@ -172,9 +118,6 @@ bool	MessageHandler::is_valid_request(const WebservConfig& config) {
 	
 	// TODO: Handle redirections if location has "return" directive
 	// Format: "301 https://example.com" or "302 /other-path"
-
-	// 4. CONTENT-LENGTH VALIDATION
-	// Validate request body size against configured maximum
 	
 	// 6. HTTP VERSION VALIDATION
 	// Ensure HTTP version is supported (1.0, 1.1)
@@ -199,6 +142,7 @@ bool	MessageHandler::is_valid_request(const WebservConfig& config) {
 	// For POST/PUT requests, validate Content-Type header presence
 	// Check if Content-Type is supported for the target location
 
+	_request->setUri(uri);
 	return true;
 }
 

@@ -8,8 +8,9 @@
 #include "../data/HttpRequest.hpp"
 #include "../data/HttpResponse.hpp"
 #include "../../config/WebservConfig.hpp"
+#include "MessageHandler.hpp"
 
- class MessageHandler {
+class MessageHandler {
 
 	private:
 		Error					_error;
