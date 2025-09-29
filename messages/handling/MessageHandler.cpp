@@ -47,12 +47,6 @@ bool	MessageHandler::is_valid_request() const {
 	return true;
 }
 
-/*
-TODO: validate URI against config
-TODO: URL decode special characters (%20, etc.)
-TODO: Validate against malicious paths (../, etc.)
-*/
-
 void	MessageHandler::process_request() {
 	
 	switch (_request->getMethod()) {

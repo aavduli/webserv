@@ -64,9 +64,9 @@ HttpRequest* RequestParser::parse_request(std::string raw_request) {
 		delete request;
 		return NULL;
 	}
-	std::cout << GREEN;
-	print_request(request);
-	std::cout << RESET << std::endl;
+	// std::cout << GREEN;
+	// print_request(request);
+	// std::cout << RESET << std::endl;
 	return request;
 }
 
