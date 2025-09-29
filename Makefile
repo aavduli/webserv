@@ -17,10 +17,12 @@ SRCS =	main.cpp \
 		messages/data/HttpRequest.cpp \
 		messages/data/RequestUri.cpp \
 		messages/handling/MessageHandler.cpp \
+		messages/handling/MessageValidator.cpp \
 		messages/parsing/MessageParser.cpp \
 		messages/parsing/RequestParser.cpp \
 		parsing/Normalization.cpp \
-		parsing/Conversion.cpp
+		parsing/Conversion.cpp \
+		parsing/BNFValidation.cpp
 
 OBJDIR = obj
 
