@@ -163,7 +163,7 @@ std::string WebservConfig::getHost() const { // todo make bloquant error
 
 
 size_t WebservConfig::getMaxBodySize() const{
-	std::string maxSize = getDirective("max_size_body");
+	std::string maxSize = getDirective("client_max_body_size");
 	if (maxSize.empty()) return 1048576; // 1MB default
 
 	size_t size = _utils.parseSize(maxSize);
@@ -180,12 +180,29 @@ std::vector<std::string> WebservConfig::getAllowedMethods() const{
 		return methods;
 	}
 
-	return _utils.split(allowMethods, ' ');
+	std::vector<std::string> parseMethods = _utils.split(allowMethods, ' ');
+	std::vector<std::string> validMethods;
+
+	for (size_t i = 0; i <parseMethods.size(); i++){
+		if (_utils.isValidMethod(parseMethods[i])){
+			validMethods.push_back(parseMethods[i]);
+		}
+	}
+
+	//if no valid methods return get
+	if (validMethods.empty()){
+		validMethods.push_back("GET");
+	}
+
+	return validMethods;
 }
 
 
 std::string WebservConfig::getServerName() const{
-	return getDirective("server_name");
+	std::string srvname = getDirective("server_name");
+	if (srvname.empty()) return "localhost";
+	else
+		return srvname;
 }
 
 std::string WebservConfig::getRoot() const{
@@ -196,7 +213,11 @@ std::string WebservConfig::getRoot() const{
 }
 
 std::string WebservConfig::getIndex() const {
-	return getDirective("index");
+	std::string index = getDirective("index");
+	if (index.empty())
+		return "index.html";
+	else
+		return index;
 }
 
 std::string WebservConfig::getErrorPage(int code) const {
@@ -210,20 +231,6 @@ std::string WebservConfig::getErrorPage(int code) const {
 
 	if (it != _server.end()){
 		return it->second; //return filepath
-	}
-	else{
-		std::cout << "keyPrefix: "<< keyPrefixe << std::endl;
-	}
-
-	if (it != _server.end()){
-		//parsing "404 /error404.html"
-		std::istringstream iss(it->second);
-		std::string pageCode;
-		std::string filepath;
-
-		if (iss >> pageCode >> filepath && pageCode == codeStr){
-			return filepath;
-		}
 	}
 	return ""; //not found
 }
