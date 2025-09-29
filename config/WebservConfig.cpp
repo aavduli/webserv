@@ -146,7 +146,7 @@ int WebservConfig::getPort() const {
 }
 
 
-std::string WebservConfig::getHost() const {
+std::string WebservConfig::getHost() const { // todo make bloquant error
 	std::string host = getDirective("host");
 	if (!host.empty()) return host;
 

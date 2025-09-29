@@ -3,7 +3,7 @@
 #include "config/WebservConfig.hpp"
 
 const bool PRINTCONFIG = false;
-const bool DEBBUGPRINT = true; 
+const bool DEBBUGPRINT = true;
 
 //to delete later
 void printdebbug(WebservConfig config){
@@ -76,10 +76,7 @@ int main(int ac, char **av) {
 		console::log("config loaded succeffulsy", INFO);
 		if (PRINTCONFIG) config.printConfig();
 		//exemple of usage
-		if (DEBBUGPRINT){
-			printdebbug(config);
-		}
-
+		if (DEBBUGPRINT){printdebbug(config);}
 	}
 	std::string portStr = config.getDirective("listen");
 	int port = atoi(portStr.c_str());
