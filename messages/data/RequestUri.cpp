@@ -35,11 +35,11 @@ bool	RequestUri::parse() {
 	clear_uri();
 
 	if (is_absolute_uri(_raw_uri))
-		parse_absolute_uri(_raw_uri);
+		*this = parse_absolute_uri(_raw_uri);
 	else if (_raw_uri[0] == '/')
-		parse_abs_path(_raw_uri);
+		*this = parse_abs_path(_raw_uri);
 	else {
-		console::log("Invalid URI format", ERROR);
+		console::log("Invalid URI format: " + _raw_uri, ERROR);
 		return false;
 	}
 	return true;
@@ -105,6 +105,7 @@ RequestUri	RequestUri::parse_absolute_uri(const std::string& raw) {
 			uri.parse_uri_path_query(raw.substr(pos));
 		else
 			uri._path = "/";
+		uri._is_absolute_uri = true;
 	}
 	return uri;
 }
