@@ -13,26 +13,26 @@ int NetworkHandler::makeNonblocking(int fd) {
 	return 0;
 }
 
-int NetworkHandler::setuptSocketOptions(int fd) {
-	int yes = 1;
-	setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
-	#ifdef SO_REUSEPORT
-	setsocketopt(fd, SOL_SOCKET, SO_REUSEPORT, &yes, sizeof(yes));
-	#endif
-	if (makeNonblocking(fd) == -1)
-		logNetworkError("[NETWORK][SOCKET]", std::string(errno));
-}
-
 int NetworkHandler::createServersocket() {
 	int fd = socket(AF_INET, SOCK_STREAM, 0);
-	if (getServerFd() < 0)
-		logNetworkError("[NETWORK][SOCKET] ", std::string(errno));
+	if (fd < 0)
+	logNetworkError("[NETWORK][SOCKET] ", std::strerror(errno));
 	return fd;
 }
 
-void NetworkHandler::bindAndListen(int serverfd, const struct sockaddr_in& address) {
-	if (bind(serverfd, (struct sockaddr*)&address, sizeof(address)) < 0)
-		logNetworkError("[NETWORK][BIND]", std::string(errno));
+void NetworkHandler::setuptSocketOptions(int fd) {
+	int yes = 1;
+	setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
+	#ifdef SO_REUSEPORT
+	setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &yes, sizeof(yes));
+	#endif
+	if (makeNonblocking(fd) == -1)
+		logNetworkError("[NETWORK][SOCKET]", std::strerror(errno));
+}
+
+void NetworkHandler::bindAndListen(int serverfd, const struct sockadd_in& address) {
+	if (bind(serverfd, (struct sockaddr*)&address, sizeof(&address)) < 0)
+		logNetworkError("[NETWORK][BIND]", std::strerror(errno));
 	if (listen(serverfd, SOMAXCONN) < 0)
-		logNetworkError("[NETWORK][LISTEN]", std::string(error));
+		logNetworkError("[NETWORK][LISTEN]", std::strerror(errno));
 }

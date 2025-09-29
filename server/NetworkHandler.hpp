@@ -2,7 +2,8 @@
 
 //Handle pure network I/O operations
 
-#include "server.hpp"
+#include <netinet/in.h>
+#include <sys/socket.h>
 #include <iostream>
 #include <string>
 #include <sys/socket.h>
@@ -11,8 +12,9 @@
 #include <cstring>
 #include <cerrno>
 #include <csignal>
+#include <cstdlib>
 
-class NetworkHandler : public server {
+class NetworkHandler {
 	private:
 		NetworkHandler() = delete; //static class only
 		static void logNetworkError(const std::string& operation, const std::string& error); //todo

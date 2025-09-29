@@ -23,7 +23,6 @@ class server {
 		std::map<int, Conn> _conns;
 
 	private:
-		void start_listen();
 		void setServer();
 		void setSockaddr();
 		static int make_nonblock(int fd);
