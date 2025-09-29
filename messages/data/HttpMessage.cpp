@@ -36,6 +36,14 @@ std::string	HttpMessage::getHttpVersion() const {
 	return (_version_major + "." + _version_minor);
 }
 
+std::string	HttpMessage::getHttpVersionMajor() const {
+	return _version_major;
+}
+
+std::string	HttpMessage::getHttpVersionMinor() const {
+	return _version_minor;
+}
+
 void	HttpMessage::setHttpVersion(std::string major, std::string minor) {
 	_version_major = major;
 	_version_minor = minor;

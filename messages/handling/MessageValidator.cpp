@@ -63,6 +63,15 @@ bool	is_allowed_method(const std::string& method, std::map<std::string, std::str
 	return false;
 }
 
+// need default version MACRO?
+bool	is_supported_version(const std::string& version) {
+
+	if (version == "1.1" || version == "1.0" || version == "0.9")
+		return true;
+	console::log("[ERROR] Unsupported HTTP version", MSG);
+	return false;
+}
+
 // need default max MACRO?
 bool	is_valid_body_size(const size_t& size, const std::string& config_max) {
 

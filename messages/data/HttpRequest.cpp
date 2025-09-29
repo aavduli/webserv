@@ -1,8 +1,6 @@
 #include "HttpRequest.hpp"
 
-HttpRequest::HttpRequest() : _method("") {
-	// The RequestUri constructor will initialize all values to empty/false
-}
+HttpRequest::HttpRequest() : _method("") {}
 
 HttpRequest::HttpRequest(const HttpRequest& rhs) : HttpMessage(rhs), _method(rhs._method), _uri(rhs._uri) {}
 

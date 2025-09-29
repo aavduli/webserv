@@ -21,7 +21,8 @@ SRCS =	main.cpp \
 		messages/parsing/MessageParser.cpp \
 		messages/parsing/RequestParser.cpp \
 		parsing/Normalization.cpp \
-		parsing/Conversion.cpp
+		parsing/Conversion.cpp \
+		parsing/BNFValidation.cpp
 
 OBJDIR = obj
 

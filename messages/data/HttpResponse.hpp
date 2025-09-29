@@ -22,4 +22,17 @@
 
 };
 
+/* 
+Headers :
+
+If 405 Method Not Allowed:
+	Content-Length: 0
+	Date: Fri, 28 Jun 2024 14:30:31 GMT
+	Server: ECLF (nyd/D179)
+	Allow: GET, POST, HEAD
+
+
+
+*/
+
 #endif //HTTPRESPONSE_HPP

@@ -12,6 +12,7 @@
 bool	is_valid_host(RequestUri *uri, const std::vector<std::string>& header_host, const std::string& config_host);
 bool	is_valid_port(RequestUri *uri, const std::vector<std::string>& header_port, const std::string& config_port);
 bool	is_allowed_method(const std::string& method, std::map<std::string, std::string> loc_config);
+bool	is_supported_version(const std::string& version);
 bool	is_valid_body_size(const size_t& size, const std::string& max_config);
 bool	is_valid_path(RequestUri *uri, const WebservConfig& config, std::map<std::string, std::string> location);
 

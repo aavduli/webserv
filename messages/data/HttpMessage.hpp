@@ -34,6 +34,8 @@ class HttpMessage {
 		State		getState() const;
 		void		setState(State state);
 		std::string	getHttpVersion() const;
+		std::string	getHttpVersionMajor() const;
+		std::string	getHttpVersionMinor() const;
 		void		setHttpVersion(std::string major, std::string minor);
 
 		bool		hasHeader(const std::string& key) const;

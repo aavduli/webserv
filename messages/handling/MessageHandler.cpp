@@ -68,10 +68,10 @@ void	handle_request(const WebservConfig& config, const std::string &raw) {
 			// resp = (handler.serialize_response()).c_str();
 		}
 		else
-			console::log("[ERROR] Invalid request in handle_request, state " + parser.getState(), MSG);
+			console::log("[ERROR] Invalid request in handle_request", MSG);
 	}
 	else
-		console::log("[ERROR] Request parsing failed with state " + parser.getState(), MSG);
+		console::log("[ERROR] Request parsing failed with state", MSG);
 }
 
 bool	MessageHandler::is_valid_request(const WebservConfig& config) {
@@ -81,14 +81,16 @@ bool	MessageHandler::is_valid_request(const WebservConfig& config) {
 	// This might indicate misconfiguration or need for default handling
 
 	RequestUri uri = _request->getUri();
-	uri.print();
-	if (!is_valid_host(&uri, _request->getHeaderValues("host"), config.getDirective("server_name")))
+	if (!is_valid_host(&uri, _request->getHeaderValues("host"), config.getDirective("server_name"))) 
 		return false;
 
 	if (!is_valid_port(&uri, _request->getHeaderValues("port"), config.getDirective("port")))
 		return false;
 
 	if (!is_allowed_method(_request->getMethod(), config.getLocationConfig(uri.getPath())))
+		return false;
+	
+	if (!is_supported_version(_request->getHttpVersion()))
 		return false;
 
 	if (!is_valid_body_size(_request->getContentLength(), config.getDirective("client_max_body_size")))
@@ -97,19 +99,6 @@ bool	MessageHandler::is_valid_request(const WebservConfig& config) {
 	if (!is_valid_path(&uri, config, config.getLocationConfig(uri.getPath())))
 		return false;
 
-
-/* 	root = locationConfig["root"]
-	fullPath = root + request.getUri().getPath()
-
-	7. RESPONSE GENERATION:
-	if (locationConfig["return"])           → Redirect response
-	else if (isCGI(extension))             → CGI execution
-	else if (isDirectory() && autoindex)   → Directory listing
-	else                                   → Static file serving */
-	
-	// TODO: Validate path access permissions for this location
-	// Check if path is accessible based on location configuration
-	
 	// TODO: Check location-specific client_max_body_size override
 	// Location config takes precedence over server config
 	
@@ -119,20 +108,12 @@ bool	MessageHandler::is_valid_request(const WebservConfig& config) {
 	// TODO: Handle redirections if location has "return" directive
 	// Format: "301 https://example.com" or "302 /other-path"
 	
-	// 6. HTTP VERSION VALIDATION
-	// Ensure HTTP version is supported (1.0, 1.1)
-	// Check _request->getHttpVersion() against supported versions
-	
 	// 7. REQUIRED HEADERS VALIDATION
 	// HTTP/1.1 requires Host header - validate it exists and is valid
 	// Check other required headers based on method (Content-Length for POST)
 	
 	// 8. URI LENGTH VALIDATION
 	// Check if URI length exceeds MAX_URI_LENGTH configuration
-	
-	// 9. PATH SECURITY VALIDATION
-	// Check for directory traversal attacks (../, ..\, etc.)
-	// Validate path doesn't contain malicious characters
 	
 	// 10. TRANSFER-ENCODING VALIDATION
 	// If Transfer-Encoding header present, validate supported encodings
@@ -166,6 +147,15 @@ void	MessageHandler::process_request() {
 
 // with default headers
 void	MessageHandler::generate_response() {
+
+	/*
+	7. RESPONSE GENERATION:
+	if (locationConfig["return"])           → Redirect response
+	else if (isCGI(extension))             → CGI execution
+	else if (isDirectory() && autoindex)   → Directory listing
+	else                                   → Static file serving */
+
+
 	return ;
 }
 
@@ -182,7 +172,7 @@ void	MessageHandler::handle_get() {
 		return ;
 	}
 	// if here, URI should not be empty
-	std::string uri = _request->getUri().getRawUri();
+	std::string path = _request->getUri().getFullPath();
 }
 
 void	MessageHandler::handle_post() {}
