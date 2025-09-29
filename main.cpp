@@ -3,7 +3,7 @@
 #include "config/WebservConfig.hpp"
 
 const bool PRINTCONFIG = false;
-const bool DEBBUGPRINT = true; 
+const bool DEBBUGPRINT = true;
 
 //to delete later
 void printdebbug(WebservConfig config){
