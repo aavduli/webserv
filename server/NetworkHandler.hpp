@@ -15,16 +15,25 @@
 #include <cstdlib>
 #include "../console/console.hpp"
 
+enum NetworkError {
+	NET_SUCCESS = 0,
+	SOCKET_ERROR = -1,
+	BIND_ERROR = -2,
+	LISTEN_ERROR = -3,
+	ACCEPT_ERROR = -4,
+	NON_BLOCK_ERROR = -5
+};
+
 class NetworkHandler {
 	private:
 		NetworkHandler() = delete; //static class only
 		static void logNetworkError(const std::string& operation, const std::string& error); //todo
 	public:
 		//server creation and configuration
-		static int createServersocket();
-		static void setuptSocketOptions(int fd);
+		static int createServerSocket();
+		static void setupSocketOptions(int fd);
 		static int makeNonblocking(int fd);
-		static void bindAndListen(int serverFd, const struct sockadd_in& address);
+		static int bindAndListen(int serverFd, const struct sockaddr_in& address);
 
 		//accept connection
 		static int acceptConnection(int serverFd, struct sockaddr_storage& clientAddr); 
