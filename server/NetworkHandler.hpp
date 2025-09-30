@@ -40,5 +40,5 @@ class NetworkHandler {
 		static bool isSocketError(int fd); //todo
 
 		//Address
-		static struct sockkaddr_in createSockkaddr(int port); //todo
+		static struct sockaddr_in createSockkaddr(int port); //todo
 };

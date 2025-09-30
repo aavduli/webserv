@@ -13,7 +13,7 @@ int NetworkHandler::makeNonblocking(int fd) {
 	int clo = fcntl(fd, F_GETFD, 0);
 	if (clo == -1) return -1;
 	if (fcntl(fd, F_SETFD, clo | FD_CLOEXEC) == -1) return -1;
-	
+
 	return 0;
 }
 
@@ -84,4 +84,13 @@ void NetworkHandler::ignoreSigPipe() {
 bool NetworkHandler::isSocketError(int fd) {
 	if (fd == -1) return true;
 	return false;
+}
+
+struct sockaddr_in NetworkHandler::createSockkaddr(int port) {
+	struct sockaddr_in adress;
+	std::memset(&adress, 0, sizeof(adress));
+	adress.sin_family = AF_INET;
+	adress.sin_addr.s_addr = htonl(INADDR_ANY);
+	adress.sin_port = htons(port);
+	return adress;
 }
