@@ -13,6 +13,7 @@
 #include <cerrno>
 #include <csignal>
 #include <cstdlib>
+#include "../console/console.hpp"
 
 class NetworkHandler {
 	private:
@@ -26,13 +27,13 @@ class NetworkHandler {
 		static void bindAndListen(int serverFd, const struct sockadd_in& address);
 
 		//accept connection
-		static int acceptConnection(int serverFd, struct sockaddr_storage& clientAddr); //todo
-		static int closeConnection(int fd); //todo
+		static int acceptConnection(int serverFd, struct sockaddr_storage& clientAddr); 
+		static void closeConnection(int fd);
 
 		//handle data
-		static ssize_t receiveData(int fd, char *buffer, ssize_t size); //todo
-		static ssize_t sendData(int fd, char *buffer, ssize_t size); //todo
-		static ssize_t sendFullData(int fd, char *buffer, ssize_t size); //todo
+		static ssize_t receiveData(int fd, char *buffer, ssize_t size);
+		static ssize_t sendData(int fd, char *buffer, ssize_t size);
+		static ssize_t sendFullData(int fd, char *buffer, ssize_t size);
 		
 		//utility
 		static void ignoreSigPipe(); //todo
