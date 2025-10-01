@@ -45,7 +45,7 @@ HttpResponse*	MessageHandler::getResponse() const {
 	return _response;
 }
 
-void	handle_request(const WebservConfig& config, const std::string &raw) {
+void	handle_request(const WebservConfig& config, const std::string &raw) {	// TODO should return status enum 
 
 	if (raw.empty()) {
 		// return status code? return error/bool?
@@ -83,15 +83,19 @@ bool	MessageHandler::is_valid_request(const WebservConfig& config) {
 	RequestUri uri = _request->getUri();
 	if (!is_valid_host(&uri, _request->getHeaderValues("host"), config.getDirective("server_name"))) 
 		return false;
+		// 400 Bad Request
 
 	if (!is_valid_port(&uri, _request->getHeaderValues("port"), config.getDirective("port")))
 		return false;
+		// 400 Bad Request
 
 	if (!is_allowed_method(_request->getMethod(), config.getLocationConfig(uri.getPath())))
 		return false;
+		// 405 Method Not Allowed
 	
-	if (!is_supported_version(_request->getHttpVersion()))
+	if (!is_valid_version(*_request))
 		return false;
+		// 505 HTTP Version Not Supported
 
 	if (!is_valid_body_size(_request->getContentLength(), config.getDirective("client_max_body_size")))
 		return false;
@@ -112,8 +116,10 @@ bool	MessageHandler::is_valid_request(const WebservConfig& config) {
 	// HTTP/1.1 requires Host header - validate it exists and is valid
 	// Check other required headers based on method (Content-Length for POST)
 	
-	// 8. URI LENGTH VALIDATION
-	// Check if URI length exceeds MAX_URI_LENGTH configuration
+	// The Request-URI is transmitted as an encoded string, where some
+	// characters may be escaped using the "% HEX HEX" encoding defined by
+	// RFC 1738 [4]. The origin server must decode the Request-URI in order
+	// to properly interpret the request.
 	
 	// 10. TRANSFER-ENCODING VALIDATION
 	// If Transfer-Encoding header present, validate supported encodings
@@ -155,7 +161,6 @@ void	MessageHandler::generate_response() {
 	else if (isDirectory() && autoindex)   → Directory listing
 	else                                   → Static file serving */
 
-
 	return ;
 }
 
@@ -172,11 +177,20 @@ void	MessageHandler::handle_get() {
 		return ;
 	}
 	// if here, URI should not be empty
-	std::string path = _request->getUri().getFullPath();
+	// std::string path = _request->getUri().getFullPath();
 }
 
-void	MessageHandler::handle_post() {}
+// POST needs Content-Length or Transfer-Encoding header
+void	MessageHandler::handle_post() {
+
+	if (!_request->hasHeader("content-length") || _request->getHeaderValues("content-length").empty()) {
+		if (_request->getContentLength() == 0)
+			return ;
+			// 400 Bad Request if it cannot determine the length of the message
+		if (!_request->hasHeader("transfer-encoding") || _request->getHeaderValues("transfer-encoding").empty())
+			return ;
+			// 411 Length Required if it wishes to insist on receiving a valid Content-Length
+	}
+}
 
 void	MessageHandler::handle_delete() {}
-
-void	MessageHandler::handle_head() {}

@@ -35,14 +35,25 @@ bool	RequestUri::parse() {
 
 	clear_uri();
 
-	if (is_absolute_uri(_raw_uri))
+	// The Request-URI is transmitted as an encoded string, where some
+	// characters may be escaped using the "% HEX HEX" encoding defined by
+	// RFC 1738 [4]. The origin server must decode the Request-URI in order
+	// to properly interpret the request.
+	// decode_uri();
+
+	if (_raw_uri.empty())
+		_raw_uri = "/";		// If the abs_path is not present in the URL, it MUST be given as "/"
+	else if (is_absolute_uri(_raw_uri))
 		*this = parse_absolute_uri(_raw_uri);
 	else if (_raw_uri[0] == '/')
 		*this = parse_abs_path(_raw_uri);
 	else {
-		console::log("Invalid URI format: " + _raw_uri, ERROR);
+		console::log("[ERROR] Invalid URI format: " + _raw_uri, MSG);
 		return false;
 	}
+
+	// encode_uri(); ?
+
 	return true;
 }
 
@@ -74,7 +85,7 @@ bool	RequestUri::parse_uri_authority(const std::string& raw) {
 	}
 	else {
 		_host = raw.substr(pos);
-		_port = "80";	// get default from server config
+		_port = "80";	// If the port is empty or not given, port 80 is assumed
 	}
 	return true;
 }
@@ -89,7 +100,7 @@ RequestUri	RequestUri::parse_absolute_uri(const std::string& raw) {
 	if (raw.find(":") != std::string::npos) {
 		uri._scheme = extract_uri_component(&pos, raw, ":");
 		if (uri._scheme != "http" && uri._scheme != "https") {
-			console::log("Unsupported URI scheme: " + uri._scheme, MSG);
+			console::log("[ERROR] Unsupported URI scheme: " + uri._scheme, MSG);
 			uri.clear_uri();
 			return uri;
 		}
