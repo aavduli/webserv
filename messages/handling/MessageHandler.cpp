@@ -97,14 +97,24 @@ bool	MessageHandler::is_valid_request(const WebservConfig& config) {
 		return false;
 		// 505 HTTP Version Not Supported
 
+	// TODO: Check location-specific client_max_body_size override
+	// Location config takes precedence over server config
 	if (!is_valid_body_size(_request->getContentLength(), config.getDirective("client_max_body_size")))
 		return false;
 
 	if (!is_valid_path(&uri, config, config.getLocationConfig(uri.getPath())))
 		return false;
 
-	// TODO: Check location-specific client_max_body_size override
-	// Location config takes precedence over server config
+	// if request->hasHeader("transfer-encoding")
+	// bool is_valid_transfer_encoding(const std::vector<std::string>& te_headers);
+	// Check for "chunked", reject unsupported encodings
+	// Handle multiple encodings (last must be chunked if present)
+
+	// RFC 7230: If both present, Transfer-Encoding takes precedence
+	// Content-Length should be ignored when Transfer-Encoding is chunked
+	// if (!te_headers.empty() && !cl_headers.empty()) {
+	// 	// Log warning about conflicting headers
+	// }
 	
 	// TODO: Validate CGI extension if path targets a script
 	// Check location["cgi_ext"] against file extension
@@ -112,18 +122,23 @@ bool	MessageHandler::is_valid_request(const WebservConfig& config) {
 	// TODO: Handle redirections if location has "return" directive
 	// Format: "301 https://example.com" or "302 /other-path"
 	
-	// 7. REQUIRED HEADERS VALIDATION
-	// HTTP/1.1 requires Host header - validate it exists and is valid
-	// Check other required headers based on method (Content-Length for POST)
+	// bool validate_header_limits(const HttpRequest* request);
+	// Check individual header field length limits
+	// Check total number of header fields
+	// Prevent header-based DoS attacks
+
+	// bool handle_expect_header(const std::vector<std::string>& expect_headers);
+	// Check for "100-continue"
+	// Return 417 Expectation Failed for unsupported expectations
+
+	// bool is_valid_connection_header(const std::vector<std::string>& conn_headers);
+	// Handle "close", "keep-alive", "upgrade"
+	// Validate connection tokens
 	
 	// The Request-URI is transmitted as an encoded string, where some
 	// characters may be escaped using the "% HEX HEX" encoding defined by
 	// RFC 1738 [4]. The origin server must decode the Request-URI in order
 	// to properly interpret the request.
-	
-	// 10. TRANSFER-ENCODING VALIDATION
-	// If Transfer-Encoding header present, validate supported encodings
-	// Handle chunked encoding properly
 	
 	// 11. CONTENT-TYPE VALIDATION
 	// For POST/PUT requests, validate Content-Type header presence
@@ -161,6 +176,34 @@ void	MessageHandler::generate_response() {
 	else if (isDirectory() && autoindex)   → Directory listing
 	else                                   → Static file serving */
 
+	/* 
+	HTTP/1.1 Changes:
+	Persistent connections are DEFAULT (keep-alive)
+	Only close if client sends Connection: close or error occurs
+	Must handle pipelined requests
+	
+	// HTTP/1.1 response format changes
+	void generateResponse(HttpResponse* response, HttpRequest* request) {
+		// Always use HTTP/1.1 in responses (backward compatible)
+		response->setHttpVersion("1", "1");
+		
+		// Required headers
+		response->addHeader("Date", getCurrentHTTPDate());
+		
+		// Handle Connection
+		bool close_connection = shouldCloseConnection(request);
+		response->addHeader("Connection", close_connection ? "close" : "keep-alive");
+		
+		// Content-Length or Transfer-Encoding required
+		if (has_body && !using_chunked) {
+			response->addHeader("Content-Length", toString(body_length));
+		}
+	}
+	
+	// date header obligatory
+
+	*/
+
 	return ;
 }
 
@@ -191,6 +234,12 @@ void	MessageHandler::handle_post() {
 			return ;
 			// 411 Length Required if it wishes to insist on receiving a valid Content-Length
 	}
+
+	// bool is_valid_content_type(const std::string& method, 
+	// 						const std::vector<std::string>& ct_headers,
+	// 						const std::map<std::string, std::string>& location);
+	// Validate Content-Type for POST/PUT
+	// Check against allowed types in location config
 }
 
 void	MessageHandler::handle_delete() {}

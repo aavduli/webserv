@@ -4,6 +4,8 @@
 // Host header format: "hostname:port" or just "hostname"
 bool	is_valid_host(RequestUri *uri, const std::vector<std::string>& header_host, const std::string& config_host) {
 
+	if (header_host.empty())
+		return false;
 	if (uri->getHost().empty() && !header_host.empty()) {
 		std::string tmp_host = header_host.at(0);
 		size_t colon = tmp_host.find(":");
