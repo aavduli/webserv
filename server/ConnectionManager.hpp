@@ -4,10 +4,33 @@
 #include <iostream>
 #include "../console/console.hpp"
 #include "onConnection.hpp"
+#include <map>
+#include <vector>
+#include "event/eventManager.hpp"
 
-class ConnectionManager {
+
+class connectionManager {
 	private:
-
+		std::map<int, Conn> _connections;
+		size_t _maxConn;
+		eventManager& _eventManager;
 	public:
-	
+		connectionManager();
+		connectionManager(eventManager& em, size_t maxConn);
+		~connectionManager();
+
+		bool addConnection(int clientFD);
+		void removeConnection(int clientFD);
+		bool hasConnection(int clientFD) const;
+		size_t getConnectionCount();
+
+		Conn& getConnection(int clientFD);
+		const Conn& getConnection(const int clientFD);
+		void removeAllConnection();
+		std::vector<int> getConnectionFds() const;
+
+		bool isConnectionValid() const;
+		void cleanUpStaleConn();
+
+		void printConnectionStats() const;
 };
