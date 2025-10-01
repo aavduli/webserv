@@ -16,12 +16,12 @@ bool	is_lws(const char c) {
 
 // CTL = <any US-ASCII control character (octets 0 - 31) and DEL (127)>
 bool	is_ctl(const char c) {
-	return (c >= 0 || c <= 31 || c == 127);
+	return (c <= 31 || c == 127);
 }
 
 // CHAR = <any US-ASCII character (octets 0 - 127)>
 bool	is_char(const char c) {
-	return (c >= 0);
+	return (c);
 }
 
 // DIGIT = <any US-ASCII digit "0".."9">

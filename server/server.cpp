@@ -23,17 +23,6 @@ server::~server() {
 		close(_serverfd);
 }
 
-int server::make_nonblock(int fd) {
-	int fl = fcntl(fd, F_GETFL, 0);
-	if (fl == -1) return -1;
-	if (fcntl(fd, F_SETFL, fl | O_NONBLOCK) == -1) return -1;
-
-	int clo = fcntl(fd, F_GETFD);
-	if (clo == -1) return -1;
-	if (fcntl(fd, F_SETFD, clo | FD_CLOEXEC) == -1) return -1;
-	return 0;
-}
-
 void server::ignore_sigpipe() {
 	struct sigaction sa;
 	std::memset(&sa, 0, sizeof(sa));
@@ -154,18 +143,22 @@ void server::serverManager(WebservConfig &config) {
 						alive = false;
 						break;	
 					}
-					if (n == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) break;
-					if (n == -1 && errno == EINTR) continue;
-					_ev.delFd(fd);
-					close(fd);
-					_conns.erase(fd);
-					alive = false;
-					break;
-					if (!alive) continue;
-					size_t endpos;
-					while (!onConn::onDiscon(c, alive, endpos)) {
-						continue;
+					if (n == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)){
+						_ev.delFd(fd);
+						close(fd);
+						_conns.erase(fd);
+						alive = false;
 					}
+					if (n == -1 && errno == EINTR) {
+						_ev.delFd(fd);
+						close(fd);
+						_conns.erase(fd);
+						alive = false;
+						break;
+					}
+					if (!alive) continue;
+					size_t endpos = 0;
+					onConn::onDiscon(c, alive, endpos);
 					if (!c.header_done && c.in.size() > onConn::MAX_HEADER_BYTES
 					&& onConn::headers_end_pos(c.in) == std::string::npos) {
 						_ev.delFd(fd);
@@ -177,6 +170,10 @@ void server::serverManager(WebservConfig &config) {
 			}
 		}
 	}
+}
+
+int server::getServFd() {
+	return this->_serverfd;
 }
 
 int server::getPort() {
