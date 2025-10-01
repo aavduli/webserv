@@ -18,9 +18,17 @@ std::string build_http_response(
     return oss.str();
 }
 
-server::~server() {
-	if (_serverfd != -1)
-		close(_serverfd);
+server::~server() {}
+
+int server::make_nonblock(int fd) {
+	int fl = fcntl(fd, F_GETFL, 0);
+	if (fl == -1) return -1;
+	if (fcntl(fd, F_SETFL, fl | O_NONBLOCK) == -1) return -1;
+
+	int clo = fcntl(fd, F_GETFD);
+	if (clo == -1) return -1;
+	if (fcntl(fd, F_SETFD, clo | FD_CLOEXEC) == -1) return -1;
+	return 0;
 }
 
 void server::ignore_sigpipe() {
@@ -170,10 +178,6 @@ void server::serverManager(WebservConfig &config) {
 			}
 		}
 	}
-}
-
-int server::getServFd() {
-	return this->_serverfd;
 }
 
 int server::getPort() {
