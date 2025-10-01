@@ -27,7 +27,7 @@ enum NetworkError {
 class NetworkHandler {
 	private:
 		NetworkHandler() = delete; //static class only
-		static void logNetworkError(const std::string& operation, const std::string& error); //todo
+		static void logNetworkError(const std::string& operation, const std::string& error);
 	public:
 		//server creation and configuration
 		static int createServerSocket();
@@ -45,9 +45,9 @@ class NetworkHandler {
 		static ssize_t sendFullData(int fd, char *buffer, ssize_t size);
 		
 		//utility
-		static void ignoreSigPipe(); //todo
-		static bool isSocketError(int fd); //todo
+		static void ignoreSigPipe();
+		static bool isSocketError(int fd); 
 
 		//Address
-		static struct sockaddr_in createSockkaddr(int port); //todo
+		static struct sockaddr_in createSockkaddr(int port);
 };

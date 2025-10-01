@@ -7,9 +7,8 @@
 # include <sys/epoll.h>
 # include <unistd.h>
 # include <cstring>
-# include "../../console/console.hpp"
+# include "../console/console.hpp"
 # include <cstdlib>
-# include "../event/eventManager.hpp"
 
 class eventManager {
 private:

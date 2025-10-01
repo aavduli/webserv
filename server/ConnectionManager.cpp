@@ -1,36 +1,43 @@
 #include "ConnectionManager.hpp"
 
-connectionManager::connectionManager() : _maxConn(1000), _eventManager(???) {}
-
 connectionManager::connectionManager(eventManager& em, size_t maxConn) :_maxConn(maxConn), _eventManager(em) {
-	console::log("ConnectionManager initialized with max connection: " + std::to_string(maxConn), SRV);
+	if (maxConn < 0)
+		throw std::runtime_error("Max connections has to be at least 1");
+	console::log("ConnectionManager initialized with max connections: " + intToString(maxConn), SRV);
 }
 
 connectionManager::~connectionManager() {}
+
+std::string intToString(int value) {
+	std::ostringstream oss;
+	oss << value;
+	return oss.str();
+}
 
 bool connectionManager::addConnection(int clientFD) {
 	if (_connections.size() >=  _maxConn) {
 		console::log("Max connection has been reached", SRV);
 		return false;
 	}
-	if (_connections.find(clientFD) != connections.end()) {
-		console::log("Connection already exists for FD: " + std::to_string(clientFD));
+	if (_connections.find(clientFD) != _connections.end()) {
+		console::log("Connection already exists for FD: " + intToString(clientFD), ERROR);
 		return false;
 	}
 	_connections[clientFD] = Conn();
-	console::log("Add connection for FD: " + std::to_string(clientFD), SRV);
+	console::log("Add connection for FD: " + intToString(clientFD), SRV);
 	return true;
 }
 
-void connectionManager::removeConnection(int clientFD) {
+void connectionManager::removeConnections(int clientFD) {
 	 std::map<int, Conn>::iterator it = _connections.find(clientFD);
 	 if (it == _connections.end()) {
-		console::log("Attempted to remove non existent connection: " + std::to_string(clientFD), ERROR);
+		console::log("Attempted to remove non existent connection: " + intToString(clientFD), ERROR);
 		return ;
 	 }
-	 console::log("Removed connection: " + std::to_string(clientFD), SRV);
+	 console::log("Removed connection: " + intToString(clientFD), SRV);
 	 _eventManager.delFd(clientFD);
 	 NetworkHandler::closeConnection(clientFD);
+	 _connections.erase(it);
 }
 
 bool connectionManager::hasConnection(int clientFD) const {
@@ -38,29 +45,30 @@ bool connectionManager::hasConnection(int clientFD) const {
 }
 
 size_t connectionManager::getConnectionCount() {
-	return _maxConn;
+	return _connections.size();
 }
 
-Conn& getConnection(int clientFD) {
+Conn& connectionManager::getConnection(int clientFD) {
 	std::map<int, Conn>::iterator it = _connections.find(clientFD);
 	if (it == _connections.end()) {
-		throw std::runtime_error("Connection not found for fd: " + std::to_string(clientFD));
+		throw std::runtime_error("Connection not found for fd: " + intToString(clientFD));
 	}
 	return it->second;
 }
 
-const Conn& getConnection(const int clientFD) {
-	std::map<int, Conn>::iterator it = _connections.find(clientFD);
+const Conn& connectionManager::getConnection(const int clientFD) {
+	std::map<int, Conn>::const_iterator it = _connections.find(clientFD);
 	if (it == _connections.end()) {
-		thr ow std::runtime_error("Connection not found for fd: " + std::to_string(clientFD));
+		throw std::runtime_error("Connection not found for fd: " + intToString(clientFD));
 	}
 	return it->second;
 }
-void removeAllConnection() {
-	console::log("Removing all connection: " + std::to_string(_connections.size()), SRV);
-	for (std::map<int, Conn>::pair : _connections) {
-		int fd = pair.first;
-		_eventManager.delFD(fd);
+
+void connectionManager::removeAllConnection() {
+	console::log("Removing all connection: " + intToString(_connections.size()), SRV);
+	for (std::map<int, Conn>::iterator it = _connections.begin(); it != _connections.end(); ++it) {
+		int fd = it->first;
+		_eventManager.delFd(fd);
 		NetworkHandler::closeConnection(fd);
 	}
 	_connections.clear();
@@ -69,40 +77,41 @@ void removeAllConnection() {
 std::vector<int> connectionManager::getConnectionFds() const {
 	std::vector<int> fds;
 	fds.reserve(_connections.size());
-	for(std::map<int, Conn>::iterator it; it < _connections.size(); ++it) {
+	for(std::map<int, Conn>::const_iterator it = _connections.begin(); it != _connections.end(); ++it) {
 		fds.push_back(it->first);
 	}
 	return fds;
 }
 
-bool connectionManager::isConnectionValid(clientFD) const {
+bool connectionManager::isConnectionValid(int clientFD) const {
 	if (!hasConnection(clientFD)) return false;
 	return NetworkHandler::isSocketError(clientFD) == false;
 }
 
 void connectionManager::cleanUpStaleConn() {
 	std::vector<int> staleConn;
-	for (std::map<int, Conn>::iterator it = _connections.begin(); it < _connections.size(); ++it) {
+	for (std::map<int, Conn>::iterator it = _connections.begin(); it != _connections.end(); ++it) {
 		int fd = it->first;
 		if (NetworkHandler::isSocketError(fd))
 			staleConn.push_back(fd);
 	}
-	for (int fd : staleConn) {
-		console::log("Removing stale connection: " + std::to_string(fd), SRV);
-		removeConnection(fd);
+	for (std::vector<int>::iterator it = staleConn.begin(); it != staleConn.end(); ++it) {
+		int fd = *it;
+		console::log("Removing stale connection: " + intToString(fd), SRV);
+		removeConnections(fd);
 	}
 }
 
 void connectionManager::printConnectionStats() const {
     console::log("=== Connection Statistics ===", SRV);
-    console::log("Active connections: " + std::to_string(_connections.size()), SRV);
-    console::log("Max connections: " + std::to_string(_maxConn), SRV);
-    console::log("Capacity used: " + std::to_string((_connections.size() * 100) / _maxConn) + "%", SRV);
+    console::log("Active connections: " + intToString(_connections.size()), SRV);
+    console::log("Max connections: " + intToString(_maxConn), SRV);
+    console::log("Capacity used: " + intToString((_connections.size() * 100) / _maxConn) + "%", SRV);
     
     if (_connections.size() > 0) {
         console::log("Connection FDs: ", SRV);
-        for (const auto& pair : _connections) {
-            console::log("  FD " + std::to_string(pair.first), SRV);
+        for (std::map<int, Conn>::const_iterator it = _connections.begin(); it != _connections.end(); ++it) {
+            console::log("  FD " + intToString(it->first), SRV);
         }
     }
 }
