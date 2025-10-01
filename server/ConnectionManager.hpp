@@ -7,6 +7,7 @@
 #include <map>
 #include <vector>
 #include "event/eventManager.hpp"
+#include "NetworkHandler.hpp"
 
 
 class connectionManager {
@@ -29,7 +30,7 @@ class connectionManager {
 		void removeAllConnection();
 		std::vector<int> getConnectionFds() const;
 
-		bool isConnectionValid() const;
+		bool isConnectionValid(clientFD) const;
 		void cleanUpStaleConn();
 
 		void printConnectionStats() const;
