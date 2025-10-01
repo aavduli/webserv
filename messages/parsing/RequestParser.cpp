@@ -64,9 +64,6 @@ HttpRequest* RequestParser::parse_request(std::string raw_request) {
 		delete request;
 		return NULL;
 	}
-	// std::cout << GREEN;
-	// print_request(request);
-	// std::cout << RESET << std::endl;
 	return request;
 }
 
@@ -115,16 +112,19 @@ bool RequestParser::parse_method(std::string request_line) {
 
 	size_t method_end = request_line.find(" ", _current_pos);
 	if (method_end == std::string::npos) {
-		console::log("No SP found after method", ERROR);
+		console::log("[ERROR] No SP found after method", MSG);
+		// 501 Not Implemented
 		return false;
 	}
 	std::string method = request_line.substr(_current_pos, method_end - _current_pos);
 	if (method.empty()) {
-		console::log("No request method found", ERROR);
+		console::log("[ERROR] No request method found", MSG);
+		// 501 Not Implemented
 		return false;
 	}
 	if (method.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ") != std::string::npos) {
-		console::log("Invalid method name", ERROR);
+		console::log("[ERROR] Invalid method name", MSG);
+		// 501 Not Implemented
 		return false;
 	}
 	_request->setMethod(method);
@@ -136,17 +136,17 @@ bool RequestParser::parse_uri(std::string request_line) {
 
 	size_t uri_end = request_line.find(" ", _current_pos);
 	if (uri_end == std::string::npos) {
-		console::log("No SP found after URI", ERROR);
+		console::log("[ERROR] No SP found after URI", MSG);
+		// 404 Not Found
 		return false;
 	}
 	std::string raw_uri = request_line.substr(_current_pos, uri_end - _current_pos);
 	raw_uri = trim_whitespaces(raw_uri);
-	if (raw_uri.empty()) {
-		console::log("Empty request URI", ERROR);
-		return false;
-	}
+	if (raw_uri.empty()) 
+		raw_uri = "/";
 	if (raw_uri.length() > MAX_URI_LENGTH) {
-		console::log("Request URI too long", ERROR);
+		console::log("[ERROR] Request URI too long", MSG);
+		// 414 Request-URI Too Long
 		return false;
 	}
 	RequestUri uri(raw_uri);
@@ -159,7 +159,7 @@ bool RequestParser::parse_uri(std::string request_line) {
 
 bool RequestParser::parse_version(std::string request_line) {
 
-	size_t version = request_line.find("HTTP/", _current_pos);
+	size_t version = request_line.find("HTTP/", _current_pos);	// could be https
 	if (version != std::string::npos) {
 		_current_pos += 5;
 		size_t dot = request_line.find_first_of('.', _current_pos);
@@ -169,6 +169,7 @@ bool RequestParser::parse_version(std::string request_line) {
 		return true;
 	}
 	console::log("Invalid HTTP version in request", ERROR);
+	// 505 HTTP Version Not Supported
 	return false;
 }
  
@@ -222,12 +223,10 @@ bool RequestParser::parse_body() {
 	else {
 		_request->setBody("");
 		_request->setContentLength(0);
-		console::log("Empty body", MSG);
+		console::log("[INFO] Empty body", MSG);
 	}
 	std::vector<std::string> content_length_value = _request->getHeaderValues("content-length");
-	if (content_length_value.empty())
-		console::log("Missing \"Content-Length\" header field", MSG);
-	else {
+	if (!content_length_value.empty()) {
 		if (content_length_value.at(0) == "") {
 			console::log("Missing \"Content-Length\" header value", MSG);
 			_state = s_req_invalid_content_length;
@@ -239,9 +238,6 @@ bool RequestParser::parse_body() {
 			_state = s_req_invalid_content_length;
 			return false;
 		}
-		// 400 (bad request) if it cannot determine the length of the message OR
-		// 411 (length required) if it wishes to insist on receiving a valid Content-Length
-		// console::log("Status 400/411", ERROR);
-	}
+	}	
 	return true;
 }

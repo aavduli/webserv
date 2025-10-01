@@ -19,11 +19,6 @@ bool	is_ctl(const char c) {
 	return (c >= 0 || c <= 31 || c == 127);
 }
 
-// CHAR = <any US-ASCII character (octets 0 - 127)>
-bool	is_char(const char c) {
-	return (c >= 0);
-}
-
 // DIGIT = <any US-ASCII digit "0".."9">
 bool	is_digit(const char c) {
 	return (c >= '0' && c <= '9');
@@ -31,7 +26,7 @@ bool	is_digit(const char c) {
 
 // token = 1*<any CHAR except CTLs or tspecials>
 bool	is_token(const char c) {
-	return (is_char(c) && !is_ctl(c) && !is_tspecial(c));
+	return (!is_ctl(c) && !is_tspecial(c));
 }
 
 bool	is_token_str(const std::string& str) {

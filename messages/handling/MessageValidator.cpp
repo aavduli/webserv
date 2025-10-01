@@ -58,15 +58,23 @@ bool	is_allowed_method(const std::string& method, std::map<std::string, std::str
 				return true;
 		}
 	}
-	console::log("[ERROR] Invalid method " + method, MSG);
+	console::log("[ERROR] Method not allowed " + method, MSG);
 	// Should return 405 Method Not Allowed
 	return false;
 }
 
 // need default version MACRO?
-bool	is_supported_version(const std::string& version) {
+bool	is_valid_version(const HttpRequest& request) {
 
-	if (version == "1.1" || version == "1.0" || version == "0.9")
+	std::string version = request.getHttpVersion();
+	if (version == "1.1") {
+		if (request.hasHeader("host"))
+			return true;
+		console::log("[ERROR] HTTP/1.1 requires \"Host\" header", MSG);
+		// Return 400 Bad Request
+		return false;
+	}
+	if (version == "1.0" || version == "0.9")
 		return true;
 	console::log("[ERROR] Unsupported HTTP version", MSG);
 	return false;
@@ -164,6 +172,7 @@ bool	is_valid_path(RequestUri *uri, const WebservConfig& config, std::map<std::s
 	struct stat buf;
 	if (stat(canonical_path.c_str(), &buf) != 0) {
 		console::log("[ERROR] File not found: " + canonical_path + " - " + strerror(errno), MSG);
+		// status code 404 Not Found
 		return false;
 	}
 	else if (S_ISDIR(buf.st_mode)) {

@@ -35,7 +35,6 @@ class MessageHandler {
 		void			handle_get();
 		void			handle_post();
 		void			handle_delete();
-		void			handle_head();
 };
 
 void	handle_request(const WebservConfig& config, const std::string &raw);
