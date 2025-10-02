@@ -20,8 +20,8 @@ if (!config.isValid()) {
 
 ```cpp
 // Port et host du serveur
-int port = config.getPort();                    // 8080 (défaut: 80)
-std::string host = config.getHost();            // "127.0.0.1" (défaut: "127.0.0.1")
+int port = config.getPort();						// 8080 (défaut: 80)
+std::string host = config.getHost();				// "127.0.0.1" (défaut: "127.0.0.1")
 
 // Limite taille requête (IMPORTANT pour MessageParser)
 size_t maxContent = config.getMaxContentLength(); // 1048576 bytes (défaut: 1MB)
@@ -71,12 +71,12 @@ if (!config.isValidHostHeader(hostHeader)) {
 if (config.hasLocation("/api")) {
     // Utiliser config spécifique pour /api
     std::map<std::string, std::string> apiConfig = config.getLocationConfig("/api");
-    
+
     // Récupérer directives de la location
     std::string methods = apiConfig["methods"];        // "GET POST" (vide = hérite serveur)
     std::string root = apiConfig["root"];              // "/var/www/api" (vide = hérite serveur)
     std::string redirect = apiConfig["return"];        // "301 https://..." (vide = pas de redirect)
-    
+
 } else {
     // Utiliser config serveur par défaut
 }
@@ -101,7 +101,7 @@ if (location["methods"].empty()) {
 
 **Défauts finaux si serveur aussi vide :**
 - `methods` → `["GET"]`
-- `root` → `"."` (dossier courant)  
+- `root` → `"."` (dossier courant)
 - `client_max_body_size` → `1048576` bytes (1MB)
 
 ## Gestion pages d'erreur
@@ -144,10 +144,9 @@ std::string getHost() const;                      // Parse "host 127.0.0.1"
 std::string getServerName() const;               // Parse "server_name localhost"
 std::string getRoot() const;                     // Parse "root /var/www"
 std::string getIndex() const;                    // Parse "index index.html"
-size_t getMaxBodySize() const;                   // Parse "client_max_body_size 1M"
 std::vector<std::string> getAllowedMethods() const; // Parse "allow_methods GET POST"
 std::string getErrorPage(int code) const;        // Parse "error_page 404 /404.html"
-size_t getMaxContentLength() const;              // Alias pour MessageParser
+size_t getMaxContentLength() const;              // Parse "client_max_body_size 1M"
 ```
 
 ### Getters locations
@@ -211,11 +210,11 @@ bool valid = utils.isValidIP("127.0.0.1");
 
 ## Validation automatique
 
-✅ **IP valides** : Format IPv4 seulement  
-✅ **Ports valides** : 1-65535  
-✅ **Méthodes HTTP** : GET, POST, DELETE uniquement  
-✅ **Tailles** : Conversion K/M/G → octets automatique  
-✅ **Redirections** : Codes 301, 302 uniquement  
+✅ **IP valides** : Format IPv4 seulement
+✅ **Ports valides** : 1-65535
+✅ **Méthodes HTTP** : GET, POST, DELETE uniquement
+✅ **Tailles** : Conversion K/M/G → octets automatique
+✅ **Redirections** : Codes 301, 302 uniquement
 ✅ **Syntaxe** : Accolades et directives vérifiées
 
 ## Exemple complet
@@ -246,7 +245,7 @@ int main() {
 
     // Locations
     const std::map<std::string, std::map<std::string, std::string>>& locations = config.getAllLocations();
-    for (std::map<std::string, std::map<std::string, std::string>>::const_iterator it = locations.begin(); 
+    for (std::map<std::string, std::map<std::string, std::string>>::const_iterator it = locations.begin();
          it != locations.end(); ++it) {
         std::cout << "Location " << it->first << std::endl;
     }
@@ -264,7 +263,7 @@ int main() {
 
 ### DONE
 - [x] vector to map
-- [x] ip doesnt start with 0 if size > 0  
+- [x] ip doesnt start with 0 if size > 0
 - [x] utils with map
 - [x] validate directive
 - [x] duplicate directive ?
@@ -274,19 +273,13 @@ int main() {
 ### DIDNT DO IT
 - [ ] make template for utils (reason: overkill for now)
 
-### Problèmes identifiés dans conversation précédente
-- [ ] Confusion `client_max_body_size` vs `max_size_body` (lignes 166 vs 232)
-- [ ] `getMaxBodySize()` peut retourner valeurs aberrantes si `parseSize()` échoue
-- [ ] `getAllowedMethods()` laisse passer méthodes invalides
-- [ ] Pas de validation existence fichiers `error_page`
-
 ## Flux d'exécution
 
 ```
 1. LECTURE
    Fichier.conf → FileReader → vector<string> (lignes)
 
-2. PARSING  
+2. PARSING
    vector<string> → ConfigParser → ServerConfig + LocationsConfig
 
 3. VALIDATION

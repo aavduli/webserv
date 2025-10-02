@@ -162,13 +162,13 @@ std::string WebservConfig::getHost() const { // todo make bloquant error
 }
 
 
-size_t WebservConfig::getMaxBodySize() const{
-	std::string maxSize = getDirective("client_max_body_size");
-	if (maxSize.empty()) return 1048576; // 1MB default
+// size_t WebservConfig::getMaxBodySize() const{
+// 	std::string maxSize = getDirective("client_max_body_size");
+// 	if (maxSize.empty()) return 1048576; // 1MB default
 
-	size_t size = _utils.parseSize(maxSize);
-	return (size > 0) ? size : 1048576;
-}
+// 	size_t size = _utils.parseSize(maxSize);
+// 	return (size > 0) ? size : 1048576;
+// }
 
 
 std::vector<std::string> WebservConfig::getAllowedMethods() const{
@@ -237,13 +237,13 @@ std::string WebservConfig::getErrorPage(int code) const {
 
 size_t WebservConfig::getMaxContentLength() const{
 	//for MessageParser.hpp MAX_CONTENT_LENGTH
-	//return max_size_body or default
+	//return client_max_size_body or default
 	ParsingUtils utils;
 	std::map<std::string, std::string>::const_iterator it = _server.find("client_max_body_size");
 	if (it != _server.end()){
 		return utils.parseSize(it->second);
 	}
-	return 1000000; // like Default MEssage parser todo asking bebou for what to do
+	return 1048576; // like Default MEssage parser todo asking bebou for what to do
 }
 
 bool WebservConfig::hasLocation(const std::string& path) const{
