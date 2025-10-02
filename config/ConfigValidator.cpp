@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/15 14:57:26 by jim               #+#    #+#             */
-/*   Updated: 2025/09/29 19:07:56 by jim              ###   ########.fr       */
+/*   Updated: 2025/10/02 20:37:36 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,7 @@ const int ConfigValidator::MIN_PORT;
 const int ConfigValidator::MAX_PORT;
 const size_t ConfigValidator::MAX_DIRECTIVE_LEN;
 
-const int BLOCKINGERROR = 0; //0 non blocking validator error 1 blocking validator error
+const int BLOCKINGERROR = 0; //0 nnon strict 1 strict
 
 ConfigValidator::ConfigValidator(): _lastError(""){}
 ConfigValidator::~ConfigValidator() {}
@@ -261,7 +261,7 @@ bool ConfigValidator::validateLocationSConfig(const LocationsConfig& config) {
 	for (std::map<std::string, LocationConfig>::const_iterator it =
 config.locations.begin();
 		it != config.locations.end(); ++it) {
-		if (!validateLocationConfig(it->second)) 
+		if (!validateLocationConfig(it->second))
 			if (BLOCKINGERROR) return false;
 	}
 	return true;
@@ -353,12 +353,20 @@ bool ConfigValidator::validateMBS(const std::string& size){
 	return true;
 }
 
-bool ConfigValidator::validateDirectoryList(const std::string& autoindex){ // todo setError
-	return (autoindex == "on" || autoindex == "off");
+bool ConfigValidator::validateDirectoryList(const std::string& autoindex){
+	if (autoindex != "on" && autoindex != "off"){
+		setError("invalid autoindex value: " + autoindex + "(must be 'on' or 'off')");
+		return false;
+	}
+	return true;
 }
 
-bool ConfigValidator::validateCGIPath(const std::string& cgiPath){ // todo seterror if invalid path
-	return (isValidPath(cgiPath));
+bool ConfigValidator::validateCGIPath(const std::string& cgiPath){
+	if (!isValidPath(cgiPath)){
+		setError("CGI path not found: " + cgiPath);
+		return false;
+	}
+	return true;
 }
 
 bool ConfigValidator::hasRPerm(const std::string& path) const{
