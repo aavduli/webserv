@@ -37,100 +37,42 @@ MessageHandler::~MessageHandler() {
 		delete _response;
 }
 
-HttpRequest*	MessageHandler::getRequest() const {
-	return _request;
-}
+HttpRequest*	MessageHandler::getRequest() const {return _request;}
+HttpResponse*	MessageHandler::getResponse() const {return _response;}
 
-HttpResponse*	MessageHandler::getResponse() const {
-	return _response;
+Error	MessageHandler::getError() const {
+	return _error;
 }
 
 void	handle_request(const WebservConfig& config, const std::string &raw) {	// TODO should return status enum 
 
+	console::log("=============[NEW REQUEST]=============", MSG);
 	if (raw.empty()) {
 		// return status code? return error/bool?
 		console::log("[ERROR] Empty request", MSG);
 		return ;
 	}
 
-	// const char*		resp;
 	RequestParser	parser;
 	HttpRequest*	request = parser.parse_request(raw);
-
 	if (parser.getState() == s_req_parsing_done) {
 		console::log("[INFO] Request parsing success", MSG);
 		
-		MessageHandler handler(request);
-		if (handler.is_valid_request(config)) {
+		MessageValidator validator(config, *request);
+		if (validator.isValidRequest()) {
 			console::log("[INFO] Request is valid", MSG);
+
+			MessageHandler handler(request);
 			handler.process_request();
 			handler.generate_response();
-			// resp = (handler.serialize_response()).c_str();
+			// const char* resp = (handler.serialize_response()).c_str();
+		} else {
+			console::log("[ERROR] Invalid request: " + error_msg(validator.getLastError()), MSG);
+			// TODO: Generate error response based on validator.getLastError()
 		}
-		else
-			console::log("[ERROR] Invalid request in handle_request", MSG);
 	}
 	else
 		console::log("[ERROR] Request parsing failed with state", MSG);
-}
-
-bool	MessageHandler::is_valid_request(const WebservConfig& config) {
-
-	// TODO: Handle case when no specific location matches
-	// Should validate against default server config and root location "/"
-	// This might indicate misconfiguration or need for default handling
-
-	RequestUri uri = _request->getUri();
-	if (!is_valid_host(&uri, _request->getHeaderValues("host"), config.getDirective("server_name"))) 
-		return false;
-		// 400 Bad Request
-
-	if (!is_valid_port(&uri, _request->getHeaderValues("port"), config.getDirective("port")))
-		return false;
-		// 400 Bad Request
-
-	if (!is_allowed_method(_request->getMethod(), config.getLocationConfig(uri.getPath())))
-		return false;
-		// 405 Method Not Allowed
-	
-	if (!is_valid_version(*_request))
-		return false;
-		// 505 HTTP Version Not Supported
-
-	if (!is_valid_body_size(_request->getContentLength(), config.getDirective("client_max_body_size")))
-		return false;
-
-	if (!is_valid_path(&uri, config, config.getLocationConfig(uri.getPath())))
-		return false;
-
-	// TODO: Check location-specific client_max_body_size override
-	// Location config takes precedence over server config
-	
-	// TODO: Validate CGI extension if path targets a script
-	// Check location["cgi_ext"] against file extension
-	
-	// TODO: Handle redirections if location has "return" directive
-	// Format: "301 https://example.com" or "302 /other-path"
-	
-	// 7. REQUIRED HEADERS VALIDATION
-	// HTTP/1.1 requires Host header - validate it exists and is valid
-	// Check other required headers based on method (Content-Length for POST)
-	
-	// The Request-URI is transmitted as an encoded string, where some
-	// characters may be escaped using the "% HEX HEX" encoding defined by
-	// RFC 1738 [4]. The origin server must decode the Request-URI in order
-	// to properly interpret the request.
-	
-	// 10. TRANSFER-ENCODING VALIDATION
-	// If Transfer-Encoding header present, validate supported encodings
-	// Handle chunked encoding properly
-	
-	// 11. CONTENT-TYPE VALIDATION
-	// For POST/PUT requests, validate Content-Type header presence
-	// Check if Content-Type is supported for the target location
-
-	_request->setUri(uri);
-	return true;
 }
 
 void	MessageHandler::process_request() {
@@ -161,6 +103,34 @@ void	MessageHandler::generate_response() {
 	else if (isDirectory() && autoindex)   → Directory listing
 	else                                   → Static file serving */
 
+	/* 
+	HTTP/1.1 Changes:
+	Persistent connections are DEFAULT (keep-alive)
+	Only close if client sends Connection: close or error occurs
+	Must handle pipelined requests
+	
+	// HTTP/1.1 response format changes
+	void generateResponse(HttpResponse* response, HttpRequest* request) {
+		// Always use HTTP/1.1 in responses (backward compatible)
+		response->setHttpVersion("1", "1");
+		
+		// Required headers
+		response->addHeader("Date", getCurrentHTTPDate());
+		
+		// Handle Connection
+		bool close_connection = shouldCloseConnection(request);
+		response->addHeader("Connection", close_connection ? "close" : "keep-alive");
+		
+		// Content-Length or Transfer-Encoding required
+		if (has_body && !using_chunked) {
+			response->addHeader("Content-Length", toString(body_length));
+		}
+	}
+	
+	// date header obligatory
+
+	*/
+
 	return ;
 }
 
@@ -184,13 +154,19 @@ void	MessageHandler::handle_get() {
 void	MessageHandler::handle_post() {
 
 	if (!_request->hasHeader("content-length") || _request->getHeaderValues("content-length").empty()) {
-		if (_request->getContentLength() == 0)
+		if (_request->getBodySize() == 0)
 			return ;
 			// 400 Bad Request if it cannot determine the length of the message
 		if (!_request->hasHeader("transfer-encoding") || _request->getHeaderValues("transfer-encoding").empty())
 			return ;
 			// 411 Length Required if it wishes to insist on receiving a valid Content-Length
 	}
+
+	// bool is_valid_content_type(const std::string& method, 
+	// 						const std::vector<std::string>& ct_headers,
+	// 						const std::map<std::string, std::string>& location);
+	// Validate Content-Type for POST/PUT
+	// Check against allowed types in location config
 }
 
 void	MessageHandler::handle_delete() {}

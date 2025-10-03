@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   WebservConfig.hpp                                  :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
+/*   By: ahanzi <ahanzi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/08 16:24:01 by jim               #+#    #+#             */
-/*   Updated: 2025/09/29 12:03:38 by jim              ###   ########.fr       */
+/*   Updated: 2025/10/03 18:01:45 by ahanzi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,7 @@
 
 class WebservConfig{
 	private:
-		ConfigParser  _parser;
+		//ConfigParser  _parser;
 		std::map<std::string, std::string> _server;
 		std::map<std::string, std::map<std::string, std::string> > _locations;
 		std::string		_configFile;
@@ -41,8 +41,12 @@ class WebservConfig{
 		std::string getLastError() const;
 
 		bool loadConfig(const std::string& configFile);
-		bool isvalid() const;
+		bool isValid() const;
 		std::map<std::string, std::map<std::string, std::string> > convertToOldFormat(const LocationsConfig& locationsConfig) const;
+
+		//validation host
+		bool matchesServerName(const std::string& host) const;
+		bool isValidHostHeader(const std::string& host) const;
 
 		//srv access
 		const std::map<std::string, std::string> &getServer() const;

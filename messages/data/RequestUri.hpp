@@ -17,7 +17,8 @@ class RequestUri {
 		std::string		_host;			// (optional) www.website.com + :
 		std::string		_port;			// (optional) 8080 + /
 		std::string		_path;			// blog/posts + ?
-		std::string		_full_path;		// root + path + file
+		std::string		_effective_path;// root + path + file
+		std::string		_redir_destination;// in case of 301/302 redirection
 		std::string		_query;			// (optional) order=newest + #
 		std::string		_fragment;		// (optional) top
 		bool			_is_absolute_uri;
@@ -48,7 +49,8 @@ class RequestUri {
 		std::string		getHost() const;
 		std::string		getPort() const;
 		std::string		getPath() const;
-		std::string		getFullPath() const;
+		std::string		getEffectivePath() const;
+		std::string		getRedirDestination() const;
 		std::string		getQuery() const;
 		std::string		getFragment() const;
 		bool			isAbsoluteUri() const;
@@ -61,7 +63,8 @@ class RequestUri {
 		void			setHost(const std::string& host);
 		void			setPort(const std::string& port);
 		void			setPath(const std::string& path);
-		void			setFullPath(const std::string& path);
+		void			setEffectivePath(const std::string& path);
+		void			setRedirDestination(const std::string& path);
 		void			setQuery(const std::string& query);
 		void			setFragment(const std::string& fragment);
 		void			setAbsoluteUri(bool is_absolute_uri);

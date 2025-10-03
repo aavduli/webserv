@@ -125,7 +125,7 @@ void server::serverManager(WebservConfig &config) {
 					console::log("Something has been received", SRV);
 					if (n > 0) {
 						c.in.append(buff, static_cast<size_t>(n));
-						size_t endpos;
+						size_t endpos = c.in.size();
 						handle_request(config, c.in.substr(0, endpos));
 						while (onConn::update_and_ready(c, endpos)) {
 							std::string response = build_http_response(200, "ok, Hello World!", "text/plain");

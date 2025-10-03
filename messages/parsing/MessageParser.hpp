@@ -9,7 +9,7 @@
 
 #define CR	'\r'
 #define LF	'\n'
-#define MAX_CONTENT_LENGTH 1000000
+#define MAX_body_size 1000000
 #define MAX_URI_LENGTH 8000
 
 #include "../../console/console.hpp"
@@ -47,7 +47,7 @@ enum State {
 	s_msg_init,
 		
 	/* REQUEST CHECKS */
-	s_req_invalid_content_length,
+	s_req_invalid_body_size,
 	
 	/* REQUEST PARSING */
 	s_req_parsing_start, 
