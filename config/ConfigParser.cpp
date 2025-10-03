@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/15 10:45:14 by jim               #+#    #+#             */
-/*   Updated: 2025/09/16 13:20:09 by jim              ###   ########.fr       */
+/*   Updated: 2025/09/29 16:31:52 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,12 +39,23 @@ ServerConfig ConfigParser::parseServer(const std::vector<std::string>& lines) co
 					skipBlock(i, lines);
 					continue;
 				}
-
-					std::pair<std::string, std::string>  directive = parseDirective(line);
-					if (!directive.first.empty()){
+				std::pair<std::string, std::string> directive = parseDirective(line);
+				if (!directive.first.empty()){
+					if (directive.first == "error_page"){
+						std::istringstream iss (directive.second);
+						std::string code;
+						std::string filepath;
+						if (iss >> code >> filepath){
+							std::string key = "error_page_"+code;
+							config.directives[key] = filepath;
+						}
+						else{
+							config.directives[directive.first] = directive.second;
+						}
+					}else{
 						config.directives[directive.first] = directive.second;
 					}
-				break;
+				}
 			}
 
 			case IN_LOCATION_BLOCK: // TODO
@@ -66,8 +77,36 @@ std::pair<std::string, std::string> ConfigParser::parseDirective(const std::stri
 	std::string key = cleanLine.substr(0, spacePos);
 	std::string value = cleanLine.substr(spacePos +1);
 
+	//normalize root
+	if (key == "root")
+		value = normalizeRootPath(value);
+
 	return std::make_pair(key, value);
 
+}
+
+std::string ConfigParser::normalizeRootPath(const std::string& path){
+	if (path.empty()) return "./";
+
+	std::string normalized = path;
+	//1. add ./ if ,missing
+	if (normalized.length() < 2 || normalized.substr(0,2) != "./"){
+		if (normalized[0] == '/'){
+			// /var/www -> ./var/www
+			normalized = "." + normalized;
+		}
+		else{
+			//www -> ./www
+			normalized = "./" + normalized;
+		}
+	}
+
+	//delete the / at the end if exist
+	while (!normalized.empty() && normalized[normalized.length() -1] == '/'){
+		normalized.erase(normalized.length() -1);
+	}
+
+	return normalized;
 }
 
 void ConfigParser::skipBlock(size_t& index, const std::vector<std::string>& lines) const{

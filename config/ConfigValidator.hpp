@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/15 14:45:23 by jim               #+#    #+#             */
-/*   Updated: 2025/09/17 19:23:23 by jim              ###   ########.fr       */
+/*   Updated: 2025/09/23 12:24:13 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,12 +38,8 @@ class ConfigValidator{
 
 		//serveur
 		bool validateServerConfig(const ServerConfig& config);
-		bool validateHost(const std::string& host);
 		bool validateSrvName(const std::string& serverName);
 		bool validateRoot(const std::string& root);
-		bool validatePort(const std::string& port);
-		bool validateIP(const std::string& ip);
-		bool validatePath(const std::string& path);
 		bool validateErrorParge(const std::string& errorPageLine);
 
 		//location
@@ -56,12 +52,10 @@ class ConfigValidator{
 
 
 		bool validateMBS(const std::string& size);
-		bool validateTimeout(const std::string& timeout);
 		bool validateDirectoryList(const std::string& autoindex);
 		bool validateCGIPath(const std::string& cgiPath);
 
-
-		bool isPortUsed(int port) const;
+		bool isPortUsed(int port) const; // not sure if needed
 		bool hasRPerm(const std::string& path) const;
 		bool hasWPerm(const std::string& path) const;
 

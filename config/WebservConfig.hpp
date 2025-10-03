@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/08 16:24:01 by jim               #+#    #+#             */
-/*   Updated: 2025/09/17 19:23:45 by jim              ###   ########.fr       */
+/*   Updated: 2025/09/29 15:34:24 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,10 +18,10 @@
 # include <map>
 # include <iostream>
 # include "ConfigParser.hpp"
-# include "ConfigLocation.hpp"
 # include "FileReader.hpp"
 # include "ConfigData.hpp"
 # include "ConfigValidator.hpp"
+# include "ParsingUtils.hpp"
 
 class WebservConfig{
 	private:
@@ -31,6 +31,7 @@ class WebservConfig{
 		std::string		_configFile;
 		bool			_isValid;
 		ConfigValidator	_validator;
+		ParsingUtils 	_utils;
 
 	public:
 		WebservConfig();
@@ -40,14 +41,31 @@ class WebservConfig{
 		std::string getLastError() const;
 
 		bool loadConfig(const std::string& configFile);
-		bool isvalid() const;
+		bool isValid() const;
 		std::map<std::string, std::map<std::string, std::string> > convertToOldFormat(const LocationsConfig& locationsConfig) const;
+
+		//validation host
+		bool matchesServerName(const std::string& host) const;
+		bool isValidHostHeader(const std::string& host) const;
 
 		//srv access
 		const std::map<std::string, std::string> &getServer() const;
 		std::string getDirective(const std::string &directive) const;
 
+		//better getter
+		int getPort() const;
+		std::string getHost() const;
+		size_t getMaxBodySize() const;
+		std::vector<std::string> getAllowedMethods() const;
+		std::string getServerName() const;
+		std::string getRoot() const;
+		std::string getIndex() const;
 
+		std::string getErrorPage(int code) const;
+		size_t getMaxContentLength() const;
+
+		//location
+		bool hasLocation(const std::string& path) const;
 
 		//locations access
 		const std::map<std::string, std::map<std::string, std::string> > &getAllLocations() const;

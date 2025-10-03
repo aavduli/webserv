@@ -18,7 +18,6 @@
 # include <map>
 # include <sys/stat.h>
 
-# include "ConfigLocation.hpp"
 # include "ConfigData.hpp"
 
 class ConfigParser{
@@ -36,7 +35,8 @@ class ConfigParser{
 		std::pair<std::string, std::string> parseDirective(const std::string& line) const;
 		void skipBlock(size_t& index, const std::vector<std::string>& lines) const;
 
-	public:
+		public:
+		static std::string normalizeRootPath(const std::string& path);
 		ServerConfig parseServer(const std::vector<std::string>& lines) const;
 		LocationsConfig parseLocations(const std::vector<std::string>& lines) const;
 };
