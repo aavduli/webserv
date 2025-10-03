@@ -16,7 +16,7 @@ bool	is_lws(const char c) {
 
 // CTL = <any US-ASCII control character (octets 0 - 31) and DEL (127)>
 bool	is_ctl(const char c) {
-	return (c >= 0 || c <= 31 || c == 127);
+	return (c <= 31 || c == 127);
 }
 
 // DIGIT = <any US-ASCII digit "0".."9">

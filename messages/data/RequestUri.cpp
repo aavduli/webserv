@@ -2,14 +2,14 @@
 #include "../parsing/MessageParser.hpp"
 
 RequestUri::RequestUri() : _raw_uri(""), _scheme(""), _userinfo(""), _host(""), _port(""), _path(""),
-	_full_path(""), _query(""), _fragment(""), _is_absolute_uri(false), _is_abs_path(false) {}
+	_effective_path(""), _redir_destination(""), _query(""), _fragment(""), _is_absolute_uri(false), _is_abs_path(false) {}
 
 RequestUri::RequestUri(const std::string& raw_uri) : _raw_uri(raw_uri), _scheme(""), _userinfo(""), _host(""), _port(""),
-	_path(""), _full_path(""), _query(""), _fragment(""), _is_absolute_uri(false), _is_abs_path(false) {
+	_path(""), _effective_path(""), _redir_destination(""), _query(""), _fragment(""), _is_absolute_uri(false), _is_abs_path(false) {
 }
 
 RequestUri::RequestUri(const RequestUri& rhs) : _raw_uri(rhs._raw_uri), _scheme(rhs._scheme),
-	_userinfo(rhs._userinfo), _host(rhs._host), _port(rhs._port), _path(rhs._path), _full_path(rhs._full_path), 
+	_userinfo(rhs._userinfo), _host(rhs._host), _port(rhs._port), _path(rhs._path), _effective_path(rhs._effective_path),  _redir_destination(""), 
 	_query(rhs._query), _fragment(rhs._fragment), _is_absolute_uri(rhs._is_absolute_uri), _is_abs_path(rhs._is_abs_path) {}
 
 RequestUri& RequestUri::operator=(const RequestUri& rhs) {
@@ -20,7 +20,8 @@ RequestUri& RequestUri::operator=(const RequestUri& rhs) {
 		_host = rhs._host;
 		_port = rhs._port;
 		_path = rhs._path;
-		_full_path = rhs._full_path;
+		_effective_path = rhs._effective_path;
+		_redir_destination = rhs._redir_destination;
 		_query = rhs._query;
 		_fragment = rhs._fragment;
 		_is_absolute_uri = rhs._is_absolute_uri;
@@ -85,7 +86,7 @@ bool	RequestUri::parse_uri_authority(const std::string& raw) {
 	}
 	else {
 		_host = raw.substr(pos);
-		_port = "80";	// If the port is empty or not given, port 80 is assumed
+		_port = "80";
 	}
 	return true;
 }
@@ -169,6 +170,8 @@ void RequestUri::clear_uri() {
 	_host = "";
 	_port = "";
 	_path = "";
+	_effective_path = "";
+	_redir_destination = "";
 	_query = "";
 	_fragment = "";
 	_is_absolute_uri = false;
@@ -184,6 +187,8 @@ void	RequestUri::print() const {
 	std::cout << "  Host: " << _host << std::endl;
 	std::cout << "  Port: " << _port << std::endl;
 	std::cout << "  Path: " << _path << std::endl;
+	std::cout << "  Effective path: " << _effective_path << std::endl;
+	std::cout << "  Redirection destination: " << _redir_destination << std::endl;
 	std::cout << "  Query: " << _query << std::endl;
 	std::cout << "  Fragment: " << _fragment << std::endl;
 	std::cout << "  Is Absolute URI: " << (_is_absolute_uri ? "true" : "false") << std::endl;
@@ -204,8 +209,12 @@ std::string	RequestUri::getPath() const {
 	return _path;
 }
 
-std::string	RequestUri::getFullPath() const {
-	return _full_path;
+std::string	RequestUri::getEffectivePath() const {
+	return _effective_path;
+}
+
+std::string	RequestUri::getRedirDestination() const {
+	return _redir_destination;
 }
 
 // Additional Getters
@@ -262,8 +271,12 @@ void	RequestUri::setPath(const std::string& path) {
 	_path = path;
 }
 
-void	RequestUri::setFullPath(const std::string& full_path) {
-	_full_path = full_path;
+void	RequestUri::setEffectivePath(const std::string& full_path) {
+	_effective_path = full_path;
+}
+
+void	RequestUri::setRedirDestination(const std::string& destination) {
+	_redir_destination = destination;
 }
 
 void	RequestUri::setQuery(const std::string& query) {

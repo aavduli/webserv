@@ -8,7 +8,8 @@
 #include "../data/HttpRequest.hpp"
 #include "../data/HttpResponse.hpp"
 #include "../../config/WebservConfig.hpp"
-#include "MessageHandler.hpp"
+
+class MessageValidator;
 
 class MessageHandler {
 
@@ -26,8 +27,8 @@ class MessageHandler {
 
 		HttpRequest*	getRequest() const;
 		HttpResponse*	getResponse() const;
+		Error			getError() const;
 		
-		bool			is_valid_request(const WebservConfig& config);
 		void			process_request();
 		void			generate_response();
 		std::string		serialize_response();

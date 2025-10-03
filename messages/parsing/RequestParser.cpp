@@ -177,6 +177,9 @@ bool RequestParser::parse_headers() {
 
 	std::map<std::string, std::vector<std::string> > headers;
 	
+	if (_current_pos < _raw_data.length())
+		_request->setHeadersSize(_raw_data.substr(_current_pos).size());
+
 	while (_current_pos < _raw_data.length()) {
 		size_t line_end = _raw_data.find("\r\n", _current_pos);
 		if (line_end == std::string::npos) {
@@ -190,7 +193,7 @@ bool RequestParser::parse_headers() {
 		size_t colon_pos = header_line.find(':');
 		if (colon_pos == std::string::npos) {
 			console::log("Missing colon in header line: ", ERROR);
-			return NULL;
+			return false;
 		}
 		std::string name = trim_lws(header_line.substr(0, colon_pos));
 		if (name.empty()) {
@@ -218,24 +221,23 @@ bool RequestParser::parse_body() {
 	if (_current_pos < _raw_data.length()) {
 		std::string body = _raw_data.substr(_current_pos);
 		_request->setBody(body);
-		_request->setContentLength(_request->getBody().size());
+		_request->setBodySize(_request->getBody().size());
 	}
 	else {
 		_request->setBody("");
-		_request->setContentLength(0);
-		console::log("[INFO] Empty body", MSG);
+		_request->setBodySize(0);
 	}
-	std::vector<std::string> content_length_value = _request->getHeaderValues("content-length");
-	if (!content_length_value.empty()) {
-		if (content_length_value.at(0) == "") {
+	std::vector<std::string> body_size_value = _request->getHeaderValues("content-length");
+	if (!body_size_value.empty()) {
+		if (body_size_value.at(0) == "") {
 			console::log("Missing \"Content-Length\" header value", MSG);
-			_state = s_req_invalid_content_length;
+			_state = s_req_invalid_body_size;
 			return false;
 		}
-		size_t content_length = to_size_t(content_length_value.at(0));
-		if (content_length != _request->getContentLength()) {
+		size_t body_size = to_size_t(body_size_value.at(0));
+		if (body_size != _request->getBodySize()) {
 			console::log("\"Content-Length\" header value doesn't match body size", MSG);
-			_state = s_req_invalid_content_length;
+			_state = s_req_invalid_body_size;
 			return false;
 		}
 	}	

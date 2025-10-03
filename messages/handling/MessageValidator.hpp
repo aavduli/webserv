@@ -6,17 +6,43 @@
 #include "../data/HttpResponse.hpp"
 #include "../../config/WebservConfig.hpp"
 #include "../../parsing/Parsing.hpp"
+#include "../../errors/errors.hpp"
 
 #include <sys/stat.h>
 
 #define MAX_URI_LENGTH 8000
+#define MAX_HEADERS_SIZE 8000
 
-bool	is_valid_host(RequestUri *uri, const std::vector<std::string>& header_host, const std::string& config_host);
-bool	is_valid_port(RequestUri *uri, const std::vector<std::string>& header_port, const std::string& config_port);
-bool	is_allowed_method(const std::string& method, std::map<std::string, std::string> loc_config);
-bool	is_valid_version(const HttpRequest& request);
+class MessageValidator {
+	private:
+		const WebservConfig&				_config;
+		HttpRequest&						_request;
+		Error								_last_error;
+		std::map<std::string, std::string>	_location_config;
+		std::vector<std::string>			_host_header;
+
+	public:
+		MessageValidator(const WebservConfig& config, HttpRequest& request);
+		
+		bool	isValidRequest();
+		Error	getLastError() const;
+
+	private:
+		bool	validateHost();
+		bool	validatePort();
+		bool	validateMethod();
+		bool	validateVersion();
+		bool	validateBodySize();
+		bool	validatePath();
+		bool	validateTransferEncoding();
+		bool	validateContentType();
+		bool	validateHeaderLimits();
+		bool	validateExpectHeader();
+		bool	validateConnectionHeader();
+		bool	validateRedirection();
+};
+
 bool	is_valid_body_size(const size_t& size, const std::string& max_config);
-bool	is_valid_path(RequestUri *uri, const WebservConfig& config, std::map<std::string, std::string> location);
 
 std::string	canonicalize_path(const std::string& path);
 bool		is_within_root(const std::string& resolved_path, const std::string& document_root);
