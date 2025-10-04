@@ -19,6 +19,7 @@ class MessageValidator {
 		HttpRequest&						_request;
 		Status								_last_status;
 		std::map<std::string, std::string>	_location_config;
+		std::string							_location_prefix;
 		std::vector<std::string>			_host_header;
 
 	public:
@@ -40,12 +41,15 @@ class MessageValidator {
 		bool	validateExpectHeader();
 		bool	validateConnectionHeader();
 		bool	validateRedirection();
+		
+		std::map<std::string, std::string>	findLocationMatch(const std::string& path);
 };
-
-bool	is_valid_body_size(const size_t& size, const std::string& max_config);
 
 std::string	canonicalize_path(const std::string& path);
 bool		is_within_root(const std::string& resolved_path, const std::string& document_root);
 bool		contains_traversal(const std::string& path);
+std::string	extract_relative_path(const std::string& full_path, const std::string& location_prefix);
+std::string	build_full_path(const std::string& root, const std::string& relative_path);
+std::string	resolve_index_file(const std::string& directory_path, const std::string& index_file);
 
 #endif // MESSAGEVALIDATOR_HPP

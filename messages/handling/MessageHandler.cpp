@@ -4,10 +4,7 @@
 MessageHandler::MessageHandler(HttpRequest* request) : _request(request), _response(NULL) {}
 
 MessageHandler::MessageHandler(const MessageHandler& rhs) {
-	if (rhs._request)
-		_request = new HttpRequest(*rhs._request);
-	else
-		_request = NULL;
+	_request = rhs._request;
 	if (rhs._response)
 		_response = new HttpResponse(*rhs._response);
 	else
@@ -16,12 +13,8 @@ MessageHandler::MessageHandler(const MessageHandler& rhs) {
 
 MessageHandler& MessageHandler::operator=(const MessageHandler& rhs) {
 	if (this != &rhs) {
-		delete _request;
 		delete _response;
-		if (rhs._request)
-			_request = new HttpRequest(*rhs._request);
-		else
-			_request = NULL;
+		_request = rhs._request;
 		if (rhs._response)
 			_response = new HttpResponse(*rhs._response);
 		else
@@ -31,8 +24,6 @@ MessageHandler& MessageHandler::operator=(const MessageHandler& rhs) {
 }
 
 MessageHandler::~MessageHandler() {
-	if (_request)
-		delete _request;
 	if (_response)
 		delete _response;
 }

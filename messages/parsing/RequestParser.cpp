@@ -3,21 +3,11 @@
 
 RequestParser::RequestParser() : MessageParser(), _request(NULL) {}
 
-RequestParser::RequestParser(const RequestParser& rhs) : MessageParser(rhs) {
-	if (rhs._request)
-		_request = new HttpRequest(*rhs._request);
-	else
-		_request = NULL;
-}
+RequestParser::RequestParser(const RequestParser& rhs) : MessageParser(rhs) {}
 
 RequestParser& RequestParser::operator=(const RequestParser& rhs) {
 	if (this != &rhs) {
 		MessageParser::operator=(rhs);
-		delete _request;
-		if (rhs._request)
-			_request = new HttpRequest(*rhs._request);
-		else
-			_request = NULL;
 	}
 	return *this;
 }

@@ -8,7 +8,7 @@ MessageValidator::MessageValidator(const WebservConfig& config, HttpRequest& req
 		return ;
 	}
 	std::string path = _request.getUri().getPath();
-	_location_config = _config.getLocationConfig(path);
+	_location_config = findLocationMatch(path);
 }
 
 bool MessageValidator::isValidRequest() {
@@ -129,34 +129,31 @@ bool MessageValidator::validateBodySize() {
 bool MessageValidator::validatePath() {
 
 	const std::string& path = _request.getUri().getPath();
-	std::string final_path;
-	
+	std::string root = _location_config["root"];
+
 	if (contains_traversal(path)) {
 		_last_status = E_PATH_TRAVERSALS;
 		return false;
 	}
-
-	std::string root = _location_config["root"];
 	if (root.empty())
 		root = _config.getRoot();
-	final_path = canonicalize_path(root + path);
+	
+	std::string relative_path = extract_relative_path(path, _location_prefix);
+	std::string full_path = build_full_path(root, relative_path);
+	std::string final_path  = canonicalize_path(full_path);
 
-	// stat not safe?
-	struct stat buf;
-	if (stat(final_path.c_str(), &buf) != 0) {
+	if (!is_valid_path(final_path)) {
 		_last_status = E_NOT_FOUND;
 		return false;
 	}
-	
-	if (S_ISDIR(buf.st_mode)) {
-		if (final_path[final_path.length() - 1] != '/')
-			final_path += "/";
-		const std::string& index = _location_config["index"];
+
+	if (is_directory(final_path)) {
+		std::string index = _location_config["index"];
 		if (index.empty())
-			final_path += _config.getIndex();
-		else
-			final_path += index;
-		if (stat(final_path.c_str(), &buf) != 0) {	// check without stat?
+			index = _config.getIndex();
+		final_path = resolve_index_file(final_path, index);
+
+		if (!is_valid_file_path(final_path)) {
 			_last_status = E_NOT_FOUND;
 			return false;
 		}
@@ -166,7 +163,7 @@ bool MessageValidator::validatePath() {
 		return false;
 	}
 	_request.getUri().setEffectivePath(final_path);
-	console::log("[INFO] Effective path: " + final_path, MSG);
+	std::cout << YELLOW << "[INFO] Effective path: " + final_path << RESET << std::endl;
 	return true;
 }
 
@@ -236,7 +233,7 @@ bool MessageValidator::validateHeaderLimits() {
 
 	size_t headers_size = _request.getHeadersSize();
 	if (headers_size > MAX_HEADERS_SIZE) {
-		console::log("[ERROR] Header size > 8000", MSG);
+		console::log("[ERROR] Header size too large", MSG);
 		_last_status = E_ENTITY_TOO_LARGE;
 		return false;
 	}
@@ -324,58 +321,40 @@ bool MessageValidator::validateRedirection() {
 	return false;
 }
 
-// traversal = use of ../ sequences (or other patterns) to escape document root
-bool contains_traversal(const std::string& path) {
-
-	return path.find("../") != std::string::npos ||
-		path.find("..\\") != std::string::npos ||
-		path.find("%2e%2e") != std::string::npos ||
-		path.find("..%2f") != std::string::npos;
-}
-
-// Canonicalization by resolving all symbolic links, redundant components (. / .. etc.) and normalizing path structure
-// Ensures that paths are in standard form for security validation
-std::string canonicalize_path(const std::string& path) {
-
-	std::vector<std::string> parts = str_to_vect(path, "/");
-	std::vector<std::string> canonical;
-	std::string canonical_path;
-	bool is_absolute;
-
-	// remove //./..
-	for (size_t i = 0; i < parts.size(); ++i) {
-		if (parts[i].empty() || parts[i] == ".")
-			continue;
-		else if (parts[i] == ".." && !canonical.empty())
-			canonical.pop_back();
+// Uses longest prefix matching
+std::map<std::string, std::string> MessageValidator::findLocationMatch(const std::string& path) {
+	
+	std::string match = "";
+	std::map<std::string, std::string> best_config;
+	_location_prefix = "";
+	
+	if (_config.hasLocation(path))
+		return _config.getLocationConfig(path);
+	
+	std::string test_path = path;
+	while (!test_path.empty()) {
+		if (_config.hasLocation(test_path)) {
+			std::map<std::string, std::string> config = _config.getLocationConfig(test_path);
+			if (test_path.length() > match.length()) {
+				match = test_path;
+				best_config = config;
+			}
+		}
+		size_t last_slash = test_path.find_last_of('/');
+		if (last_slash == 0) {
+			test_path = "/";
+			if (_config.hasLocation(test_path)) {
+				std::map<std::string, std::string> config = _config.getLocationConfig(test_path);
+				if (match.empty())
+					best_config = config;
+			}
+			break;
+		}
+		else if (last_slash == std::string::npos)
+			break;
 		else
-			canonical.push_back(parts[i]);
+			test_path = test_path.substr(0, last_slash);
 	}
-	
-	is_absolute = (!path.empty() && path[0] == '/');
-	if (is_absolute)
-		canonical_path = "/";
-
-	for (size_t i = 0; i < canonical.size(); ++i) {
-		if (i > 0 || (is_absolute && !canonical_path.empty() && canonical_path != "/"))
-			canonical_path += "/";
-		canonical_path += canonical[i];
-	}
-	if (canonical_path.empty() && !is_absolute)
-		canonical_path = ".";
-	return canonical_path;
-}
-
-bool is_within_root(const std::string& resolved_path, const std::string& document_root) {
-
-	std::string canonical_root = canonicalize_path(document_root);
-	std::string canonical_path = canonicalize_path(resolved_path);
-	
-	if (canonical_root[canonical_root.length() - 1] != '/')
-		canonical_root += "/";
-	if (canonical_path.substr(0, canonical_root.length()) == canonical_root)
-		return true;
-	else if (canonical_path == canonical_root.substr(0, canonical_root.length() - 1))
-		return true;
-	return false;
+	_location_prefix = match;
+	return best_config;
 }
