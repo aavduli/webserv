@@ -122,8 +122,9 @@ void server::serverManager(WebservConfig &config) {
 				bool alive = true;
 				while (true) {
 					ssize_t n = recv(fd, buff, sizeof(buff), 0);
-					console::log("Something has been received", SRV);
+					// console::log("Something has been received", SRV); // Commented to prevent spam
 					if (n > 0) {
+						console::log("Data received from client", SRV); // Only log when data actually received
 						c.in.append(buff, static_cast<size_t>(n));
 						size_t endpos = c.in.size();
 						handle_request(config, c.in.substr(0, endpos));
@@ -145,6 +146,7 @@ void server::serverManager(WebservConfig &config) {
 						}
 					}
 					if (n == 0) {
+						console::log("Client disconnected", SRV);
 						_ev.delFd(fd);
 						close(fd);
 						_conns.erase(fd);
@@ -152,27 +154,35 @@ void server::serverManager(WebservConfig &config) {
 						break;	
 					}
 					if (n == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)){
-						_ev.delFd(fd);
-						close(fd);
-						_conns.erase(fd);
-						alive = false;
+						// No more data available, exit recv loop
+						break;
 					}
 					if (n == -1 && errno == EINTR) {
+						console::log("Interrupted recv, cleaning up connection", SRV);
 						_ev.delFd(fd);
 						close(fd);
 						_conns.erase(fd);
 						alive = false;
 						break;
 					}
-					if (!alive) continue;
+					if (n == -1) {
+						console::log("recv error, closing connection", SRV);
+						_ev.delFd(fd);
+						close(fd);
+						_conns.erase(fd);
+						alive = false;
+						break;
+					}
+					if (!alive) break; // Exit loop if connection is dead
 					size_t endpos = 0;
 					onConn::onDiscon(c, alive, endpos);
 					if (!c.header_done && c.in.size() > onConn::MAX_HEADER_BYTES
 					&& onConn::headers_end_pos(c.in) == std::string::npos) {
+						console::log("Header too large, closing connection", SRV);
 						_ev.delFd(fd);
 						close(fd);
 						_conns.erase(fd);
-						continue;
+						break; // Exit the recv loop
 					}
 				}
 			}
