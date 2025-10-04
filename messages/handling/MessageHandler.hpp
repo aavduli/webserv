@@ -14,8 +14,7 @@ class MessageValidator;
 class MessageHandler {
 
 	private:
-		Error					_error;
-		State					_state;
+		Status					_status;
 		HttpRequest*			_request;
 		HttpResponse*			_response;
 
@@ -27,15 +26,15 @@ class MessageHandler {
 
 		HttpRequest*	getRequest() const;
 		HttpResponse*	getResponse() const;
-		Error			getError() const;
+		Status			getStatus() const;
 		
-		void			process_request();
-		void			generate_response();
-		std::string		serialize_response();
+		void			processRequest();
+		void			generateResponse();
+		std::string		serializeResponse();
 		
-		void			handle_get();
-		void			handle_post();
-		void			handle_delete();
+		void			handleGet();
+		void			handlePost();
+		void			handleDelete();
 };
 
 void	handle_request(const WebservConfig& config, const std::string &raw);

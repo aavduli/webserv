@@ -1,7 +1,8 @@
 #include "errors.hpp"
 
-std::string	error_msg(Error e) {
+std::string	status_msg(Status e) {
 	switch (e) {
+		case E_INIT: return "Initialization";
 		case E_OK: return "Success";
 		case E_INVALID_FILE: return "Invalid file";
 		case E_FAILED_CONNECTION: return "Failed connection";

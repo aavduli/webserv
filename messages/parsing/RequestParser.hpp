@@ -7,7 +7,7 @@
 class RequestParser : public MessageParser {
 
 	private:
-		HttpRequest*	_request;		// for request parsing
+		HttpRequest*	_request;
 
 	public:
 		RequestParser();
@@ -15,15 +15,14 @@ class RequestParser : public MessageParser {
 		RequestParser& operator=(const RequestParser& rhs);
 		~RequestParser();
 
-		HttpRequest*	parse_request(std::string raw_request);
-		bool			parse_request_line();
-		bool			parse_method(std::string request_line);
-		bool			parse_uri(std::string request_line);
-		bool			parse_version(std::string request_line);
-		bool			parse_headers();
-		std::string		parse_header_name(std::string line);
-		std::vector<std::string>	parse_header_values(std::string line);
-		bool			parse_body();
+		bool			parseRequest(HttpRequest* request, const std::string& raw_request);
+		bool			parseRequestLine();
+		bool			parseMethod(std::string request_line);
+		bool			parseUri(std::string request_line);
+		bool			parseVersion(std::string request_line);
+		bool			parseHeaders();
+		std::string		parseHeaderName(std::string line);
+		bool			parseBody();
 };
 
 #endif //REQUESTPARSER_HPP

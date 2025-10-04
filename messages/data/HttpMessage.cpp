@@ -2,17 +2,15 @@
 #include "HttpRequest.hpp"
 
 HttpMessage::HttpMessage() {
-	_state = s_msg_dead;
 	_version_major = "";
 	_version_minor = "";
 	_body = "";
 }
 
-HttpMessage::HttpMessage(const HttpMessage& rhs) : _state(rhs._state), _version_major(rhs._version_major), _version_minor(rhs._version_minor), _headers(rhs._headers), _body(rhs._body), _body_size(0) {}
+HttpMessage::HttpMessage(const HttpMessage& rhs) : _version_major(rhs._version_major), _version_minor(rhs._version_minor), _headers(rhs._headers), _body(rhs._body), _body_size(0) {}
 
 HttpMessage& HttpMessage::operator=(const HttpMessage& rhs) {
 	if (this != &rhs) {
-		_state = rhs._state;
 		_version_major = rhs._version_major;
 		_version_minor = rhs._version_minor;
 		_headers = rhs._headers;
@@ -23,14 +21,6 @@ HttpMessage& HttpMessage::operator=(const HttpMessage& rhs) {
 }
 
 HttpMessage::~HttpMessage() {}
-
-State	HttpMessage::getState() const {
-	return _state;
-}
-
-void	HttpMessage::setState(State state) {
-	_state = state;
-}
 
 std::string	HttpMessage::getHttpVersion() const {
 	return (_version_major + "." + _version_minor);

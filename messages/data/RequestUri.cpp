@@ -34,7 +34,7 @@ RequestUri::~RequestUri() {}
 
 bool	RequestUri::parse() {
 
-	clear_uri();
+	clearUri();
 
 	// The Request-URI is transmitted as an encoded string, where some
 	// characters may be escaped using the "% HEX HEX" encoding defined by
@@ -44,10 +44,10 @@ bool	RequestUri::parse() {
 
 	if (_raw_uri.empty())
 		_raw_uri = "/";		// If the abs_path is not present in the URL, it MUST be given as "/"
-	else if (is_absolute_uri(_raw_uri))
-		*this = parse_absolute_uri(_raw_uri);
+	else if (isAbsoluteUri(_raw_uri))
+		*this = parseAbsoluteUri(_raw_uri);
 	else if (_raw_uri[0] == '/')
-		*this = parse_abs_path(_raw_uri);
+		*this = parseAbsolutePath(_raw_uri);
 	else {
 		console::log("[ERROR] Invalid URI format: " + _raw_uri, MSG);
 		return false;
@@ -58,12 +58,12 @@ bool	RequestUri::parse() {
 	return true;
 }
 
-bool	RequestUri::parse_uri_path_query(const std::string& raw) {
+bool	RequestUri::parseUriPath(const std::string& raw) {
 
 	size_t pos = 0;
 	
 	if (raw.find("?", pos) != std::string::npos) {
-		_path = extract_uri_component(&pos, raw, "?");
+		_path = extractComponent(&pos, raw, "?");
 		_query = raw.substr(pos);
 	}
 	else {
@@ -73,15 +73,15 @@ bool	RequestUri::parse_uri_path_query(const std::string& raw) {
 	return true;
 }
 
-bool	RequestUri::parse_uri_authority(const std::string& raw) {
+bool	RequestUri::parseUriAuthority(const std::string& raw) {
 
 	size_t pos = 0;
 	
 	if (raw.find("@") != std::string::npos)
-		_userinfo = extract_uri_component(&pos, raw, "@");
+		_userinfo = extractComponent(&pos, raw, "@");
 
 	if (raw.find(":", pos) != std::string::npos && raw.find(":", pos) > pos) {
-		_host = extract_uri_component(&pos, raw, ":");
+		_host = extractComponent(&pos, raw, ":");
 		_port = raw.substr(pos);
 	}
 	else {
@@ -91,7 +91,7 @@ bool	RequestUri::parse_uri_authority(const std::string& raw) {
 	return true;
 }
 
-RequestUri	RequestUri::parse_absolute_uri(const std::string& raw) {
+RequestUri	RequestUri::parseAbsoluteUri(const std::string& raw) {
 
 	RequestUri uri;
 	size_t pos = 0;
@@ -99,10 +99,10 @@ RequestUri	RequestUri::parse_absolute_uri(const std::string& raw) {
 	uri._is_absolute_uri = true;
 
 	if (raw.find(":") != std::string::npos) {
-		uri._scheme = extract_uri_component(&pos, raw, ":");
+		uri._scheme = extractComponent(&pos, raw, ":");
 		if (uri._scheme != "http" && uri._scheme != "https") {
 			console::log("[ERROR] Unsupported URI scheme: " + uri._scheme, MSG);
-			uri.clear_uri();
+			uri.clearUri();
 			return uri;
 		}
 		if (pos < raw.length() && raw.substr(pos, 2) == "//") {
@@ -111,11 +111,11 @@ RequestUri	RequestUri::parse_absolute_uri(const std::string& raw) {
 			if (authority_end == std::string::npos)
 				authority_end = raw.length();
 			std::string authority = raw.substr(pos, authority_end - pos);
-			uri.parse_uri_authority(authority);
+			uri.parseUriAuthority(authority);
 			pos = authority_end;
 		}
 		if (pos < raw.length())
-			uri.parse_uri_path_query(raw.substr(pos));
+			uri.parseUriPath(raw.substr(pos));
 		else
 			uri._path = "/";
 		uri._is_absolute_uri = true;
@@ -123,18 +123,18 @@ RequestUri	RequestUri::parse_absolute_uri(const std::string& raw) {
 	return uri;
 }
 
-RequestUri	RequestUri::parse_abs_path(const std::string& raw) {
+RequestUri	RequestUri::parseAbsolutePath(const std::string& raw) {
 
 	RequestUri uri;
 	uri._raw_uri = raw;
 	uri._is_abs_path = true;
-	uri.parse_uri_path_query(raw);
+	uri.parseUriPath(raw);
 	return uri;
 }
 
 // UTILS
 
-std::string RequestUri::extract_uri_component(size_t* pos, const std::string& str, const std::string& del) {
+std::string RequestUri::extractComponent(size_t* pos, const std::string& str, const std::string& del) {
 
 	size_t component_pos = *pos;
 	*pos = str.find(del, component_pos);
@@ -148,7 +148,7 @@ std::string RequestUri::extract_uri_component(size_t* pos, const std::string& st
 	return component;
 }
 
-bool RequestUri::is_absolute_uri(const std::string& uri) {
+bool RequestUri::isAbsoluteUri(const std::string& uri) {
 
 	size_t colon_pos = uri.find(":");
 	if (colon_pos == std::string::npos || colon_pos == 0)
@@ -164,7 +164,7 @@ bool RequestUri::is_absolute_uri(const std::string& uri) {
 	return true;
 }
 
-void RequestUri::clear_uri() {
+void RequestUri::clearUri() {
 	_scheme = "";
 	_userinfo = "";
 	_host = "";
@@ -238,15 +238,11 @@ std::string	RequestUri::getQuery() const {
 	return _query;
 }
 
-std::string	RequestUri::getFragment() const {
-	return _fragment;
-}
-
 bool	RequestUri::isAbsoluteUri() const {
 	return _is_absolute_uri;
 }
 
-bool	RequestUri::isAbsPath() const {
+bool	RequestUri::isAbsolutePath() const {
 	return _is_abs_path;
 }
 

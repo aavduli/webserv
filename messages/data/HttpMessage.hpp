@@ -18,7 +18,6 @@ class HttpResponse;
 class HttpMessage {
 
 	protected:
-		State			_state;
 		std::string		_version_major;
 		std::string		_version_minor;
 		std::map<std::string, std::vector<std::string> >	_headers;
@@ -32,8 +31,6 @@ class HttpMessage {
 		HttpMessage& operator=(const HttpMessage& rhs);
 		virtual ~HttpMessage();
 
-		State		getState() const;
-		void		setState(State state);
 		std::string	getHttpVersion() const;
 		std::string	getHttpVersionMajor() const;
 		std::string	getHttpVersionMinor() const;

@@ -12,7 +12,8 @@ ERROR HANDLING
 4. Http errors -> status enum list of status codes and messages
  */
 
-enum Error {
+enum Status {
+	E_INIT,
 	E_OK,
 
 	// Config file related
@@ -26,6 +27,7 @@ enum Error {
 	E_REDIRECT_TEMPORARY = 302,
 
 	// Parsing related
+	E_PARSING_DONE,
 	E_INCOMPLETE_REQUEST,
 	E_INVALID_REQUEST,
 	E_INVALID_METHOD,
@@ -57,6 +59,6 @@ enum Error {
 
 };
 
-std::string	error_msg(Error e);
+std::string	status_msg(Status e);
 
 #endif //ERRORS_HPP

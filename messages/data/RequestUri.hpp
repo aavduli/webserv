@@ -24,13 +24,13 @@ class RequestUri {
 		bool			_is_absolute_uri;
 		bool			_is_abs_path;
 		
-		std::string		extract_uri_component(size_t* pos, const std::string& str, const std::string& del);
-		bool			is_absolute_uri(const std::string& uri);
-		void			clear_uri();
-		bool			parse_uri_path_query(const std::string& raw);
-		bool			parse_uri_authority(const std::string& raw);
-		RequestUri		parse_absolute_uri(const std::string& raw);
-		RequestUri		parse_abs_path(const std::string& raw);
+		std::string		extractComponent(size_t* pos, const std::string& str, const std::string& del);
+		bool			isAbsoluteUri(const std::string& uri);
+		void			clearUri();
+		bool			parseUriPath(const std::string& raw);
+		bool			parseUriAuthority(const std::string& raw);
+		RequestUri		parseAbsoluteUri(const std::string& raw);
+		RequestUri		parseAbsolutePath(const std::string& raw);
 		
 	public:
 		RequestUri();
@@ -52,9 +52,8 @@ class RequestUri {
 		std::string		getEffectivePath() const;
 		std::string		getRedirDestination() const;
 		std::string		getQuery() const;
-		std::string		getFragment() const;
 		bool			isAbsoluteUri() const;
-		bool			isAbsPath() const;
+		bool			isAbsolutePath() const;
 
 		// Setters
 		void			setRawUri(const std::string& raw_uri);

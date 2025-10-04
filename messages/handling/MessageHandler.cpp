@@ -39,10 +39,7 @@ MessageHandler::~MessageHandler() {
 
 HttpRequest*	MessageHandler::getRequest() const {return _request;}
 HttpResponse*	MessageHandler::getResponse() const {return _response;}
-
-Error	MessageHandler::getError() const {
-	return _error;
-}
+Status			MessageHandler::getStatus() const {return _status;}
 
 void	handle_request(const WebservConfig& config, const std::string &raw) {	// TODO should return status enum 
 
@@ -53,48 +50,49 @@ void	handle_request(const WebservConfig& config, const std::string &raw) {	// TO
 		return ;
 	}
 
-	RequestParser	parser;
-	HttpRequest*	request = parser.parse_request(raw);
-	if (parser.getState() == s_req_parsing_done) {
-		console::log("[INFO] Request parsing success", MSG);
-		
-		MessageValidator validator(config, *request);
-		if (validator.isValidRequest()) {
-			console::log("[INFO] Request is valid", MSG);
-
-			MessageHandler handler(request);
-			handler.process_request();
-			handler.generate_response();
-			// const char* resp = (handler.serialize_response()).c_str();
-		} else {
-			console::log("[ERROR] Invalid request: " + error_msg(validator.getLastError()), MSG);
-			// TODO: Generate error response based on validator.getLastError()
-		}
+	HttpRequest request;
+	RequestParser parser;
+	
+	if (!parser.parseRequest(&request, raw)) {
+		console::log("[ERROR] Request parsing failed", MSG);
+		return;
 	}
-	else
-		console::log("[ERROR] Request parsing failed with state", MSG);
+	MessageValidator validator(config, request);
+
+	if (validator.isValidRequest()) {
+		console::log("[INFO] Request is valid", MSG);
+		MessageHandler handler(&request);  // Pass pointer to stack object
+
+		handler.processRequest();
+		handler.generateResponse();
+		// const char* resp = (handler.serializeResponse()).c_str();
+	}
+	else {
+		console::log("[ERROR] Invalid request: " + status_msg(validator.getLastStatus()), MSG);
+		// TODO: Generate error response based on validator.getLastStatus()
+	}
 }
 
-void	MessageHandler::process_request() {
+void	MessageHandler::processRequest() {
 	
 	if (!_request->getMethod().compare("GET")) {
 		console::log("[INFO] GET method", MSG);
-		handle_get();
+		handleGet();
 	}
 	else if (!_request->getMethod().compare("POST")) {
 		console::log("[INFO] POST method", MSG);
-		handle_post();
+		handlePost();
 	}
 	else if (!_request->getMethod().compare("DELETE")) {
 		console::log("[INFO] DELETE method", MSG);
-		handle_delete();
+		handleDelete();
 	}
 	else
 		console::log("[ERROR] Unkown method", MSG);
 }
 
 // with default headers
-void	MessageHandler::generate_response() {
+void	MessageHandler::generateResponse() {
 
 	/*
 	7. RESPONSE GENERATION:
@@ -134,16 +132,16 @@ void	MessageHandler::generate_response() {
 	return ;
 }
 
-std::string	MessageHandler::serialize_response() {
+std::string	MessageHandler::serializeResponse() {
 	return "coucou";
 }
 
 // TODO set response status code and clean exit
-void	MessageHandler::handle_get() {
+void	MessageHandler::handleGet() {
 
 	if (!(_request->getBody().empty())) {
 		console::log("[ERROR] GET request shouldn't have a body", MSG);
-		_state = s_req_invalid_get;
+		// _state = s_req_invalid_get;
 		return ;
 	}
 	// if here, URI should not be empty
@@ -151,7 +149,7 @@ void	MessageHandler::handle_get() {
 }
 
 // POST needs Content-Length or Transfer-Encoding header
-void	MessageHandler::handle_post() {
+void	MessageHandler::handlePost() {
 
 	if (!_request->hasHeader("content-length") || _request->getHeaderValues("content-length").empty()) {
 		if (_request->getBodySize() == 0)
@@ -169,4 +167,4 @@ void	MessageHandler::handle_post() {
 	// Check against allowed types in location config
 }
 
-void	MessageHandler::handle_delete() {}
+void	MessageHandler::handleDelete() {}

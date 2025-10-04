@@ -25,7 +25,7 @@ class MessageValidator {
 		MessageValidator(const WebservConfig& config, HttpRequest& request);
 		
 		bool	isValidRequest();
-		Error	getLastError() const;
+		Error	getLastStatus() const;
 
 	private:
 		bool	validateHost();

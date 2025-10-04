@@ -29,7 +29,7 @@ bool MessageValidator::isValidRequest() {
 	return true;
 }
 
-Error MessageValidator::getLastError() const {return _last_error;}
+Status MessageValidator::getLastStatus() const {return _last_error;}
 
 
 // TODO Validation format hostname (RFC 1123)
