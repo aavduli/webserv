@@ -1,7 +1,7 @@
 #ifndef MESSAGEHANDLER_HPP
 #define MESSAGEHANDLER_HPP
 
-#include "../../errors/errors.hpp"
+#include "../../status/status.hpp"
 #include "../parsing/MessageParser.hpp"
 #include "../parsing/RequestParser.hpp"
 #include "../data/HttpMessage.hpp"
@@ -14,7 +14,7 @@ class MessageValidator;
 class MessageHandler {
 
 	private:
-		Status					_status;
+		Status					_last_status;
 		HttpRequest*			_request;
 		HttpResponse*			_response;
 
@@ -22,21 +22,14 @@ class MessageHandler {
 		MessageHandler(HttpRequest* request);
 		MessageHandler(const MessageHandler& rhs);
 		MessageHandler& operator=(const MessageHandler& rhs);
-		~MessageHandler();
+		virtual ~MessageHandler();
 
 		HttpRequest*	getRequest() const;
 		HttpResponse*	getResponse() const;
-		Status			getStatus() const;
-		
-		void			processRequest();
-		void			generateResponse();
-		std::string		serializeResponse();
-		
-		void			handleGet();
-		void			handlePost();
-		void			handleDelete();
+		Status			getLastStatus() const;
+		void			setLastStatus(Status status);
 };
 
-void	handle_request(const WebservConfig& config, const std::string &raw);
+void	handle_messages(const WebservConfig& config, const std::string &raw_request);
 
 #endif //MESSAGEHANDLER_HPP
