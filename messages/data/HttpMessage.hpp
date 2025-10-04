@@ -8,7 +8,7 @@
 #include <map>
 #include <vector>
 
-#include "../../errors/errors.hpp"
+#include "../../status/status.hpp"
 #include "../../console/console.hpp"
 #include "../parsing/MessageParser.hpp"
 

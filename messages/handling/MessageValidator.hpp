@@ -6,7 +6,7 @@
 #include "../data/HttpResponse.hpp"
 #include "../../config/WebservConfig.hpp"
 #include "../../parsing/Parsing.hpp"
-#include "../../errors/errors.hpp"
+#include "../../status/status.hpp"
 
 #include <sys/stat.h>
 

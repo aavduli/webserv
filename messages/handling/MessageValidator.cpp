@@ -31,7 +31,6 @@ bool MessageValidator::isValidRequest() {
 
 Status MessageValidator::getLastStatus() const {return _last_status;}
 
-
 // TODO Validation format hostname (RFC 1123)
 bool MessageValidator::validateHost() {
 

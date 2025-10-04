@@ -9,7 +9,7 @@
 #include <vector>
 #include <algorithm>
 
-#include "../errors/errors.hpp"
+#include "../status/status.hpp"
 
 // CONVERSION
 size_t 						to_size_t(std::string str);

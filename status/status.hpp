@@ -1,5 +1,5 @@
-#ifndef ERRORS_HPP
-#define ERRORS_HPP
+#ifndef STATUS_HPP
+#define STATUS_HPP
 
 #include <string>
 
@@ -61,4 +61,4 @@ enum Status {
 
 std::string	status_msg(Status e);
 
-#endif //ERRORS_HPP
+#endif //STATUS_HPP

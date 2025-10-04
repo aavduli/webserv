@@ -1,4 +1,4 @@
-#include "errors.hpp"
+#include "status.hpp"
 
 std::string	status_msg(Status e) {
 	switch (e) {

@@ -14,7 +14,7 @@
 
 #include "../../console/console.hpp"
 #include "../../config/WebservConfig.hpp"
-#include "../../errors/errors.hpp"
+#include "../../status/status.hpp"
 #include "../../parsing/Parsing.hpp"
 
 class HttpMessage;
