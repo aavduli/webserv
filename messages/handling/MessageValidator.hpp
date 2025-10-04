@@ -17,7 +17,7 @@ class MessageValidator {
 	private:
 		const WebservConfig&				_config;
 		HttpRequest&						_request;
-		Error								_last_error;
+		Status								_last_status;
 		std::map<std::string, std::string>	_location_config;
 		std::vector<std::string>			_host_header;
 
@@ -25,7 +25,7 @@ class MessageValidator {
 		MessageValidator(const WebservConfig& config, HttpRequest& request);
 		
 		bool	isValidRequest();
-		Error	getLastStatus() const;
+		Status	getLastStatus() const;
 
 	private:
 		bool	validateHost();

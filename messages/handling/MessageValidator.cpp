@@ -1,10 +1,10 @@
 #include "MessageValidator.hpp"
 #include <cstring>
 
-MessageValidator::MessageValidator(const WebservConfig& config, HttpRequest& request) : _config(config), _request(request), _last_error(E_OK) {
+MessageValidator::MessageValidator(const WebservConfig& config, HttpRequest& request) : _config(config), _request(request), _last_status(E_OK) {
 	_host_header = _request.getHeaderValues("host");
 	if (_host_header.empty()) {
-		_last_error = E_EMPTY_HEADER_HOST;
+		_last_status = E_EMPTY_HEADER_HOST;
 		return ;
 	}
 	std::string path = _request.getUri().getPath();
@@ -12,7 +12,7 @@ MessageValidator::MessageValidator(const WebservConfig& config, HttpRequest& req
 }
 
 bool MessageValidator::isValidRequest() {
-	_last_error = E_OK;
+	_last_status = E_OK;
 	
 	if (!validateVersion()) return false;	// 505 HTTP VERSION NOT SUPPORTED
 	if (!validateHost()) return false;		// 400 BAD REQUEST
@@ -29,7 +29,7 @@ bool MessageValidator::isValidRequest() {
 	return true;
 }
 
-Status MessageValidator::getLastStatus() const {return _last_error;}
+Status MessageValidator::getLastStatus() const {return _last_status;}
 
 
 // TODO Validation format hostname (RFC 1123)
@@ -46,7 +46,7 @@ bool MessageValidator::validateHost() {
 			_request.getUri().setHost(tmp_host);
 	}
 	if (!_request.getUri().getHost().empty() && _request.getUri().getHost().compare(config_host)) {
-		_last_error = E_INVALID_HOST;
+		_last_status = E_INVALID_HOST;
 		return false;
 	}
 	else if (_request.getUri().getHost().empty())
@@ -69,13 +69,13 @@ bool MessageValidator::validatePort() {
 			long port_value = std::strtol(header_port.c_str(), &endptr, 10);
 			if (*endptr != '\0' || port_value < 1 || port_value > 65535) {
 				console::log("[ERROR] Invalid port number: " + header_port, MSG);
-				_last_error = E_INVALID_PORT;
+				_last_status = E_INVALID_PORT;
 				return false;
 			}
 			
 			if (static_cast<int>(port_value) != config_port) {
 				console::log("[ERROR] Request port doesn't match server port", MSG);
-				_last_error = E_INVALID_PORT;
+				_last_status = E_INVALID_PORT;
 				return false;
 			}
 			_request.getUri().setPort(header_port);
@@ -98,7 +98,7 @@ bool MessageValidator::validateMethod() {
 		if (method == *it)
 			return true;
 	}
-	_last_error = E_METHOD_NOT_ALLOWED;
+	_last_status = E_METHOD_NOT_ALLOWED;
 	console::log("[ERROR] Method not allowed " + method, MSG);
 	return false;
 }
@@ -108,7 +108,7 @@ bool MessageValidator::validateVersion() {
 
 	const std::string& version = _request.getHttpVersion();
 	if (version != "1.1" && version != "1.0" && version != "0.9") {
-		_last_error = E_UNSUPPORTED_VERSION;
+		_last_status = E_UNSUPPORTED_VERSION;
 		return false;
 	}
 	return true;
@@ -120,7 +120,7 @@ bool MessageValidator::validateBodySize() {
 	size_t body_size = _request.getBodySize();
 
 	if (body_size > config_max) {
-		_last_error = E_ENTITY_TOO_LARGE;
+		_last_status = E_ENTITY_TOO_LARGE;
 		return false;
 	}
 	return true;
@@ -132,7 +132,7 @@ bool MessageValidator::validatePath() {
 	std::string final_path;
 	
 	if (contains_traversal(path)) {
-		_last_error = E_PATH_TRAVERSALS;
+		_last_status = E_PATH_TRAVERSALS;
 		return false;
 	}
 
@@ -144,7 +144,7 @@ bool MessageValidator::validatePath() {
 	// stat not safe?
 	struct stat buf;
 	if (stat(final_path.c_str(), &buf) != 0) {
-		_last_error = E_NOT_FOUND;
+		_last_status = E_NOT_FOUND;
 		return false;
 	}
 	
@@ -157,12 +157,12 @@ bool MessageValidator::validatePath() {
 		else
 			final_path += index;
 		if (stat(final_path.c_str(), &buf) != 0) {	// check without stat?
-			_last_error = E_NOT_FOUND;
+			_last_status = E_NOT_FOUND;
 			return false;
 		}
 	}
 	if (!is_within_root(final_path, root)) {
-		_last_error = E_PATH_ESCAPES_ROOT;
+		_last_status = E_PATH_ESCAPES_ROOT;
 		return false;
 	}
 	_request.getUri().setEffectivePath(final_path);
@@ -184,7 +184,7 @@ bool MessageValidator::validateTransferEncoding() {
 	for (size_t i = 0; i < te_headers.size(); i++) {
 		if (te_headers[i] != "chunked") {
 			console::log("[ERROR] Unsupported transfer encoding: " + te_headers[i], MSG);
-			_last_error = E_INVALID_TRANSFER_ENCODING;
+			_last_status = E_INVALID_TRANSFER_ENCODING;
 			return false;
 		}
 	}
@@ -215,7 +215,7 @@ bool MessageValidator::validateContentType() {
 		const std::vector<std::string>& ct_headers = _request.getHeaderValues("content-type");
 		if (ct_headers.empty()) {
 			console::log("[ERROR] POST request requires Content-Type header", MSG);
-			_last_error = E_MISSING_CONTENT_TYPE;
+			_last_status = E_MISSING_CONTENT_TYPE;
 			return false;
 		}
 
@@ -225,7 +225,7 @@ bool MessageValidator::validateContentType() {
 			content_type.find("text/") == std::string::npos &&
 			content_type.find("multipart/") == std::string::npos) {
 			console::log("[ERROR] Unsupported content type: " + content_type, MSG);
-			_last_error = E_UNSUPPORTED_MEDIA_TYPE;
+			_last_status = E_UNSUPPORTED_MEDIA_TYPE;
 			return false;
 		}
 	}
@@ -237,7 +237,7 @@ bool MessageValidator::validateHeaderLimits() {
 	size_t headers_size = _request.getHeadersSize();
 	if (headers_size > MAX_HEADERS_SIZE) {
 		console::log("[ERROR] Header size > 8000", MSG);
-		_last_error = E_ENTITY_TOO_LARGE;
+		_last_status = E_ENTITY_TOO_LARGE;
 		return false;
 	}
 	return true;
@@ -262,7 +262,7 @@ bool MessageValidator::validateExpectHeader() {
 	for (size_t i = 0; i < expect_headers.size(); i++) {
 		if (expect_headers[i] != "100-continue") {
 			console::log("[ERROR] Unsupported expectation: " + expect_headers[i], MSG);
-			_last_error = E_EXPECTATION_FAILED;
+			_last_status = E_EXPECTATION_FAILED;
 			return false;
 		}
 	}
@@ -285,7 +285,7 @@ bool MessageValidator::validateConnectionHeader() {
 		std::string conn = conn_headers[i];
 		if (conn != "close" && conn != "keep-alive" && conn != "upgrade") {
 			console::log("[ERROR] Invalid \"Connection\" header value: " + conn, MSG);
-			_last_error = E_INVALID_CONNECTION;
+			_last_status = E_INVALID_CONNECTION;
 			return false;
 		}
 	}
@@ -302,14 +302,14 @@ bool MessageValidator::validateRedirection() {
 	size_t space = redirect.find(' ');
 	if (space == std::string::npos) {
 		console::log("[ERROR] Invalid redirect format: " + redirect, MSG);
-		_last_error = E_INVALID_REDIRECT;
+		_last_status = E_INVALID_REDIRECT;
 		return false;
 	}
 
 	std::string code = redirect.substr(0, space);
 	if (code != "301" && code != "302") {
 		console::log("[ERROR] Unsupported redirect code: " + code, MSG);
-		_last_error = E_INVALID_REDIRECT;
+		_last_status = E_INVALID_REDIRECT;
 		return false;
 	}
 	
@@ -317,9 +317,9 @@ bool MessageValidator::validateRedirection() {
 	_request.getUri().setRedirDestination(destination);
 
 	if (code == "301")
-		_last_error = E_REDIRECT_PERMANENT;
+		_last_status = E_REDIRECT_PERMANENT;
 	else
-		_last_error = E_REDIRECT_TEMPORARY;
+		_last_status = E_REDIRECT_TEMPORARY;
 	console::log("[INFO] Redirect " + code + " to '" + destination + "' detected for path: " + _request.getUri().getPath(), MSG);
 	return false;
 }
