@@ -9,7 +9,7 @@ class HttpRequest : public HttpMessage {
 	private:
 		std::string		_method;
 		RequestUri		_uri;
-		
+
 	public:
 		HttpRequest();
 		HttpRequest(const HttpRequest& rhs);

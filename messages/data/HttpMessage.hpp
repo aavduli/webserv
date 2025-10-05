@@ -10,7 +10,6 @@
 
 #include "../../status/status.hpp"
 #include "../../console/console.hpp"
-#include "../parsing/MessageParser.hpp"
 
 class HttpRequest;
 class HttpResponse;

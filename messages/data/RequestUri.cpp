@@ -1,5 +1,4 @@
 #include "RequestUri.hpp"
-#include "../parsing/MessageParser.hpp"
 
 RequestUri::RequestUri() : _raw_uri(""), _scheme(""), _userinfo(""), _host(""), _port(""), _path(""),
 	_effective_path(""), _redir_destination(""), _query(""), _fragment(""), _is_absolute_uri(false), _is_abs_path(false) {}
