@@ -1,76 +1,97 @@
 #include "MessageHandler.hpp"
-#include "MessageValidator.hpp"
-#include "RequestHandler.hpp"
-#include "ResponseHandler.hpp"
 
-MessageHandler::MessageHandler(HttpRequest* request) : _last_status(E_INIT), _request(request), _response(NULL) {}
-
-MessageHandler::MessageHandler(const MessageHandler& rhs) : _last_status(rhs._last_status), _request(rhs._request) {
-	if (rhs._response)
-		_response = new HttpResponse(*rhs._response);
-	else
-		_response = NULL;
-}
-
+MessageHandler::MessageHandler(const WebservConfig& config) : _config(config), _request(), _response(), _last_status(E_INIT) {}
+MessageHandler::MessageHandler(const MessageHandler& rhs) : _config(rhs._config), _request(rhs._request), _response(rhs._response), _last_status(rhs._last_status) {}
 MessageHandler& MessageHandler::operator=(const MessageHandler& rhs) {
 	if (this != &rhs) {
-		delete _response;
 		_last_status = rhs._last_status;
 		_request = rhs._request;
-		if (rhs._response)
-			_response = new HttpResponse(*rhs._response);
-		else
-			_response = NULL;
+		_response = rhs._response;
 	}
 	return *this;
 }
+MessageHandler::~MessageHandler() {}
 
-MessageHandler::~MessageHandler() {
-	if (_response)
-		delete _response;
-}
+Status	MessageHandler::getLastStatus() const {return _last_status;}
 
-Status			MessageHandler::getLastStatus() const {return _last_status;}
-void			MessageHandler::setLastStatus(Status status) {_last_status = status;}
-HttpRequest*	MessageHandler::getRequest() const {return _request;};
-HttpResponse*	MessageHandler::getResponse() const {return _response;};
+const HttpRequest	MessageHandler::getRequest() const {return _request;};
+const HttpResponse	MessageHandler::getResponse() const {return _response;};
 
+
+
+// handleMessage() → parseRequest() → validateRequest() → processRequest() → generateResponse()
 // TODO should give a way for server to get Status
 void	handle_messages(const WebservConfig& config, const std::string &raw_request) {
 
 	console::log("=============[NEW REQUEST]=============", MSG);
 
-	// should never be empty?
 	if (raw_request.empty()) {
-		// return status code? return error/bool?
-		console::log("[ERROR] Empty request", MSG);
+		console::log("[ERROR] Empty request", MSG);		// return status code? return error/bool?
 		return ;
 	}
 
-	HttpRequest request;
-	RequestParser requ_parser;
-	if (!requ_parser.parseRequest(&request, raw_request)) {
-		console::log("[ERROR] Request parsing failed", MSG);
-		return;
-	}
+	MessageHandler	handler(config);
 
-	MessageValidator validator(config, request);
-	if (validator.isValidRequest()) {
-		console::log("[INFO] Request is valid", MSG);
+	if (!handler.parseRequest(raw_request)) {
+		console::log("[ERROR] Request parsing failed: " + status_msg(handler.getLastStatus()), MSG);
+		return ;
+	}
+	if (!handler.validateRequest()) {
+		console::log("[ERROR] Request validation failed: " + status_msg(handler.getLastStatus()), MSG);
+		return ;
+	}
+	if (!handler.processRequest()) {
+		console::log("[ERROR] Request process failed: " + status_msg(handler.getLastStatus()), MSG);
+		return ;
+	}
+	if (!handler.generateResponse()) {
+		console::log("[ERROR] Response generation failed: " + status_msg(handler.getLastStatus()), MSG);
+		return ;
+	}
+	// do something with response
+}
 
-		RequestHandler requ_handler(&request);
-		requ_handler.setLastStatus(validator.getLastStatus());
-		requ_handler.processRequest();
-		
-		// Use ResponseHandler for generating the response
-		ResponseHandler resp_handler(&request, config);
-		resp_handler.setLastStatus(requ_handler.getLastStatus());
-		resp_handler.generateResponse();
-		
-		// const char* resp = (resp_handler.serializeResponse()).c_str();
+
+
+bool	MessageHandler::parseRequest(const std::string& raw_request) {
+
+	RequestParser	parser(&_request, raw_request);
+
+	if (!parser.parseRequest()) {
+		_last_status = parser.getLastStatus();
+		return false;
 	}
-	else {
-		console::log("[ERROR] Invalid request: " + status_msg(validator.getLastStatus()), MSG);
-		// TODO: Generate error response based on validator.getLastStatus()
+	_last_status = E_OK;
+	return true;
+}
+
+bool MessageHandler::validateRequest() {
+
+	MessageValidator	validator(_config, &_request);
+
+	if (!validator.validateRequest()) {
+		_last_status = validator.getLastStatus();
+		return false;
 	}
+	_last_status = E_OK;
+	_validator = &validator;
+	return true;
+}
+
+bool MessageHandler::processRequest() {
+
+	RequestProcessor	processor(_config, _request);
+
+	processor.processRequest(_validator);
+	_last_status = processor.getLastStatus();
+	return true;
+}
+
+bool MessageHandler::generateResponse() {
+
+	ResponseGenerator	generator(_config, &_request, &_response);
+
+	generator.generateResponse();
+	_last_status = generator.getLastStatus();
+	return true;
 }

@@ -1,17 +1,33 @@
 #include "MessageValidator.hpp"
 #include <cstring>
 
-MessageValidator::MessageValidator(const WebservConfig& config, HttpRequest& request) : _config(config), _request(request), _last_status(E_OK) {
-	_host_header = _request.getHeaderValues("host");
+MessageValidator::MessageValidator(const WebservConfig& config, HttpRequest* request) : _config(config) {
+	 _request = request;
+	 _last_status = E_INIT;
+	_host_header = _request->getHeaderValues("host");
 	if (_host_header.empty()) {
 		_last_status = E_EMPTY_HEADER_HOST;
 		return ;
 	}
-	std::string path = _request.getUri().getPath();
+
+	std::string path = _request->getUri().getPath();
 	_location_config = findLocationMatch(path);
 }
+MessageValidator::MessageValidator(const MessageValidator& rhs) : _config(rhs._config), _request(rhs._request), _last_status(rhs._last_status) {}
+MessageValidator& MessageValidator::operator=(const MessageValidator& rhs) {
+	if (this != &rhs) {
+		_request = rhs._request;
+		_last_status = rhs._last_status;
+	}
+	return *this;
+}
+MessageValidator::~MessageValidator() {}
 
-bool MessageValidator::isValidRequest() {
+Status MessageValidator::getLastStatus() const {return _last_status;}
+const std::map<std::string, std::string>& MessageValidator::getLocationConfig() const { return _location_config; }
+const std::string& MessageValidator::getLocationPrefix() const { return _location_prefix; }
+
+bool MessageValidator::validateRequest() {
 	_last_status = E_OK;
 	
 	if (!validateVersion()) return false;	// 505 HTTP VERSION NOT SUPPORTED
@@ -29,27 +45,25 @@ bool MessageValidator::isValidRequest() {
 	return true;
 }
 
-Status MessageValidator::getLastStatus() const {return _last_status;}
-
 // TODO Validation format hostname (RFC 1123)
 bool MessageValidator::validateHost() {
 
 	std::string config_host = _config.getHost();
 	
-	if (_request.getUri().getHost().empty()) {
+	if (_request->getUri().getHost().empty()) {
 		std::string tmp_host = _host_header.at(0);
 		size_t colon = tmp_host.find(":");
 		if (colon != std::string::npos)
-			_request.getUri().setHost(tmp_host.substr(0, colon));
+			_request->getUri().setHost(tmp_host.substr(0, colon));
 		else
-			_request.getUri().setHost(tmp_host);
+			_request->getUri().setHost(tmp_host);
 	}
-	if (!_request.getUri().getHost().empty() && _request.getUri().getHost().compare(config_host)) {
+	if (!_request->getUri().getHost().empty() && _request->getUri().getHost().compare(config_host)) {
 		_last_status = E_INVALID_HOST;
 		return false;
 	}
-	else if (_request.getUri().getHost().empty())
-		_request.getUri().setHost(config_host);
+	else if (_request->getUri().getHost().empty())
+		_request->getUri().setHost(config_host);
 	return true;
 }
 
@@ -77,7 +91,7 @@ bool MessageValidator::validatePort() {
 				_last_status = E_INVALID_PORT;
 				return false;
 			}
-			_request.getUri().setPort(header_port);
+			_request->getUri().setPort(header_port);
 		}
 	}
 	return true;
@@ -85,7 +99,7 @@ bool MessageValidator::validatePort() {
 
 bool MessageValidator::validateMethod() {
 
-	const std::string& method = _request.getMethod();
+	const std::string& method = _request->getMethod();
 	std::vector<std::string> allowed_methods;
 	
 	if (!_location_config.empty() && !_location_config["methods"].empty())
@@ -105,7 +119,7 @@ bool MessageValidator::validateMethod() {
 // need default version MACRO?
 bool MessageValidator::validateVersion() {
 
-	const std::string& version = _request.getHttpVersion();
+	const std::string& version = _request->getHttpVersion();
 	if (version != "1.1" && version != "1.0" && version != "0.9") {
 		_last_status = E_UNSUPPORTED_VERSION;
 		return false;
@@ -116,7 +130,7 @@ bool MessageValidator::validateVersion() {
 bool MessageValidator::validateBodySize() {
 
 	size_t config_max = _config.getMaxContentLength();
-	size_t body_size = _request.getBodySize();
+	size_t body_size = _request->getBodySize();
 
 	if (body_size > config_max) {
 		_last_status = E_ENTITY_TOO_LARGE;
@@ -127,8 +141,9 @@ bool MessageValidator::validateBodySize() {
 
 bool MessageValidator::validatePath() {
 
-	const std::string& path = _request.getUri().getPath();
+	const std::string& path = _request->getUri().getPath();
 	std::string root = _location_config["root"];
+	std::cout << YELLOW << "[INFO] root: " + root << RESET << std::endl;
 
 	if (contains_traversal(path)) {
 		_last_status = E_PATH_TRAVERSALS;
@@ -138,30 +153,21 @@ bool MessageValidator::validatePath() {
 		root = _config.getRoot();
 	
 	std::string relative_path = extract_relative_path(path, _location_prefix);
+	std::cout << YELLOW << "[INFO] relative_path: " + relative_path << RESET << std::endl;
 	std::string full_path = build_full_path(root, relative_path);
+	std::cout << YELLOW << "[INFO] full_path: " + full_path << RESET << std::endl;
 	std::string final_path  = canonicalize_path(full_path);
 
 	if (!is_valid_path(final_path)) {
 		_last_status = E_NOT_FOUND;
+		std::cout << RED << "[ERROR] Invalid path: " + final_path << RESET << std::endl;
 		return false;
-	}
-
-	if (is_directory(final_path)) {
-		std::string index = _location_config["index"];
-		if (index.empty())
-			index = _config.getIndex();
-		final_path = resolve_index_file(final_path, index);
-
-		if (!is_valid_file_path(final_path)) {
-			_last_status = E_NOT_FOUND;
-			return false;
-		}
 	}
 	if (!is_within_root(final_path, root)) {
 		_last_status = E_PATH_ESCAPES_ROOT;
 		return false;
 	}
-	_request.getUri().setEffectivePath(final_path);
+	_request->getUri().setEffectivePath(final_path);
 	std::cout << YELLOW << "[INFO] Effective path: " + final_path << RESET << std::endl;
 	return true;
 }
@@ -171,7 +177,7 @@ bool MessageValidator::validatePath() {
 // Example: "Transfer-Encoding: chunked" - data sent in chunks with size prefixes
 bool MessageValidator::validateTransferEncoding() {
 
-	const std::vector<std::string>& te_headers = _request.getHeaderValues("transfer-encoding");
+	const std::vector<std::string>& te_headers = _request->getHeaderValues("transfer-encoding");
 	if (te_headers.empty())
 		return true;
 
@@ -188,7 +194,7 @@ bool MessageValidator::validateTransferEncoding() {
 	// RFC 7230: If both Transfer-Encoding and Content-Length present, ignore Content-Length
 	// This is because chunked encoding makes Content-Length meaningless
 	// The body size is determined by the chunk sizes, not by Content-Length
-	if (_request.hasHeader("content-length")) {
+	if (_request->hasHeader("content-length")) {
 		console::log("[WARNING] Both Transfer-Encoding and Content-Length present, ignoring Content-Length", MSG);
 		
 		// CRITICAL: Signal to handler that Content-Length must be ignored
@@ -205,10 +211,10 @@ bool MessageValidator::validateTransferEncoding() {
 // POST always carries data, so Content-Type is mandatory and helps the server know how to parse and handle the request body
 bool MessageValidator::validateContentType() {
 
-	const std::string& method = _request.getMethod();
+	const std::string& method = _request->getMethod();
 	
 	if (method == "POST") {
-		const std::vector<std::string>& ct_headers = _request.getHeaderValues("content-type");
+		const std::vector<std::string>& ct_headers = _request->getHeaderValues("content-type");
 		if (ct_headers.empty()) {
 			console::log("[ERROR] POST request requires Content-Type header", MSG);
 			_last_status = E_MISSING_CONTENT_TYPE;
@@ -230,7 +236,7 @@ bool MessageValidator::validateContentType() {
 
 bool MessageValidator::validateHeaderLimits() {
 
-	size_t headers_size = _request.getHeadersSize();
+	size_t headers_size = _request->getHeadersSize();
 	if (headers_size > MAX_HEADERS_SIZE) {
 		console::log("[ERROR] Header size too large", MSG);
 		_last_status = E_ENTITY_TOO_LARGE;
@@ -246,11 +252,11 @@ bool MessageValidator::validateHeaderLimits() {
 */
 bool MessageValidator::validateExpectHeader() {
 
-	const std::vector<std::string>& expect_headers = _request.getHeaderValues("expect");
+	const std::vector<std::string>& expect_headers = _request->getHeaderValues("expect");
 	if (expect_headers.empty())
 		return true;
 
-	const std::string& version = _request.getHttpVersion();
+	const std::string& version = _request->getHttpVersion();
 	if (version == "1.0" || version == "0.9") {
 		console::log("[INFO] Ignoring Expect header for HTTP/" + version + " request (RFC compliant)", MSG);
 		return true;
@@ -273,7 +279,7 @@ bool MessageValidator::validateExpectHeader() {
 // Essential for HTTP/1.1 persistent connections and connection management
 bool MessageValidator::validateConnectionHeader() {
 
-	const std::vector<std::string>& conn_headers = _request.getHeaderValues("connection");
+	const std::vector<std::string>& conn_headers = _request->getHeaderValues("connection");
 	if (conn_headers.empty())
 		return true;
 
@@ -310,13 +316,13 @@ bool MessageValidator::validateRedirection() {
 	}
 	
 	std::string destination = redirect.substr(space + 1);
-	_request.getUri().setRedirDestination(destination);
+	_request->getUri().setRedirDestination(destination);
 
 	if (code == "301")
 		_last_status = E_REDIRECT_PERMANENT;
 	else
 		_last_status = E_REDIRECT_TEMPORARY;
-	console::log("[INFO] Redirect " + code + " to '" + destination + "' detected for path: " + _request.getUri().getPath(), MSG);
+	console::log("[INFO] Redirect " + code + " to '" + destination + "' detected for path: " + _request->getUri().getPath(), MSG);
 	return false;
 }
 
@@ -327,8 +333,10 @@ std::map<std::string, std::string> MessageValidator::findLocationMatch(const std
 	std::map<std::string, std::string> best_config;
 	_location_prefix = "";
 	
-	if (_config.hasLocation(path))
+	if (_config.hasLocation(path)) {
+		_location_prefix = path;
 		return _config.getLocationConfig(path);
+	}
 	
 	std::string test_path = path;
 	while (!test_path.empty()) {

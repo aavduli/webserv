@@ -14,21 +14,16 @@
 #define MAX_HEADERS_SIZE 8000
 
 class MessageValidator {
+
 	private:
-		const WebservConfig&				_config;
-		HttpRequest&						_request;
-		Status								_last_status;
+		const WebservConfig&	_config;
+		HttpRequest*			_request;
+		Status					_last_status;
+
 		std::map<std::string, std::string>	_location_config;
 		std::string							_location_prefix;
 		std::vector<std::string>			_host_header;
 
-	public:
-		MessageValidator(const WebservConfig& config, HttpRequest& request);
-		
-		bool	isValidRequest();
-		Status	getLastStatus() const;
-
-	private:
 		bool	validateHost();
 		bool	validatePort();
 		bool	validateMethod();
@@ -41,8 +36,19 @@ class MessageValidator {
 		bool	validateExpectHeader();
 		bool	validateConnectionHeader();
 		bool	validateRedirection();
-		
+
+	public:
+		MessageValidator(const WebservConfig& config, HttpRequest* request);
+		MessageValidator(const MessageValidator& rhs);
+		MessageValidator& operator=(const MessageValidator& rhs);
+		~MessageValidator();
+
+		bool	validateRequest();
 		std::map<std::string, std::string>	findLocationMatch(const std::string& path);
+		Status	getLastStatus() const;
+
+		const std::map<std::string, std::string>& getLocationConfig() const;
+		const std::string& getLocationPrefix() const;
 };
 
 std::string	canonicalize_path(const std::string& path);

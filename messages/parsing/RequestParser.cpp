@@ -1,29 +1,20 @@
 #include "RequestParser.hpp"
-#include "../data/HttpRequest.hpp"
 
-RequestParser::RequestParser() : MessageParser(), _request(NULL) {}
-
-RequestParser::RequestParser(const RequestParser& rhs) : MessageParser(rhs) {}
-
+RequestParser::RequestParser(HttpRequest* request, const std::string& raw_request) : _request(request), _raw_request(raw_request), _current_pos(0), _last_status(E_INIT) {}
+RequestParser::RequestParser(const RequestParser& rhs) : _request(rhs._request), _raw_request(rhs._raw_request), _current_pos(rhs._current_pos), _last_status(rhs._last_status) {}
 RequestParser& RequestParser::operator=(const RequestParser& rhs) {
 	if (this != &rhs) {
-		MessageParser::operator=(rhs);
+		_request = rhs._request;
+		_raw_request = rhs._raw_request;
+		_current_pos = rhs._current_pos;
+		_last_status = rhs._last_status;
 	}
 	return *this;
 }
-
 RequestParser::~RequestParser() {}
+Status RequestParser::getLastStatus() const {return _last_status;}
 
-bool RequestParser::parseRequest(HttpRequest* request, const std::string& raw_request) {
-	
-	if (!request) {
-		console::log("[ERROR] NULL request pointer provided", MSG);
-		return false;
-	}
-	
-	_raw_data = raw_request;
-	_request = request;
-	_current_pos = 0;
+bool RequestParser::parseRequest() {
 
 	if (!parseRequestLine()) {
 		console::log("[ERROR] Failed to parse request line", MSG);
@@ -43,12 +34,12 @@ bool RequestParser::parseRequest(HttpRequest* request, const std::string& raw_re
 
 bool RequestParser::parseRequestLine() {
 
-	size_t line_end = _raw_data.find("\r\n", _current_pos);
+	size_t line_end = _raw_request.find("\r\n", _current_pos);
 	if (line_end == std::string::npos) {
 		console::log("No CRLF found in request line", ERROR);
 		return false;
 	}
-	std::string request_line = _raw_data.substr(_current_pos, line_end - _current_pos);
+	std::string request_line = _raw_request.substr(_current_pos, line_end - _current_pos);
 	request_line = trim_lws(request_line);
 	
 	if (!parseMethod(request_line))
@@ -130,16 +121,16 @@ bool RequestParser::parseHeaders() {
 
 	std::map<std::string, std::vector<std::string> > headers;
 	
-	if (_current_pos < _raw_data.length())
-		_request->setHeadersSize(_raw_data.substr(_current_pos).size());
+	if (_current_pos < _raw_request.length())
+		_request->setHeadersSize(_raw_request.substr(_current_pos).size());
 
-	while (_current_pos < _raw_data.length()) {
-		size_t line_end = _raw_data.find("\r\n", _current_pos);
+	while (_current_pos < _raw_request.length()) {
+		size_t line_end = _raw_request.find("\r\n", _current_pos);
 		if (line_end == std::string::npos) {
 			console::log("No CRLF found in headers", ERROR);
 			return false;
 		}
-		std::string header_line = _raw_data.substr(_current_pos, line_end - _current_pos);
+		std::string header_line = _raw_request.substr(_current_pos, line_end - _current_pos);
 		_current_pos = line_end + 2;
 		if (header_line.empty())
 			break;
@@ -171,8 +162,8 @@ bool RequestParser::parseHeaders() {
 // For HTTP requests, body parsing depends on Content-Length or Transfer-Encoding
 bool RequestParser::parseBody() {
 
-	if (_current_pos < _raw_data.length()) {
-		std::string body = _raw_data.substr(_current_pos);
+	if (_current_pos < _raw_request.length()) {
+		std::string body = _raw_request.substr(_current_pos);
 		_request->setBody(body);
 		_request->setBodySize(_request->getBody().size());
 	}

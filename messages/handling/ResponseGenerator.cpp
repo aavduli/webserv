@@ -1,24 +1,22 @@
-#include "ResponseHandler.hpp"
+#include "ResponseGenerator.hpp"
 #include "../../console/console.hpp"
 #include <ctime>
 #include <sstream>
 
-ResponseHandler::ResponseHandler(HttpRequest* request, const WebservConfig& config) 
-	: MessageHandler(request), _config(config) {}
-
-ResponseHandler::ResponseHandler(const ResponseHandler& rhs) 
-	: MessageHandler(rhs), _config(rhs._config) {}
-
-ResponseHandler& ResponseHandler::operator=(const ResponseHandler& rhs) {
+ResponseGenerator::ResponseGenerator(const WebservConfig& config, HttpRequest* request, HttpResponse* response) : _config(config), _request(request), _response(response) {}
+ResponseGenerator::ResponseGenerator(const ResponseGenerator& rhs) : _config(rhs._config), _request(rhs._request), _response(rhs._response) {}
+ResponseGenerator& ResponseGenerator::operator=(const ResponseGenerator& rhs) {
 	if (this != &rhs) {
-		MessageHandler::operator=(rhs);
+		_request = rhs._request;
+		_response = rhs._response;
+		_last_status = rhs._last_status;
 	}
 	return *this;
 }
+ResponseGenerator::~ResponseGenerator() {}
+Status	ResponseGenerator::getLastStatus() const {return _last_status;}
 
-ResponseHandler::~ResponseHandler() {}
-
-void ResponseHandler::generateResponse() {
+void ResponseGenerator::generateResponse() {
 	/*
 	7. RESPONSE GENERATION:
 	if (locationConfig["return"])           → Redirect response
@@ -29,11 +27,11 @@ void ResponseHandler::generateResponse() {
 
 	console::log("[INFO] Generating response", MSG);
 	
-	// Create response object if not exists
-	if (!getResponse()) {
-		// TODO: Initialize response object
-		console::log("[INFO] Creating new response object", MSG);
-	}
+	// // Create response object if not exists
+	// if (!getResponse()) {
+	// 	// TODO: Initialize response object
+	// 	console::log("[INFO] Creating new response object", MSG);
+	// }
 	
 	// // Set default headers for HTTP/1.1
 	// setDefaultHeaders();
@@ -56,7 +54,7 @@ void ResponseHandler::generateResponse() {
 	// }
 }
  
-// std::string ResponseHandler::serializeResponse() {
+// std::string ResponseGenerator::serializeResponse() {
 // 	if (!getResponse()) {
 // 		console::log("[ERROR] No response to serialize", MSG);
 // 		return "";
@@ -68,7 +66,7 @@ void ResponseHandler::generateResponse() {
 // 	return "HTTP/1.1 200 OK\r\nContent-Length: 13\r\n\r\nHello, World!";
 // }
 // 
-// void ResponseHandler::generateStaticFileResponse() {
+// void ResponseGenerator::generateStaticFileResponse() {
 // 	console::log("[INFO] Generating static file response", MSG);
 // 	
 // 	const std::string& effective_path = getRequest()->getUri().getEffectivePath();
@@ -79,7 +77,7 @@ void ResponseHandler::generateResponse() {
 // 	// TODO: Set Content-Length header
 // }
 // 
-// void ResponseHandler::generateDirectoryListingResponse() {
+// void ResponseGenerator::generateDirectoryListingResponse() {
 // 	console::log("[INFO] Generating directory listing response", MSG);
 // 	
 // 	// TODO: Check if autoindex is enabled
@@ -87,7 +85,7 @@ void ResponseHandler::generateResponse() {
 // 	// TODO: Set Content-Type to text/html
 // }
 // 
-// void ResponseHandler::generateRedirectResponse() {
+// void ResponseGenerator::generateRedirectResponse() {
 // 	console::log("[INFO] Generating redirect response", MSG);
 // 	
 // 	const std::string& destination = getRequest()->getUri().getRedirDestination();
@@ -97,7 +95,7 @@ void ResponseHandler::generateResponse() {
 // 	// TODO: Set appropriate status code (301/302)
 // }
 // 
-// void ResponseHandler::generateErrorResponse() {
+// void ResponseGenerator::generateErrorResponse() {
 // 	console::log("[INFO] Generating error response", MSG);
 // 	
 // 	Status status = getLastStatus();
@@ -107,7 +105,7 @@ void ResponseHandler::generateResponse() {
 // 	// TODO: Set status code and error content
 // }
 // 
-// void ResponseHandler::generateCGIResponse() {
+// void ResponseGenerator::generateCGIResponse() {
 // 	console::log("[INFO] Generating CGI response", MSG);
 // 	
 // 	// TODO: Execute CGI script
@@ -115,7 +113,7 @@ void ResponseHandler::generateResponse() {
 // 	// TODO: Set headers from CGI response
 // }
 // 
-// void ResponseHandler::setDefaultHeaders() {
+// void ResponseGenerator::setDefaultHeaders() {
 // 	/*
 // 	HTTP/1.1 Changes:
 // 	Persistent connections are DEFAULT (keep-alive)
@@ -131,28 +129,28 @@ void ResponseHandler::generateResponse() {
 // 	setConnectionHeader();
 // }
 // 
-// void ResponseHandler::setConnectionHeader() {
+// void ResponseGenerator::setConnectionHeader() {
 // 	bool close_connection = shouldCloseConnection();
 // 	console::log("[INFO] Connection will be " + std::string(close_connection ? "closed" : "kept alive"), MSG);
 // 	
 // 	// TODO: Set Connection header
 // }
 // 
-// void ResponseHandler::setContentHeaders(size_t content_length) {
+// void ResponseGenerator::setContentHeaders(size_t content_length) {
 // 	console::log("[INFO] Setting content headers, length: " + std::to_string(content_length), MSG);
 // 	
 // 	// TODO: Set Content-Length header
 // 	// TODO: Set Content-Type header based on file or content
 // }
 // 
-// void ResponseHandler::setDateHeader() {
+// void ResponseGenerator::setDateHeader() {
 // 	std::string date = getCurrentHTTPDate();
 // 	console::log("[INFO] Setting Date header: " + date, MSG);
 // 	
 // 	// TODO: Set Date header (required by HTTP/1.1)
 // }
 // 
-// bool ResponseHandler::shouldCloseConnection() const {
+// bool ResponseGenerator::shouldCloseConnection() const {
 // 	// Check if client requested connection close
 // 	if (getRequest()->hasHeader("connection")) {
 // 		const std::vector<std::string>& conn_headers = getRequest()->getHeaderValues("connection");
@@ -170,7 +168,7 @@ void ResponseHandler::generateResponse() {
 // 	return false;
 // }
 // 
-// std::string ResponseHandler::getCurrentHTTPDate() const {
+// std::string ResponseGenerator::getCurrentHTTPDate() const {
 // 	time_t now = time(0);
 // 	struct tm* gmt = gmtime(&now);
 // 	
@@ -180,7 +178,7 @@ void ResponseHandler::generateResponse() {
 // 	return std::string(buffer);
 // }
 // 
-// std::string ResponseHandler::getMimeType(const std::string& file_extension) const {
+// std::string ResponseGenerator::getMimeType(const std::string& file_extension) const {
 // 	// TODO: Implement MIME type detection based on file extension
 // 	if (file_extension == "html" || file_extension == "htm") {
 // 		return "text/html";
@@ -201,7 +199,7 @@ void ResponseHandler::generateResponse() {
 // 	return "application/octet-stream"; // Default binary type
 // }
 // 
-// std::string ResponseHandler::generateDirectoryHTML(const std::string& directory_path) const {
+// std::string ResponseGenerator::generateDirectoryHTML(const std::string& directory_path) const {
 // 	// TODO: Implement directory listing HTML generation
 // 	console::log("[INFO] Generating directory HTML for: " + directory_path, MSG);
 // 	
@@ -216,7 +214,7 @@ void ResponseHandler::generateResponse() {
 // 	return html.str();
 // }
 // 
-// std::string ResponseHandler::readFileContent(const std::string& file_path) const {
+// std::string ResponseGenerator::readFileContent(const std::string& file_path) const {
 // 	// TODO: Implement file reading with proper error handling
 // 	console::log("[INFO] Reading file content: " + file_path, MSG);
 // 	

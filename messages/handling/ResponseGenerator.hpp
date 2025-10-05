@@ -1,30 +1,34 @@
-#ifndef RESPONSEHANDLER_HPP
-#define RESPONSEHANDLER_HPP
+#ifndef RESPONSEGENERATOR_HPP
+#define RESPONSEGENERATOR_HPP
 
 #include "MessageHandler.hpp"
 #include "../../config/WebservConfig.hpp"
 
-class ResponseHandler : public MessageHandler {
+class ResponseGenerator {
 
 	private:
 		const WebservConfig&	_config;
+		HttpRequest*			_request;
+		HttpResponse*			_response;
+		Status					_last_status;
 
-	public:
-		ResponseHandler(HttpRequest* request, const WebservConfig& config);
-		ResponseHandler(const ResponseHandler& rhs);
-		ResponseHandler& operator=(const ResponseHandler& rhs);
-		~ResponseHandler();
-
-		void			generateResponse();
-		//std::string		serializeResponse();
+//		std::string		serializeResponse();
 		
 // 		void			generateStaticFileResponse();
 // 		void			generateDirectoryListingResponse();
 // 		void			generateRedirectResponse();
 // 		void			generateErrorResponse();
 // 		void			generateCGIResponse();
-// 
-// 	private:
+
+	public:
+		ResponseGenerator(const WebservConfig& config, HttpRequest* request, HttpResponse* response);
+		ResponseGenerator(const ResponseGenerator& rhs);
+		ResponseGenerator& operator=(const ResponseGenerator& rhs);
+		~ResponseGenerator();
+
+		Status	getLastStatus() const;
+		void	generateResponse();
+
 // 		void			setDefaultHeaders();
 // 		void			setConnectionHeader();
 // 		void			setContentHeaders(size_t content_length);
@@ -36,6 +40,7 @@ class ResponseHandler : public MessageHandler {
 // 		
 // 		std::string		generateDirectoryHTML(const std::string& directory_path) const;
 // 		std::string		readFileContent(const std::string& file_path) const;
+
 };
 
-#endif //RESPONSEHANDLER_HPP
+#endif // RESPONSEGENERATOR_HPP
