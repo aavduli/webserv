@@ -4,6 +4,14 @@
 #include "HttpMessage.hpp"
 #include "RequestUri.hpp"
 
+// struct RequestContext {
+// 	HttpRequest request;
+// 	std::map<std::string, std::string> location_config;
+// 	std::string location_prefix;
+// 	std::string resolved_path;
+// 	Status status;
+// };
+
 class HttpRequest : public HttpMessage {
 
 	private:
