@@ -2,15 +2,11 @@
 
 RequestUri::RequestUri() : _raw_uri(""), _scheme(""), _userinfo(""), _host(""), _port(""), _path(""),
 	_effective_path(""), _redir_destination(""), _query(""), _fragment(""), _is_absolute_uri(false), _is_abs_path(false) {}
-
 RequestUri::RequestUri(const std::string& raw_uri) : _raw_uri(raw_uri), _scheme(""), _userinfo(""), _host(""), _port(""),
-	_path(""), _effective_path(""), _redir_destination(""), _query(""), _fragment(""), _is_absolute_uri(false), _is_abs_path(false) {
-}
-
+	_path(""), _effective_path(""), _redir_destination(""), _query(""), _fragment(""), _is_absolute_uri(false), _is_abs_path(false) {}
 RequestUri::RequestUri(const RequestUri& rhs) : _raw_uri(rhs._raw_uri), _scheme(rhs._scheme),
 	_userinfo(rhs._userinfo), _host(rhs._host), _port(rhs._port), _path(rhs._path), _effective_path(rhs._effective_path),  _redir_destination(""), 
 	_query(rhs._query), _fragment(rhs._fragment), _is_absolute_uri(rhs._is_absolute_uri), _is_abs_path(rhs._is_abs_path) {}
-
 RequestUri& RequestUri::operator=(const RequestUri& rhs) {
 	if (this != &rhs) {
 		_raw_uri = rhs._raw_uri;
@@ -28,7 +24,6 @@ RequestUri& RequestUri::operator=(const RequestUri& rhs) {
 	}
 	return *this;
 }
-
 RequestUri::~RequestUri() {}
 
 bool	RequestUri::parse() {
@@ -194,98 +189,26 @@ void	RequestUri::print() const {
 	std::cout << "  Is Abs Path: " << (_is_abs_path ? "true" : "false") << std::endl;
 }
 
-// ACCESSORS
-
-std::string	RequestUri::getRawUri() const {
-	return _raw_uri;
-}
-
-void	RequestUri::setRawUri(const std::string& raw) {
-	_raw_uri = raw;
-}
-
-std::string	RequestUri::getPath() const {
-	return _path;
-}
-
-std::string	RequestUri::getEffectivePath() const {
-	return _effective_path;
-}
-
-std::string	RequestUri::getRedirDestination() const {
-	return _redir_destination;
-}
-
-// Additional Getters
-std::string	RequestUri::getScheme() const {
-	return _scheme;
-}
-
-std::string	RequestUri::getUserinfo() const {
-	return _userinfo;
-}
-
-std::string	RequestUri::getHost() const {
-	return _host;
-}
-
-std::string	RequestUri::getPort() const {
-	return _port;
-}
-
-std::string	RequestUri::getQuery() const {
-	return _query;
-}
-
-bool	RequestUri::isAbsoluteUri() const {
-	return _is_absolute_uri;
-}
-
-bool	RequestUri::isAbsolutePath() const {
-	return _is_abs_path;
-}
-
-// Additional Setters
-void	RequestUri::setScheme(const std::string& scheme) {
-	_scheme = scheme;
-}
-
-void	RequestUri::setUserinfo(const std::string& userinfo) {
-	_userinfo = userinfo;
-}
-
-void	RequestUri::setHost(const std::string& host) {
-	_host = host;
-}
-
-void	RequestUri::setPort(const std::string& port) {
-	_port = port;
-}
-
-void	RequestUri::setPath(const std::string& path) {
-	_path = path;
-}
-
-void	RequestUri::setEffectivePath(const std::string& full_path) {
-	_effective_path = full_path;
-}
-
-void	RequestUri::setRedirDestination(const std::string& destination) {
-	_redir_destination = destination;
-}
-
-void	RequestUri::setQuery(const std::string& query) {
-	_query = query;
-}
-
-void	RequestUri::setFragment(const std::string& fragment) {
-	_fragment = fragment;
-}
-
-void	RequestUri::setAbsoluteUri(bool is_absolute_uri) {
-	_is_absolute_uri = is_absolute_uri;
-}
-
-void	RequestUri::setAbsPath(bool is_abs_path) {
-	_is_abs_path = is_abs_path;
-}
+std::string	RequestUri::getRawUri() const {return _raw_uri;}
+void		RequestUri::setRawUri(const std::string& raw) {_raw_uri = raw;}
+std::string	RequestUri::getPath() const {return _path;}
+std::string	RequestUri::getEffectivePath() const {return _effective_path;}
+std::string	RequestUri::getRedirDestination() const {return _redir_destination;}
+std::string	RequestUri::getScheme() const {return _scheme;}
+std::string	RequestUri::getUserinfo() const {return _userinfo;}
+std::string	RequestUri::getHost() const {return _host;}
+std::string	RequestUri::getPort() const {return _port;}
+std::string	RequestUri::getQuery() const {return _query;}
+bool	RequestUri::isAbsoluteUri() const {return _is_absolute_uri;}
+bool	RequestUri::isAbsolutePath() const {return _is_abs_path;}
+void	RequestUri::setScheme(const std::string& scheme) {_scheme = scheme;}
+void	RequestUri::setUserinfo(const std::string& userinfo) {_userinfo = userinfo;}
+void	RequestUri::setHost(const std::string& host) {_host = host;}
+void	RequestUri::setPort(const std::string& port) {_port = port;}
+void	RequestUri::setPath(const std::string& path) {_path = path;}
+void	RequestUri::setEffectivePath(const std::string& full_path) {_effective_path = full_path;}
+void	RequestUri::setRedirDestination(const std::string& destination) {_redir_destination = destination;}
+void	RequestUri::setQuery(const std::string& query) {_query = query;}
+void	RequestUri::setFragment(const std::string& fragment) {_fragment = fragment;}
+void	RequestUri::setAbsoluteUri(bool is_absolute_uri) {_is_absolute_uri = is_absolute_uri;}
+void	RequestUri::setAbsPath(bool is_abs_path) {_is_abs_path = is_abs_path;}

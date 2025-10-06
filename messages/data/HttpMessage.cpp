@@ -6,9 +6,7 @@ HttpMessage::HttpMessage() {
 	_version_minor = "";
 	_body = "";
 }
-
 HttpMessage::HttpMessage(const HttpMessage& rhs) : _version_major(rhs._version_major), _version_minor(rhs._version_minor), _headers(rhs._headers), _body(rhs._body), _body_size(0) {}
-
 HttpMessage& HttpMessage::operator=(const HttpMessage& rhs) {
 	if (this != &rhs) {
 		_version_major = rhs._version_major;
@@ -19,20 +17,11 @@ HttpMessage& HttpMessage::operator=(const HttpMessage& rhs) {
 	}
 	return *this;
 }
-
 HttpMessage::~HttpMessage() {}
 
-std::string	HttpMessage::getHttpVersion() const {
-	return (_version_major + "." + _version_minor);
-}
-
-std::string	HttpMessage::getHttpVersionMajor() const {
-	return _version_major;
-}
-
-std::string	HttpMessage::getHttpVersionMinor() const {
-	return _version_minor;
-}
+std::string	HttpMessage::getHttpVersion() const {return (_version_major + "." + _version_minor);}
+std::string	HttpMessage::getHttpVersionMajor() const {return _version_major;}
+std::string	HttpMessage::getHttpVersionMinor() const {return _version_minor;}
 
 void	HttpMessage::setHttpVersion(std::string major, std::string minor) {
 	_version_major = major;
@@ -62,9 +51,7 @@ void	HttpMessage::addHeader(const std::string& key, const std::vector<std::strin
 		_headers[lower(key)] = values;
 }
 
-std::map<std::string, std::vector<std::string> > HttpMessage::getHeaders() const {
-	return _headers;
-}
+std::map<std::string, std::vector<std::string> > HttpMessage::getHeaders() const {return _headers;}
 
 const std::vector<std::string>&	HttpMessage::getHeaderValues(const std::string& key) const {
 	
@@ -92,26 +79,9 @@ void	HttpMessage::printHeaders() const {
 	}
 }
 
-size_t	HttpMessage::getHeadersSize() const {
-	return _headers_size;
-}
-
-void	HttpMessage::setHeadersSize(size_t headers_size) {
-	_headers_size = headers_size;
-}
-
-std::string	HttpMessage::getBody() const {
-	return _body;
-}
-
-void	HttpMessage::setBody(const std::string& body) {
-	_body = body;
-}
-
-size_t	HttpMessage::getBodySize() const {
-	return _body_size;
-}
-
-void	HttpMessage::setBodySize(size_t body_size) {
-	_body_size = body_size;
-}
+size_t	HttpMessage::getHeadersSize() const {return _headers_size;}
+void	HttpMessage::setHeadersSize(size_t headers_size) {_headers_size = headers_size;}
+std::string	HttpMessage::getBody() const {return _body;}
+void	HttpMessage::setBody(const std::string& body) {_body = body;}
+size_t	HttpMessage::getBodySize() const {return _body_size;}
+void	HttpMessage::setBodySize(size_t body_size) {_body_size = body_size;}
