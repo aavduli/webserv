@@ -7,7 +7,7 @@
 # include <cstdlib>
 # include <netinet/in.h>
 # include "../console/console.hpp"
-# include "../event/eventManager.hpp"
+# include "eventManager.hpp"
 # include "onConnection.hpp"
 # include <cstring>
 # include <fcntl.h>

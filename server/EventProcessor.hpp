@@ -5,6 +5,7 @@
 #include "../console/console.hpp"
 #include <iostream>
 #include "eventManager.hpp"
+#include "NetworkHandler.hpp"
 #include "ConnectionManager.hpp"
 #include "server.hpp"
 
@@ -14,24 +15,26 @@ class eventProcessor {
 		connectionManager& _connectionManager;
 		RequestProcessor& _requestProcessor; //todo
 		int _serverFd;
+		bool _shouldStop;
 
 	private:
 		void acceptNewConnections();
-		void processIncomingData(int clientFd, const WebservConfig& config);
+		void processIncomingData(int clientFd, const WebServConfig& config);
 		void handleReceiveError(int clientFd, ssize_t recvResult);
 		void sendResponse(int clientFd, const std::string response);
 
 	public:
-	eventProcessor(eventManager& em, connectionManager& cm, int serverFd);
-	~eventProcessor();
+		eventProcessor(eventManager& em, connectionManager& cm, int serverFd);
+		~eventProcessor();
 
-	void runEventLoop(const Webservconfig& config);
-	void stopEventLoop();
+		void runEventLoop(const Webservconfig& config);
+		void stopEventLoop();
 
-	void handleServerEvents(int serverFd);
-	void handleClientDisconnection(int clientFd); //EPOLLUP | EPOLLERR | EPOLLRDUP
-	void handleServerDisconnection(int serverFd);
+		void handleServerEvents(int serverFd);
+		void handleClientDisconnection(int clientFd); //EPOLLUP | EPOLLERR | EPOLLRDUP
+		void handleClientData(int serverFd);
 
-	
-
+		bool isServerSocket(int fd) const;
+		bool isDisconnectionEvent(uint32_t event) const;
+		bool isDataReadyEvent(uint32_t event) const;
 };
