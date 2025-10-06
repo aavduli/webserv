@@ -42,6 +42,8 @@ void	handle_messages(const WebservConfig& config, const std::string &raw_request
 		console::log("[ERROR] Response generation failed: " + status_msg(handler.getLastStatus()), MSG);
 		return ;
 	}
+	
+	HttpResponse response = handler.getResponse();
 	// do something with response
 }
 
@@ -98,6 +100,7 @@ bool MessageHandler::generateResponse() {
 
 	ResponseGenerator	generator(_config, _request, &_response);
 
+	generator.setLastStatus(_last_status);
 	generator.generateResponse();
 	_last_status = generator.getLastStatus();
 	return true;
