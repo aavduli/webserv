@@ -37,6 +37,7 @@ bool	is_text_str(const std::string& str);
 bool	is_valid_path(const std::string& path);
 bool	is_valid_file_path(const std::string& path);
 bool	is_directory(const std::string& path);
+bool	is_python_CGI(const std::string& path);
 
 std::string	extract_relative_path(const std::string& full_path, const std::string& location_prefix);
 std::string	build_full_path(const std::string& root, const std::string& relative_path);

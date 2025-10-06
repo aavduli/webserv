@@ -1,4 +1,5 @@
 #include "Parsing.hpp"
+#include "../console/console.hpp"
 
 bool is_valid_path(const std::string& path) {
 	
@@ -25,6 +26,20 @@ bool is_directory(const std::string& path) {
 
 	struct stat buf;
 	return stat(path.c_str(), &buf) == 0 && S_ISDIR(buf.st_mode);
+}
+
+bool is_python_CGI(const std::string& path) {
+
+	if (path.empty() || !is_valid_file_path(path))
+		return false;
+
+	size_t	dot = path.find_last_of(".");
+	if (dot == std::string::npos)
+		return false;
+	
+	std::string extension = path.substr(dot);
+	console::log("[INFO] Extension: " + extension, MSG);
+	return extension.compare("py");
 }
 
 std::string extract_relative_path(const std::string& full_path, const std::string& location_prefix) {
