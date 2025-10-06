@@ -28,18 +28,23 @@ bool is_directory(const std::string& path) {
 	return stat(path.c_str(), &buf) == 0 && S_ISDIR(buf.st_mode);
 }
 
+std::string get_file_extension(const std::string& path) {
+
+	size_t	dot = path.find_last_of(".");
+	if (dot == std::string::npos || dot == path.length() - 1)
+		return "";
+	
+	std::string extension = path.substr(dot + 1);
+	return (lower(extension));
+}
+
 bool is_python_CGI(const std::string& path) {
 
 	if (path.empty() || !is_valid_file_path(path))
 		return false;
 
-	size_t	dot = path.find_last_of(".");
-	if (dot == std::string::npos)
-		return false;
-	
-	std::string extension = path.substr(dot);
-	console::log("[INFO] Extension: " + extension, MSG);
-	return extension.compare("py");
+	std::string extension = get_file_extension(path);
+	return (extension == "py");
 }
 
 std::string extract_relative_path(const std::string& full_path, const std::string& location_prefix) {
