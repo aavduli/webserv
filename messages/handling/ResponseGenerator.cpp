@@ -14,121 +14,177 @@ ResponseGenerator& ResponseGenerator::operator=(const ResponseGenerator& rhs) {
 	return *this;
 }
 ResponseGenerator::~ResponseGenerator() {}
+void	ResponseGenerator::setLastStatus(Status last_status) {_last_status = last_status;}
 Status	ResponseGenerator::getLastStatus() const {return _last_status;}
 
 void ResponseGenerator::generateResponse() {
-	/*
-	7. RESPONSE GENERATION:
-	if (locationConfig["return"])           → Redirect response
-	else if (isCGI(extension))             → CGI execution
-	else if (isDirectory() && autoindex)   → Directory listing
-	else                                   → Static file serving
-	*/
 
-	console::log("[INFO] Generating response", MSG);
+	// Set default headers for HTTP/1.1
+	setDefaultHeaders();
+
+	// Determine response type based on request and configuration
+	console::log("[INFO] Last status: " + status_msg(_last_status), MSG);
+	std::string path = _request->getUri().getEffectivePath();
 	
-	// // Create response object if not exists
-	// if (!getResponse()) {
-	// 	// TODO: Initialize response object
-	// 	console::log("[INFO] Creating new response object", MSG);
-	// }
-	
-	// // Set default headers for HTTP/1.1
-	// setDefaultHeaders();
-	// 
-	// // Determine response type based on request and configuration
-	// Status status = getLastStatus();
-	// 
-	// switch (status) {
-	// 	case E_REDIRECT_PERMANENT:
-	// 	case E_REDIRECT_TEMPORARY:
-	// 		generateRedirectResponse();
-	// 		break;
-	// 	case E_OK:
-	// 		// Check if it's a directory, file, or CGI
-	// 		generateStaticFileResponse();
-	// 		break;
-	// 	default:
-	// 		generateErrorResponse();
-	// 		break;
-	// }
+	switch (_last_status) {
+		case E_REDIRECT_PERMANENT:
+		case E_REDIRECT_TEMPORARY: {
+			generateRedirResponse();
+			break;
+		}
+		case E_OK: {
+			if (is_python_CGI(path))
+				generateCGIResponse();
+			else if (is_directory(path))
+				generateDirectoryResponse();
+			// else if (is_post)
+			// else if (is_delete)
+			else
+				generateStaticFileResponse();
+			break;
+		}
+		default: {
+			generateErrorResponse();
+			break;
+		}
+	}
 }
- 
-// std::string ResponseGenerator::serializeResponse() {
-// 	if (!getResponse()) {
-// 		console::log("[ERROR] No response to serialize", MSG);
-// 		return "";
-// 	}
-// 	
-// 	// TODO: Implement response serialization
-// 	// Format: HTTP/1.1 200 OK\r\nHeaders\r\n\r\nBody
-// 	console::log("[INFO] Serializing response", MSG);
-// 	return "HTTP/1.1 200 OK\r\nContent-Length: 13\r\n\r\nHello, World!";
-// }
-// 
-// void ResponseGenerator::generateStaticFileResponse() {
-// 	console::log("[INFO] Generating static file response", MSG);
-// 	
-// 	const std::string& effective_path = getRequest()->getUri().getEffectivePath();
-// 	console::log("[INFO] Serving file: " + effective_path, MSG);
-// 	
-// 	// TODO: Check if file exists, read content, set appropriate headers
-// 	// TODO: Handle MIME types based on file extension
-// 	// TODO: Set Content-Length header
-// }
-// 
-// void ResponseGenerator::generateDirectoryListingResponse() {
-// 	console::log("[INFO] Generating directory listing response", MSG);
-// 	
-// 	// TODO: Check if autoindex is enabled
-// 	// TODO: Generate HTML directory listing
-// 	// TODO: Set Content-Type to text/html
-// }
-// 
-// void ResponseGenerator::generateRedirectResponse() {
-// 	console::log("[INFO] Generating redirect response", MSG);
-// 	
-// 	const std::string& destination = getRequest()->getUri().getRedirDestination();
-// 	console::log("[INFO] Redirecting to: " + destination, MSG);
-// 	
-// 	// TODO: Set Location header
-// 	// TODO: Set appropriate status code (301/302)
-// }
-// 
-// void ResponseGenerator::generateErrorResponse() {
-// 	console::log("[INFO] Generating error response", MSG);
-// 	
-// 	Status status = getLastStatus();
-// 	console::log("[INFO] Error status: " + status_msg(status), MSG);
-// 	
-// 	// TODO: Generate appropriate error page
-// 	// TODO: Set status code and error content
-// }
-// 
-// void ResponseGenerator::generateCGIResponse() {
-// 	console::log("[INFO] Generating CGI response", MSG);
-// 	
-// 	// TODO: Execute CGI script
-// 	// TODO: Parse CGI output
-// 	// TODO: Set headers from CGI response
-// }
-// 
-// void ResponseGenerator::setDefaultHeaders() {
-// 	/*
-// 	HTTP/1.1 Changes:
-// 	Persistent connections are DEFAULT (keep-alive)
-// 	Only close if client sends Connection: close or error occurs
-// 	Must handle pipelined requests
-// 	*/
-// 	
-// 	console::log("[INFO] Setting default HTTP/1.1 headers", MSG);
-// 	
-// 	// TODO: Set HTTP version to 1.1
-// 	// TODO: Add required headers
-// 	setDateHeader();
-// 	setConnectionHeader();
-// }
-// 
+
+std::string ResponseGenerator::serializeResponse() {
+
+	if (!_response) {
+		console::log("[ERROR] No response to serialize", MSG);
+		return "";
+	}
+	
+	// HTTP/1.1 status line
+	// All headers with proper CRLF
+	// Empty line
+	// Body content
+
+	// TODO: Implement response serialization
+	// Format: HTTP/1.1 200 OK\r\nHeaders\r\n\r\nBody
+	console::log("[INFO] Serializing response", MSG);
+	return "HTTP/1.1 200 OK\r\nContent-Length: 13\r\n\r\nHello, World!";
+}
+
+void ResponseGenerator::generateStaticFileResponse() {
+
+	console::log("[INFO] Generating static file response", MSG);
+	
+	const std::string& effective_path = _request->getUri().getEffectivePath();
+	console::log("[INFO] Serving file: " + effective_path, MSG);
+
+	// Content-Type header
+	std::string extension = get_file_extension(effective_path);
+	std::string content_type = get_mime_type(extension);
+	_response->addHeader("Content-Type", str_to_vect(content_type, ""));
+
+	// Opening file
+	std::ifstream file(effective_path.c_str());
+	if (!file.is_open()){
+		console::log("[ERROR] Failed to read: " + effective_path, MSG);
+		// _last_status = some permission error??
+		return generateErrorResponse();
+	}
+	
+	// Content-Length header
+	std::string	str;
+	std::string	file_contents;
+	size_t		file_size = 0;
+	while (std::getline(file, str)) {
+		file_size += str.size();
+		file_contents += str;
+		file_contents.push_back('\n');
+	}
+	_response->addHeader("Content-Length", str_to_vect(nb_to_string(file_size), ""));
+	_response->setStatus(E_OK);
+}
+
+void ResponseGenerator::generateDirectoryResponse() {
+
+	console::log("[INFO] Generating directory listing response", MSG);
+
+	// Check for index file first
+	// If no index and autoindex enabled -> directory listing
+		// Read directory contents
+		// Generate HTML listing
+		// Proper sorting and formatting
+		// Handle permissions
+	// If no index and autoindex disabled -> 403 Forbidden
+
+	// TODO: Check if autoindex is enabled
+	// TODO: Generate HTML directory listing
+	// TODO: Set Content-Type to text/html
+}
+
+void ResponseGenerator::generateRedirResponse() {
+
+	console::log("[INFO] Generating redirect response", MSG);
+	
+	const std::string& destination = _request->getUri().getRedirDestination();
+	console::log("[INFO] Redirecting to: " + destination, MSG);
+	
+	// Parse location config "return" directive
+	// Set 301/302 status
+	// Set Location header
+	// Optional redirect body
+
+	// TODO: Set Location header
+	// TODO: Set appropriate status code (301/302)
+}
+
+void ResponseGenerator::generateErrorResponse() {
+
+	console::log("[INFO] Generating error response", MSG);
+	
+	Status status = getLastStatus();
+	console::log("[INFO] Error status: " + status_msg(status), MSG);
+	
+	// Try custom error page from config
+	// Fall back to default error page
+	// Set appropriate headers
+	// Set error status code
+
+	// TODO: Generate appropriate error page
+	// TODO: Set status code and error content
+}
+
+void ResponseGenerator::generateCGIResponse() {
+
+	console::log("[INFO] Generating CGI response", MSG);
+
+	// Execute CGI script
+	// Parse CGI output headers
+	// Handle CGI errors
+	// Set appropriate response
+
+	// TODO: Execute CGI script
+	// TODO: Parse CGI output
+	// TODO: Set headers from CGI response
+}
+
+void ResponseGenerator::setDefaultHeaders() {
+	/*
+	HTTP/1.1 Changes:
+	Persistent connections are DEFAULT (keep-alive)
+	Only close if client sends Connection: close or error occurs
+	Must handle pipelined requests
+	
+	Accurate Content-Length for all responses
+	Last-Modified headers for static files
+	Server identification header
+	Proper Date headers
+	*/
+	
+	console::log("[INFO] Setting default HTTP/1.1 headers", MSG);
+	
+	// TODO: Set HTTP version to 1.1
+	// TODO: Add required headers
+	// setDateHeader();
+	// setConnectionHeader();
+}
+
 // void ResponseGenerator::setConnectionHeader() {
 // 	bool close_connection = shouldCloseConnection();
 // 	console::log("[INFO] Connection will be " + std::string(close_connection ? "closed" : "kept alive"), MSG);
@@ -149,7 +205,7 @@ void ResponseGenerator::generateResponse() {
 // 	
 // 	// TODO: Set Date header (required by HTTP/1.1)
 // }
-// 
+
 // bool ResponseGenerator::shouldCloseConnection() const {
 // 	// Check if client requested connection close
 // 	if (getRequest()->hasHeader("connection")) {
@@ -177,28 +233,7 @@ void ResponseGenerator::generateResponse() {
 // 	
 // 	return std::string(buffer);
 // }
-// 
-// std::string ResponseGenerator::getMimeType(const std::string& file_extension) const {
-// 	// TODO: Implement MIME type detection based on file extension
-// 	if (file_extension == "html" || file_extension == "htm") {
-// 		return "text/html";
-// 	}
-// 	else if (file_extension == "css") {
-// 		return "text/css";
-// 	}
-// 	else if (file_extension == "js") {
-// 		return "application/javascript";
-// 	}
-// 	else if (file_extension == "png") {
-// 		return "image/png";
-// 	}
-// 	else if (file_extension == "jpg" || file_extension == "jpeg") {
-// 		return "image/jpeg";
-// 	}
-// 	
-// 	return "application/octet-stream"; // Default binary type
-// }
-// 
+
 // std::string ResponseGenerator::generateDirectoryHTML(const std::string& directory_path) const {
 // 	// TODO: Implement directory listing HTML generation
 // 	console::log("[INFO] Generating directory HTML for: " + directory_path, MSG);
@@ -221,3 +256,92 @@ void ResponseGenerator::generateResponse() {
 // 	// TODO: Open file, read content, handle errors
 // 	return "<!-- File content placeholder -->";
 // }
+
+std::string get_mime_type(const std::string& extension) {
+
+	// Text types
+	if (extension == "html" || extension == "htm") {
+		return "text/html";
+	}
+	if (extension == "css") {
+		return "text/css";
+	}
+	if (extension == "js") {
+		return "application/javascript";
+	}
+	if (extension == "txt") {
+		return "text/plain";
+	}
+	if (extension == "json") {
+		return "application/json";
+	}
+	if (extension == "xml") {
+		return "application/xml";
+	}
+	
+	// Image types
+	if (extension == "png") {
+		return "image/png";
+	}
+	if (extension == "jpg" || extension == "jpeg") {
+		return "image/jpeg";
+	}
+	if (extension == "gif") {
+		return "image/gif";
+	}
+	if (extension == "svg") {
+		return "image/svg+xml";
+	}
+	if (extension == "ico") {
+		return "image/x-icon";
+	}
+	if (extension == "webp") {
+		return "image/webp";
+	}
+	
+	// Font types
+	if (extension == "woff") {
+		return "font/woff";
+	}
+	if (extension == "woff2") {
+		return "font/woff2";
+	}
+	if (extension == "ttf") {
+		return "font/ttf";
+	}
+	if (extension == "eot") {
+		return "application/vnd.ms-fontobject";
+	}
+	
+	// Document types
+	if (extension == "pdf") {
+		return "application/pdf";
+	}
+	if (extension == "doc") {
+		return "application/msword";
+	}
+	if (extension == "docx") {
+		return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+	}
+	
+	// Archive types
+	if (extension == "zip") {
+		return "application/zip";
+	}
+	if (extension == "tar") {
+		return "application/x-tar";
+	}
+	if (extension == "gz") {
+		return "application/gzip";
+	}
+
+	// Default for unknown extensions
+	return "application/octet-stream";
+}
+
+template<typename T>
+std::string nb_to_string(T value) {
+	std::ostringstream stream;
+	stream << value;
+	return stream.str();
+}

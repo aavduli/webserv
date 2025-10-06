@@ -12,13 +12,13 @@ class ResponseGenerator {
 		HttpResponse*			_response;
 		Status					_last_status;
 
-//		std::string		serializeResponse();
+		std::string		serializeResponse();
 		
-// 		void			generateStaticFileResponse();
-// 		void			generateDirectoryListingResponse();
-// 		void			generateRedirectResponse();
-// 		void			generateErrorResponse();
-// 		void			generateCGIResponse();
+		void			generateStaticFileResponse();
+		void			generateRedirResponse();
+		void			generateCGIResponse();
+		void			generateDirectoryResponse();
+		void			generateErrorResponse();
 
 	public:
 		ResponseGenerator(const WebservConfig& config, HttpRequest* request, HttpResponse* response);
@@ -27,9 +27,11 @@ class ResponseGenerator {
 		~ResponseGenerator();
 
 		Status	getLastStatus() const;
+		void	setLastStatus(Status last_status);
+
 		void	generateResponse();
 
-// 		void			setDefaultHeaders();
+		void			setDefaultHeaders();
 // 		void			setConnectionHeader();
 // 		void			setContentHeaders(size_t content_length);
 // 		void			setDateHeader();
@@ -42,5 +44,9 @@ class ResponseGenerator {
 // 		std::string		readFileContent(const std::string& file_path) const;
 
 };
+
+std::string get_mime_type(const std::string& extension);
+template<typename T>
+std::string nb_to_string(T value);
 
 #endif // RESPONSEGENERATOR_HPP

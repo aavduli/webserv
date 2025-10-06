@@ -13,6 +13,7 @@ MessageHandler& MessageHandler::operator=(const MessageHandler& rhs) {
 MessageHandler::~MessageHandler() {}
 
 Status				MessageHandler::getLastStatus() const {return _last_status;}
+void				MessageHandler::setLastStatus(Status status) {_last_status = status;}
 const HttpResponse	MessageHandler::getResponse() const {return _response;};
 
 // handleMessage() → parseRequest() → validateRequest() → processRequest() → generateResponse()
@@ -21,28 +22,23 @@ void	handle_messages(const WebservConfig& config, const std::string &raw_request
 
 	console::log("=============[NEW REQUEST]=============", MSG);
 
-	if (raw_request.empty()) {
-		console::log("[ERROR] Empty request", MSG);		// return status code? return error/bool?
-		return ;
-	}
-
 	HttpRequest		request;
 	MessageHandler	handler(config, &request);
-	
-	if (!handler.parseRequest(raw_request)) {
-		console::log("[ERROR] Request parsing failed: " + status_msg(handler.getLastStatus()), MSG);
-		return ;
+
+	if (raw_request.empty()) {
+		console::log("[ERROR] Empty request", MSG);
+		handler.setLastStatus(E_BAD_REQUEST);
 	}
-	handler.setRequestContext();
-	if (!handler.validateRequest()) {
-		console::log("[ERROR] Request validation failed: " + status_msg(handler.getLastStatus()), MSG);
-		return ;
+	else if (handler.parseRequest(raw_request)) {
+		// only set context if parsing OK
+		handler.setRequestContext();
+		handler.validateRequest();
 	}
 	if (!handler.generateResponse()) {
 		console::log("[ERROR] Response generation failed: " + status_msg(handler.getLastStatus()), MSG);
+		// critical error
 		return ;
 	}
-	
 	HttpResponse response = handler.getResponse();
 	// do something with response
 }
@@ -61,25 +57,26 @@ bool	MessageHandler::parseRequest(const std::string& raw_request) {
 
 void	MessageHandler::setRequestContext() {
 
-	RequestContext ctx;
+	RequestContext ctx(_config);
 	
-	ctx.location_name = getLocationName();
-	if (ctx.location_name.empty())
-		ctx.location_config = _config.getServer();
+	ctx.setLocationName(findConfigLocationName());
+	if (ctx.getLocationName().empty())
+		ctx.setLocationConfig(_config.getServer());
 	else
-		ctx.location_config = findLocationMatch();
+		ctx.setLocationConfig(findLocationMatch());
 
-	std::string root = ctx.location_config["root"];
+	std::map<std::string, std::string> config = ctx.getLocationConfig();
+	std::string root = config["root"];
 	if (root.empty())
-		root = _config.getRoot();
+		ctx.setDocumentRoot(_config.getRoot());
 	else
-		ctx.document_root = root;
+		ctx.setDocumentRoot(root);
 
-	std::string autoindex = ctx.location_config["autoindex"];
+	std::string autoindex = config["autoindex"];
 	if (autoindex == "on")
-		ctx.autoindex_enabled = true;
-	else 
-		ctx.autoindex_enabled = false;
+		ctx.setAutoindexEnabled(true);
+	else
+		ctx.setAutoindexEnabled(false);
 
 	_request->ctx = ctx;
 }
@@ -106,7 +103,7 @@ bool MessageHandler::generateResponse() {
 	return true;
 }
 
-std::string	MessageHandler::getLocationName() {
+std::string	MessageHandler::findConfigLocationName() {
 	
 	std::string path = _request->getUri().getPath();
 	if (_config.hasLocation(path))

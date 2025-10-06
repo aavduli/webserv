@@ -3,11 +3,12 @@
 
 #include "HttpMessage.hpp"
 
+
+
  class HttpResponse : public HttpMessage {
 
 	private:
 		Status		_status;
-		std::string	_custom_msg;
 
 	public:
 		HttpResponse();
@@ -17,8 +18,6 @@
 
 		Status		getStatus() const;
 		void		setStatus(Status code);
-		void		setCustomMessage(const std::string& msg);
-		std::string	getCustomMessage() const;
 
 };
 
