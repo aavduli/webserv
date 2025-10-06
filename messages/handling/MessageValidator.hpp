@@ -19,10 +19,7 @@ class MessageValidator {
 		const WebservConfig&	_config;
 		HttpRequest*			_request;
 		Status					_last_status;
-
-		std::map<std::string, std::string>	_location_config;
-		std::string							_location_prefix;
-		std::vector<std::string>			_host_header;
+		std::vector<std::string>	_host_header;
 
 		bool	validateHost();
 		bool	validatePort();
@@ -44,11 +41,7 @@ class MessageValidator {
 		~MessageValidator();
 
 		bool	validateRequest();
-		std::map<std::string, std::string>	findLocationMatch(const std::string& path);
 		Status	getLastStatus() const;
-
-		const std::map<std::string, std::string>& getLocationConfig() const;
-		const std::string& getLocationPrefix() const;
 };
 
 std::string	canonicalize_path(const std::string& path);

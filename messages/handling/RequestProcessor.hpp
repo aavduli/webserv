@@ -12,10 +12,10 @@ class RequestProcessor {
 		const HttpRequest&		_request;
 		Status					_last_status;
 
-		bool	validateGetRequest(MessageValidator* validator);
+		bool	validateGetRequest();
 		bool	validatePostRequest();
 		bool	validateDeleteRequest();
-		void	processGetRequest(MessageValidator* validator);
+		void	processGetRequest();
 		void	processPostRequest();
 		void	processDeleteRequest();
 
@@ -25,7 +25,7 @@ class RequestProcessor {
 		RequestProcessor& operator=(const RequestProcessor& rhs);
 		~RequestProcessor();
 
-		void	processRequest(MessageValidator* validator);
+		void	processRequest();
 		Status	getLastStatus() const;
 };
 

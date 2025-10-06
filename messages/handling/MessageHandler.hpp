@@ -14,28 +14,28 @@
 class MessageHandler {
 
 	private:
-		MessageValidator*		_validator;
-
-	protected:
 		const WebservConfig&	_config;
-		HttpRequest				_request;
+		HttpRequest*			_request;
 		HttpResponse			_response;
 		Status					_last_status;
 
-	public:
-		MessageHandler(const WebservConfig& config);
+		std::string							getLocationName();
+		std::map<std::string, std::string>	findLocationMatch();
+
+		public:
+		MessageHandler(const WebservConfig& config, HttpRequest* request);
 		MessageHandler(const MessageHandler& rhs);
 		MessageHandler& operator=(const MessageHandler& rhs);
 		virtual ~MessageHandler();
-
+		
 		bool	parseRequest(const std::string& raw_request);
+		void	setRequestContext();
 		bool	validateRequest();
 		bool	processRequest();
 		bool	generateResponse();
 
 		Status	getLastStatus() const;
 		
-		const HttpRequest	getRequest() const;
 		const HttpResponse	getResponse() const;
 };
 

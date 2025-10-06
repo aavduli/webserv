@@ -9,9 +9,6 @@ MessageValidator::MessageValidator(const WebservConfig& config, HttpRequest* req
 		_last_status = E_EMPTY_HEADER_HOST;
 		return ;
 	}
-
-	std::string path = _request->getUri().getPath();
-	_location_config = findLocationMatch(path);
 }
 MessageValidator::MessageValidator(const MessageValidator& rhs) : _config(rhs._config), _request(rhs._request), _last_status(rhs._last_status) {}
 MessageValidator& MessageValidator::operator=(const MessageValidator& rhs) {
@@ -24,8 +21,6 @@ MessageValidator& MessageValidator::operator=(const MessageValidator& rhs) {
 MessageValidator::~MessageValidator() {}
 
 Status MessageValidator::getLastStatus() const {return _last_status;}
-const std::map<std::string, std::string>& MessageValidator::getLocationConfig() const { return _location_config; }
-const std::string& MessageValidator::getLocationPrefix() const { return _location_prefix; }
 
 bool MessageValidator::validateRequest() {
 	_last_status = E_OK;
@@ -67,7 +62,7 @@ bool MessageValidator::validateHost() {
 	return true;
 }
 
-// TODO Gestion des ports réservés
+// TODO Gestion des ports réservés?
 bool MessageValidator::validatePort() {
 
 	int config_port = _config.getPort();
@@ -102,8 +97,8 @@ bool MessageValidator::validateMethod() {
 	const std::string& method = _request->getMethod();
 	std::vector<std::string> allowed_methods;
 	
-	if (!_location_config.empty() && !_location_config["methods"].empty())
-		allowed_methods = str_to_vect(_location_config["methods"], " ");
+	if (!_request->ctx.location_config.empty() && !_request->ctx.location_config["methods"].empty())
+		allowed_methods = str_to_vect(_request->ctx.location_config["methods"], " ");
 	else
 		allowed_methods = _config.getAllowedMethods();
 
@@ -142,20 +137,13 @@ bool MessageValidator::validateBodySize() {
 bool MessageValidator::validatePath() {
 
 	const std::string& path = _request->getUri().getPath();
-	std::string root = _location_config["root"];
-	std::cout << YELLOW << "[INFO] root: " + root << RESET << std::endl;
-
 	if (contains_traversal(path)) {
 		_last_status = E_PATH_TRAVERSALS;
 		return false;
 	}
-	if (root.empty())
-		root = _config.getRoot();
 	
-	std::string relative_path = extract_relative_path(path, _location_prefix);
-	std::cout << YELLOW << "[INFO] relative_path: " + relative_path << RESET << std::endl;
-	std::string full_path = build_full_path(root, relative_path);
-	std::cout << YELLOW << "[INFO] full_path: " + full_path << RESET << std::endl;
+	std::string relative_path = extract_relative_path(path, _request->ctx.location_name);
+	std::string full_path = build_full_path(_request->ctx.document_root, relative_path);
 	std::string final_path  = canonicalize_path(full_path);
 
 	if (!is_valid_path(final_path)) {
@@ -163,7 +151,7 @@ bool MessageValidator::validatePath() {
 		std::cout << RED << "[ERROR] Invalid path: " + final_path << RESET << std::endl;
 		return false;
 	}
-	if (!is_within_root(final_path, root)) {
+	if (!is_within_root(final_path, _request->ctx.document_root)) {
 		_last_status = E_PATH_ESCAPES_ROOT;
 		return false;
 	}
@@ -297,7 +285,7 @@ bool MessageValidator::validateConnectionHeader() {
 // Return false to stop processing, but it's a valid redirect if 301 or 302
 bool MessageValidator::validateRedirection() {
 
-	const std::string& redirect = _location_config["return"];
+	const std::string& redirect = _request->ctx.location_config["return"];
 	if (redirect.empty())
 		return true;
 
@@ -324,44 +312,4 @@ bool MessageValidator::validateRedirection() {
 		_last_status = E_REDIRECT_TEMPORARY;
 	console::log("[INFO] Redirect " + code + " to '" + destination + "' detected for path: " + _request->getUri().getPath(), MSG);
 	return false;
-}
-
-// Uses longest prefix matching
-std::map<std::string, std::string> MessageValidator::findLocationMatch(const std::string& path) {
-	
-	std::string match = "";
-	std::map<std::string, std::string> best_config;
-	_location_prefix = "";
-	
-	if (_config.hasLocation(path)) {
-		_location_prefix = path;
-		return _config.getLocationConfig(path);
-	}
-	
-	std::string test_path = path;
-	while (!test_path.empty()) {
-		if (_config.hasLocation(test_path)) {
-			std::map<std::string, std::string> config = _config.getLocationConfig(test_path);
-			if (test_path.length() > match.length()) {
-				match = test_path;
-				best_config = config;
-			}
-		}
-		size_t last_slash = test_path.find_last_of('/');
-		if (last_slash == 0) {
-			test_path = "/";
-			if (_config.hasLocation(test_path)) {
-				std::map<std::string, std::string> config = _config.getLocationConfig(test_path);
-				if (match.empty())
-					best_config = config;
-			}
-			break;
-		}
-		else if (last_slash == std::string::npos)
-			break;
-		else
-			test_path = test_path.substr(0, last_slash);
-	}
-	_location_prefix = match;
-	return best_config;
 }

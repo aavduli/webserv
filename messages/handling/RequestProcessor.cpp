@@ -10,15 +10,16 @@ RequestProcessor& RequestProcessor::operator=(const RequestProcessor& rhs) {
 	return *this;
 }
 RequestProcessor::~RequestProcessor() {}
+
 Status	RequestProcessor::getLastStatus() const {return _last_status;}
 
-void RequestProcessor::processRequest(MessageValidator* validator) {
+void RequestProcessor::processRequest() {
 	
 	const std::string& method = _request.getMethod();
 	
 	if (method == "GET") {
 		console::log("[INFO] Processing GET method", MSG);
-		processGetRequest(validator);
+		processGetRequest();
 	}
 	else if (method == "POST" ) {
 		console::log("[INFO] Processing POST method", MSG);
@@ -34,7 +35,7 @@ void RequestProcessor::processRequest(MessageValidator* validator) {
 	}
 }
 
-bool RequestProcessor::validateGetRequest(MessageValidator* validator) {
+bool RequestProcessor::validateGetRequest() {
 
 	if (!_request.getBody().empty()) {
 		console::log("[ERROR] GET request shouldn't have a body", MSG);
@@ -44,8 +45,7 @@ bool RequestProcessor::validateGetRequest(MessageValidator* validator) {
 	
 	std::string path = _request.getUri().getEffectivePath();
 	if (is_directory(path)) {
-		std::map<std::string, std::string> loc_conf = validator->getLocationConfig();
-		std::string index = loc_conf["index"];
+		std::string index = _request.ctx.location_config.at("index");
 		if (index.empty())
 			index = _config.getIndex();
 		path = resolve_index_file(path, index);
@@ -80,9 +80,9 @@ bool RequestProcessor::validateDeleteRequest() {
 	return true;
 }
 
-void RequestProcessor::processGetRequest(MessageValidator* validator) {
+void RequestProcessor::processGetRequest() {
 
-	if (!validateGetRequest(validator)) {
+	if (!validateGetRequest()) {
 		console::log("[ERROR] Invalid GET request", MSG);
 		return ;
 	}

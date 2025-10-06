@@ -12,13 +12,25 @@
 // 	Status status;
 // };
 
+struct RequestContext {
+
+	std::string							location_name;
+	std::map<std::string, std::string>	location_config;
+	std::string							document_root;
+	bool								autoindex_enabled;
+
+	RequestContext() : location_name(""), location_config(), document_root(""), autoindex_enabled(false) {};
+};
+
 class HttpRequest : public HttpMessage {
 
 	private:
 		std::string		_method;
 		RequestUri		_uri;
-
+		
 	public:
+		RequestContext	ctx;
+		
 		HttpRequest();
 		HttpRequest(const HttpRequest& rhs);
 		HttpRequest& operator=(const HttpRequest& rhs);
