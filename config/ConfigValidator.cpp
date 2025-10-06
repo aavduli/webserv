@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/15 14:57:26 by jim               #+#    #+#             */
-/*   Updated: 2025/10/02 20:37:36 by jim              ###   ########.fr       */
+/*   Updated: 2025/10/03 19:09:33 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -94,8 +94,6 @@ bool ConfigValidator::validateSyntax(const std::vector<std::string>& lines) {
 	}
 	return true;
 }
-
-
 
 bool ConfigValidator::isValidNumber(const std::string& str) const{
 	if (str.empty()) return false;
@@ -188,7 +186,6 @@ bool ConfigValidator::validateServerConfig(const ServerConfig& config) {
 
 	return true;
 }
-
 
 bool ConfigValidator::validateRoot(const std::string& root){
 	if (!isValidPath(root)){

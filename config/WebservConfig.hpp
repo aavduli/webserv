@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/08 16:24:01 by jim               #+#    #+#             */
-/*   Updated: 2025/09/29 15:34:24 by jim              ###   ########.fr       */
+/*   Updated: 2025/10/03 19:04:57 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,7 @@
 
 class WebservConfig{
 	private:
-		ConfigParser  _parser;
+		//ConfigParser  _parser;
 		std::map<std::string, std::string> _server;
 		std::map<std::string, std::map<std::string, std::string> > _locations;
 		std::string		_configFile;
