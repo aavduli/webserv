@@ -17,11 +17,10 @@ SRCS =	main.cpp \
 		messages/data/HttpResponse.cpp \
 		messages/data/HttpRequest.cpp \
 		messages/data/RequestUri.cpp \
-		messages/handling/MessageHandler.cpp \
-		messages/handling/MessageValidator.cpp \
-		messages/handling/RequestProcessor.cpp \
-		messages/handling/ResponseGenerator.cpp \
 		messages/parsing/RequestParser.cpp \
+		messages/handling/MessageHandler.cpp \
+		messages/handling/RequestValidator.cpp \
+		messages/handling/ResponseGenerator.cpp \
 		parsing/Normalization.cpp \
 		parsing/Conversion.cpp \
 		parsing/BNFValidation.cpp \

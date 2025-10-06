@@ -38,10 +38,6 @@ void	handle_messages(const WebservConfig& config, const std::string &raw_request
 		console::log("[ERROR] Request validation failed: " + status_msg(handler.getLastStatus()), MSG);
 		return ;
 	}
-	if (!handler.processRequest()) {
-		console::log("[ERROR] Request process failed: " + status_msg(handler.getLastStatus()), MSG);
-		return ;
-	}
 	if (!handler.generateResponse()) {
 		console::log("[ERROR] Response generation failed: " + status_msg(handler.getLastStatus()), MSG);
 		return ;
@@ -88,22 +84,13 @@ void	MessageHandler::setRequestContext() {
 
 bool MessageHandler::validateRequest() {
 
-	MessageValidator	validator(_config, _request);
+	RequestValidator	validator(_config, _request);
 
 	if (!validator.validateRequest()) {
 		_last_status = validator.getLastStatus();
 		return false;
 	}
 	_last_status = E_OK;
-	return true;
-}
-
-bool MessageHandler::processRequest() {
-
-	RequestProcessor	processor(_config, *_request);
-
-	processor.processRequest();
-	_last_status = processor.getLastStatus();
 	return true;
 }
 

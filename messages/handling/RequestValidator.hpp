@@ -1,5 +1,5 @@
-#ifndef MESSAGEVALIDATOR_HPP
-#define MESSAGEVALIDATOR_HPP
+#ifndef REQUESTVALIDATOR_HPP
+#define REQUESTVALIDATOR_HPP
 
 #include "../data/HttpMessage.hpp"
 #include "../data/HttpRequest.hpp"
@@ -13,7 +13,7 @@
 #define MAX_URI_LENGTH 8000
 #define MAX_HEADERS_SIZE 8000
 
-class MessageValidator {
+class RequestValidator {
 
 	private:
 		const WebservConfig&		_config;
@@ -35,13 +35,13 @@ class MessageValidator {
 		bool	validateRedirection();
 
 	public:
-		MessageValidator(const WebservConfig& config, HttpRequest* request);
-		MessageValidator(const MessageValidator& rhs);
-		MessageValidator& operator=(const MessageValidator& rhs);
-		~MessageValidator();
+		RequestValidator(const WebservConfig& config, HttpRequest* request);
+		RequestValidator(const RequestValidator& rhs);
+		RequestValidator& operator=(const RequestValidator& rhs);
+		~RequestValidator();
 
 		bool	validateRequest();
 		Status	getLastStatus() const;
 };
 
-#endif // MESSAGEVALIDATOR_HPP
+#endif // REQUESTVALIDATOR_HPP

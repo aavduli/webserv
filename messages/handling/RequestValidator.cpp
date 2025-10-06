@@ -1,7 +1,7 @@
-#include "MessageValidator.hpp"
+#include "RequestValidator.hpp"
 #include <cstring>
 
-MessageValidator::MessageValidator(const WebservConfig& config, HttpRequest* request) : _config(config) {
+RequestValidator::RequestValidator(const WebservConfig& config, HttpRequest* request) : _config(config) {
 	 _request = request;
 	 _last_status = E_INIT;
 	_host_header = _request->getHeaderValues("host");
@@ -10,19 +10,19 @@ MessageValidator::MessageValidator(const WebservConfig& config, HttpRequest* req
 		return ;
 	}
 }
-MessageValidator::MessageValidator(const MessageValidator& rhs) : _config(rhs._config), _request(rhs._request), _last_status(rhs._last_status) {}
-MessageValidator& MessageValidator::operator=(const MessageValidator& rhs) {
+RequestValidator::RequestValidator(const RequestValidator& rhs) : _config(rhs._config), _request(rhs._request), _last_status(rhs._last_status) {}
+RequestValidator& RequestValidator::operator=(const RequestValidator& rhs) {
 	if (this != &rhs) {
 		_request = rhs._request;
 		_last_status = rhs._last_status;
 	}
 	return *this;
 }
-MessageValidator::~MessageValidator() {}
+RequestValidator::~RequestValidator() {}
 
-Status MessageValidator::getLastStatus() const {return _last_status;}
+Status RequestValidator::getLastStatus() const {return _last_status;}
 
-bool MessageValidator::validateRequest() {
+bool RequestValidator::validateRequest() {
 	_last_status = E_OK;
 
 	if (!validateVersion()) return false;	// 505 HTTP VERSION NOT SUPPORTED
@@ -41,7 +41,7 @@ bool MessageValidator::validateRequest() {
 }
 
 // TODO Validation format hostname (RFC 1123)
-bool MessageValidator::validateHost() {
+bool RequestValidator::validateHost() {
 
 	RequestUri	uri = _request->getUri();
 	std::string config_host = _config.getHost();
@@ -65,7 +65,7 @@ bool MessageValidator::validateHost() {
 }
 
 // TODO Gestion des ports réservés?
-bool MessageValidator::validatePort() {
+bool RequestValidator::validatePort() {
 
 	RequestUri	uri = _request->getUri();
 	int config_port = _config.getPort();
@@ -96,7 +96,7 @@ bool MessageValidator::validatePort() {
 	return true;
 }
 
-bool MessageValidator::validateMethod() {
+bool RequestValidator::validateMethod() {
 
 	const std::string& method = _request->getMethod();
 	std::vector<std::string> allowed_methods;
@@ -116,7 +116,7 @@ bool MessageValidator::validateMethod() {
 }
 
 // need default version MACRO?
-bool MessageValidator::validateVersion() {
+bool RequestValidator::validateVersion() {
 
 	const std::string& version = _request->getHttpVersion();
 	if (version != "1.1" && version != "1.0" && version != "0.9") {
@@ -126,7 +126,7 @@ bool MessageValidator::validateVersion() {
 	return true;
 }
 
-bool MessageValidator::validateBodySize() {
+bool RequestValidator::validateBodySize() {
 
 	size_t config_max = _config.getMaxContentLength();
 	size_t body_size = _request->getBodySize();
@@ -138,7 +138,7 @@ bool MessageValidator::validateBodySize() {
 	return true;
 }
 
-bool MessageValidator::validatePath() {
+bool RequestValidator::validatePath() {
 
 	RequestUri	uri = _request->getUri();
 	const std::string& path = uri.getPath();
@@ -168,7 +168,7 @@ bool MessageValidator::validatePath() {
 // Transfer-Encoding validation (RFC 7230)
 // Transfer-Encoding is used for chunked data transmission where the body size is unknown
 // Example: "Transfer-Encoding: chunked" - data sent in chunks with size prefixes
-bool MessageValidator::validateTransferEncoding() {
+bool RequestValidator::validateTransferEncoding() {
 
 	const std::vector<std::string>& te_headers = _request->getHeaderValues("transfer-encoding");
 	if (te_headers.empty())
@@ -202,7 +202,7 @@ bool MessageValidator::validateTransferEncoding() {
 }
 
 // POST always carries data, so Content-Type is mandatory and helps the server know how to parse and handle the request body
-bool MessageValidator::validateContentType() {
+bool RequestValidator::validateContentType() {
 
 	const std::string& method = _request->getMethod();
 	
@@ -227,7 +227,7 @@ bool MessageValidator::validateContentType() {
 	return true;
 }
 
-bool MessageValidator::validateHeaderLimits() {
+bool RequestValidator::validateHeaderLimits() {
 
 	size_t headers_size = _request->getHeadersSize();
 	if (headers_size > MAX_HEADERS_SIZE) {
@@ -243,7 +243,7 @@ bool MessageValidator::validateHeaderLimits() {
 		- an immediate response with a final status code, if that status can be determined by examining just the method, target URI, and header fields, or
 		- an immediate 100 (Continue) response to encourage the client to send the request content.
 */
-bool MessageValidator::validateExpectHeader() {
+bool RequestValidator::validateExpectHeader() {
 
 	const std::vector<std::string>& expect_headers = _request->getHeaderValues("expect");
 	if (expect_headers.empty())
@@ -270,7 +270,7 @@ bool MessageValidator::validateExpectHeader() {
 
 // Controls whether connection should be kept alive or closed after response (RFC 7230)
 // Essential for HTTP/1.1 persistent connections and connection management
-bool MessageValidator::validateConnectionHeader() {
+bool RequestValidator::validateConnectionHeader() {
 
 	const std::vector<std::string>& conn_headers = _request->getHeaderValues("connection");
 	if (conn_headers.empty())
@@ -288,7 +288,7 @@ bool MessageValidator::validateConnectionHeader() {
 }
 
 // Return false to stop processing, but it's a valid redirect if 301 or 302
-bool MessageValidator::validateRedirection() {
+bool RequestValidator::validateRedirection() {
 
 	const std::string& redirect = _request->ctx.location_config["return"];
 	if (redirect.empty())

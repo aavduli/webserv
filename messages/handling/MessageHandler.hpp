@@ -7,8 +7,7 @@
 #include "../data/HttpRequest.hpp"
 #include "../data/HttpResponse.hpp"
 #include "../parsing/RequestParser.hpp"
-#include "RequestProcessor.hpp"
-#include "MessageValidator.hpp"
+#include "RequestValidator.hpp"
 #include "ResponseGenerator.hpp"
 
 class MessageHandler {
@@ -31,7 +30,6 @@ class MessageHandler {
 		bool	parseRequest(const std::string& raw_request);
 		void	setRequestContext();
 		bool	validateRequest();
-		bool	processRequest();
 		bool	generateResponse();
 
 		Status	getLastStatus() const;
