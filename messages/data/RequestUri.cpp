@@ -201,12 +201,13 @@ std::string	RequestUri::getPort() const {return _port;}
 std::string	RequestUri::getQuery() const {return _query;}
 bool	RequestUri::isAbsoluteUri() const {return _is_absolute_uri;}
 bool	RequestUri::isAbsolutePath() const {return _is_abs_path;}
+
 void	RequestUri::setScheme(const std::string& scheme) {_scheme = scheme;}
 void	RequestUri::setUserinfo(const std::string& userinfo) {_userinfo = userinfo;}
 void	RequestUri::setHost(const std::string& host) {_host = host;}
 void	RequestUri::setPort(const std::string& port) {_port = port;}
 void	RequestUri::setPath(const std::string& path) {_path = path;}
-void	RequestUri::setEffectivePath(const std::string& full_path) {_effective_path = full_path;}
+void	RequestUri::setEffectivePath(const std::string& path) {_effective_path = path;}
 void	RequestUri::setRedirDestination(const std::string& destination) {_redir_destination = destination;}
 void	RequestUri::setQuery(const std::string& query) {_query = query;}
 void	RequestUri::setFragment(const std::string& fragment) {_fragment = fragment;}

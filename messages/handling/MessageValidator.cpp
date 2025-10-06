@@ -24,7 +24,7 @@ Status MessageValidator::getLastStatus() const {return _last_status;}
 
 bool MessageValidator::validateRequest() {
 	_last_status = E_OK;
-	
+
 	if (!validateVersion()) return false;	// 505 HTTP VERSION NOT SUPPORTED
 	if (!validateHost()) return false;		// 400 BAD REQUEST
 	if (!validatePort()) return false;		// 400 BAD REQUEST
@@ -43,28 +43,31 @@ bool MessageValidator::validateRequest() {
 // TODO Validation format hostname (RFC 1123)
 bool MessageValidator::validateHost() {
 
+	RequestUri	uri = _request->getUri();
 	std::string config_host = _config.getHost();
 	
-	if (_request->getUri().getHost().empty()) {
+	if (uri.getHost().empty()) {
 		std::string tmp_host = _host_header.at(0);
 		size_t colon = tmp_host.find(":");
 		if (colon != std::string::npos)
-			_request->getUri().setHost(tmp_host.substr(0, colon));
+			uri.setHost(tmp_host.substr(0, colon));
 		else
-			_request->getUri().setHost(tmp_host);
+			uri.setHost(tmp_host);
 	}
-	if (!_request->getUri().getHost().empty() && _request->getUri().getHost().compare(config_host)) {
+	if (!uri.getHost().empty() && uri.getHost().compare(config_host) && uri.getHost().compare(_config.getServerName())) {
 		_last_status = E_INVALID_HOST;
 		return false;
 	}
-	else if (_request->getUri().getHost().empty())
-		_request->getUri().setHost(config_host);
+	else if (uri.getHost().empty())
+		uri.setHost(config_host);
+	_request->setUri(uri);
 	return true;
 }
 
 // TODO Gestion des ports réservés?
 bool MessageValidator::validatePort() {
 
+	RequestUri	uri = _request->getUri();
 	int config_port = _config.getPort();
 
 	if (!_host_header.empty()) {
@@ -86,9 +89,10 @@ bool MessageValidator::validatePort() {
 				_last_status = E_INVALID_PORT;
 				return false;
 			}
-			_request->getUri().setPort(header_port);
+			uri.setPort(header_port);
 		}
 	}
+	_request->setUri(uri);
 	return true;
 }
 
@@ -136,7 +140,8 @@ bool MessageValidator::validateBodySize() {
 
 bool MessageValidator::validatePath() {
 
-	const std::string& path = _request->getUri().getPath();
+	RequestUri	uri = _request->getUri();
+	const std::string& path = uri.getPath();
 	if (contains_traversal(path)) {
 		_last_status = E_PATH_TRAVERSALS;
 		return false;
@@ -155,8 +160,8 @@ bool MessageValidator::validatePath() {
 		_last_status = E_PATH_ESCAPES_ROOT;
 		return false;
 	}
-	_request->getUri().setEffectivePath(final_path);
-	std::cout << YELLOW << "[INFO] Effective path: " + final_path << RESET << std::endl;
+	uri.setEffectivePath(final_path);
+	_request->setUri(uri);
 	return true;
 }
 
@@ -303,13 +308,15 @@ bool MessageValidator::validateRedirection() {
 		return false;
 	}
 	
+	RequestUri	uri = _request->getUri();
 	std::string destination = redirect.substr(space + 1);
-	_request->getUri().setRedirDestination(destination);
+	uri.setRedirDestination(destination);
 
 	if (code == "301")
 		_last_status = E_REDIRECT_PERMANENT;
 	else
 		_last_status = E_REDIRECT_TEMPORARY;
+	_request->setUri(uri);
 	console::log("[INFO] Redirect " + code + " to '" + destination + "' detected for path: " + _request->getUri().getPath(), MSG);
 	return false;
 }

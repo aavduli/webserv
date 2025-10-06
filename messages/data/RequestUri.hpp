@@ -42,7 +42,6 @@ class RequestUri {
 		bool			parse();
 		void			print() const;
 
-		// Getters
 		std::string		getRawUri() const;
 		std::string		getScheme() const;
 		std::string		getUserinfo() const;
@@ -55,7 +54,6 @@ class RequestUri {
 		bool			isAbsoluteUri() const;
 		bool			isAbsolutePath() const;
 
-		// Setters
 		void			setRawUri(const std::string& raw_uri);
 		void			setScheme(const std::string& scheme);
 		void			setUserinfo(const std::string& userinfo);
