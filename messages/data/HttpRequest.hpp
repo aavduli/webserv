@@ -4,22 +4,31 @@
 #include "HttpMessage.hpp"
 #include "RequestUri.hpp"
 
-// struct RequestContext {
-// 	HttpRequest request;
-// 	std::map<std::string, std::string> location_config;
-// 	std::string location_prefix;
-// 	std::string resolved_path;
-// 	Status status;
-// };
+class WebservConfig;
 
-struct RequestContext {
+class RequestContext {
+	
+	private:
+		std::string							_location_name;
+		std::map<std::string, std::string>	_location_config;
+		std::string							_document_root;
+		bool								_autoindex_enabled;
+		bool								_has_redirect;
 
-	std::string							location_name;
-	std::map<std::string, std::string>	location_config;
-	std::string							document_root;
-	bool								autoindex_enabled;
+	public:
+		RequestContext();
+		RequestContext(const WebservConfig& config);
 
-	RequestContext() : location_name(""), location_config(), document_root(""), autoindex_enabled(false) {};
+		const std::string&		getLocationName() const;
+		void					setLocationName(const std::string& name);
+		const std::map<std::string, std::string>& getLocationConfig() const;
+		void					setLocationConfig(const std::map<std::string, std::string>& loc_config);
+		const std::string&		getDocumentRoot() const;
+		void					setDocumentRoot(const std::string& root);
+		bool					isAutoindexEnabled() const;
+		void					setAutoindexEnabled(bool value);
+		bool					hasRedirect() const;
+		void					setRedirect(bool value);
 };
 
 class HttpRequest : public HttpMessage {
@@ -38,7 +47,6 @@ class HttpRequest : public HttpMessage {
 
 		const std::string&	getMethod() const;
 		void				setMethod(const std::string& method);
-
 		RequestUri			getUri() const;
 		void				setUri(const RequestUri& uri);
 };

@@ -100,9 +100,10 @@ bool RequestValidator::validateMethod() {
 
 	const std::string& method = _request->getMethod();
 	std::vector<std::string> allowed_methods;
-	
-	if (!_request->ctx.location_config.empty() && !_request->ctx.location_config["methods"].empty())
-		allowed_methods = str_to_vect(_request->ctx.location_config["methods"], " ");
+	std::map<std::string, std::string> config = _request->ctx.getLocationConfig();
+
+	if (!config.empty() && !config["methods"].empty())
+		allowed_methods = str_to_vect(config["methods"], " ");
 	else
 		allowed_methods = _config.getAllowedMethods();
 
@@ -147,16 +148,16 @@ bool RequestValidator::validatePath() {
 		return false;
 	}
 	
-	std::string relative_path = extract_relative_path(path, _request->ctx.location_name);
-	std::string full_path = build_full_path(_request->ctx.document_root, relative_path);
+	std::string relative_path = extract_relative_path(path, _request->ctx.getLocationName());
+	std::string full_path = build_full_path(_request->ctx.getDocumentRoot(), relative_path);
 	std::string final_path  = canonicalize_path(full_path);
 
 	if (!is_valid_path(final_path)) {
 		_last_status = E_NOT_FOUND;
-		std::cout << RED << "[ERROR] Invalid path: " + final_path << RESET << std::endl;
+		console::log("[ERROR] Invalid path: " + final_path, MSG);
 		return false;
 	}
-	if (!is_within_root(final_path, _request->ctx.document_root)) {
+	if (!is_within_root(final_path, _request->ctx.getDocumentRoot())) {
 		_last_status = E_PATH_ESCAPES_ROOT;
 		return false;
 	}
@@ -290,7 +291,8 @@ bool RequestValidator::validateConnectionHeader() {
 // Return false to stop processing, but it's a valid redirect if 301 or 302
 bool RequestValidator::validateRedirection() {
 
-	const std::string& redirect = _request->ctx.location_config["return"];
+	std::map<std::string, std::string> config = _request->ctx.getLocationConfig();
+	const std::string& redirect = config["return"];
 	if (redirect.empty())
 		return true;
 
@@ -311,6 +313,7 @@ bool RequestValidator::validateRedirection() {
 	RequestUri	uri = _request->getUri();
 	std::string destination = redirect.substr(space + 1);
 	uri.setRedirDestination(destination);
+	_request->ctx.setRedirect(true);
 
 	if (code == "301")
 		_last_status = E_REDIRECT_PERMANENT;
@@ -318,5 +321,5 @@ bool RequestValidator::validateRedirection() {
 		_last_status = E_REDIRECT_TEMPORARY;
 	_request->setUri(uri);
 	console::log("[INFO] Redirect " + code + " to '" + destination + "' detected for path: " + _request->getUri().getPath(), MSG);
-	return false;
+	return true;
 }

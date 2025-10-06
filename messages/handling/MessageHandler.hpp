@@ -18,7 +18,7 @@ class MessageHandler {
 		HttpResponse			_response;
 		Status					_last_status;
 
-		std::string							getLocationName();
+		std::string							findConfigLocationName();
 		std::map<std::string, std::string>	findLocationMatch();
 
 		public:
@@ -33,6 +33,7 @@ class MessageHandler {
 		bool	generateResponse();
 
 		Status	getLastStatus() const;
+		void	setLastStatus(Status status);
 		
 		const HttpResponse	getResponse() const;
 };
