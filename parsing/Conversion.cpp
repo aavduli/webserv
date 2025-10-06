@@ -6,11 +6,13 @@ std::vector<std::string>	str_to_vect(const std::string& str, const std::string& 
 	std::vector<std::string>	v;
 
 	size_t	current_pos = 0;
-	size_t	found = str.find(del, current_pos);
-	while (found != std::string::npos) {
-		v.push_back(trim_whitespaces(str.substr(current_pos, found - current_pos)));
-		current_pos = found + 1;
-		found = str.find(del, current_pos);
+	if (!del.empty()) {
+		size_t	found = str.find(del, current_pos);
+		while (found != std::string::npos) {
+			v.push_back(trim_whitespaces(str.substr(current_pos, found - current_pos)));
+			current_pos = found + 1;
+			found = str.find(del, current_pos);
+		}
 	}
 	v.push_back(trim_whitespaces(str.substr(current_pos, str.size() - current_pos)));
 	return v;
