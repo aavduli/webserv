@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/15 14:57:26 by jim               #+#    #+#             */
-/*   Updated: 2025/10/03 19:09:33 by jim              ###   ########.fr       */
+/*   Updated: 2025/10/06 14:18:03 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -336,7 +336,7 @@ bool ConfigValidator::validateHTTPMethods(const std::string& methods){
 
 bool ConfigValidator::validateMBS(const std::string& size){
 	if (!isValidNumber(size)){
-		setError("Invalid client max body size format: " +size); //todo ask bebou for MBS
+		setError("Invalid client max body size format: " +size); 
 		console::log(_lastError, CONF);
 		if (BLOCKINGERROR) return false;
 	}
