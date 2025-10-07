@@ -1,0 +1,17 @@
+/* Static CSS file for testing */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+    margin: 20px;
+}
+
+h1 {
+    color: #333;
+    border-bottom: 2px solid #007acc;
+}
+
+.test-class {
+    background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+    padding: 20px;
+    border-radius: 10px;
+}

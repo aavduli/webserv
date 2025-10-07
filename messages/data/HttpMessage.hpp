@@ -8,9 +8,8 @@
 #include <map>
 #include <vector>
 
-#include "../../errors/errors.hpp"
+#include "../../status/status.hpp"
 #include "../../console/console.hpp"
-#include "../parsing/MessageParser.hpp"
 
 class HttpRequest;
 class HttpResponse;
@@ -18,12 +17,12 @@ class HttpResponse;
 class HttpMessage {
 
 	protected:
-		State			_state;
 		std::string		_version_major;
 		std::string		_version_minor;
 		std::map<std::string, std::vector<std::string> >	_headers;
+		size_t			_headers_size;
 		std::string		_body;
-		size_t			_content_length;
+		size_t			_body_size;
 		
 	public:
 		HttpMessage();
@@ -31,21 +30,23 @@ class HttpMessage {
 		HttpMessage& operator=(const HttpMessage& rhs);
 		virtual ~HttpMessage();
 
-		State		getState() const;
-		void		setState(State state);
 		std::string	getHttpVersion() const;
+		std::string	getHttpVersionMajor() const;
+		std::string	getHttpVersionMinor() const;
 		void		setHttpVersion(std::string major, std::string minor);
 
 		bool		hasHeader(const std::string& key) const;
 		void		addHeader(const std::string& key, const std::vector<std::string>& values);
-		std::vector<std::string>	getHeaderValues(const std::string& key) const;
+		std::map<std::string, std::vector<std::string> >	getHeaders() const;
+		const std::vector<std::string>&	getHeaderValues(const std::string& key) const;
 		void 		printHeaders() const;
+		size_t		getHeadersSize() const;
+		void		setHeadersSize(size_t headers_size);
 
 		std::string	getBody() const;
 		void		setBody(const std::string& body);
-
-		size_t		getContentLength() const;
-		void		setContentLength(size_t content_length);
+		size_t		getBodySize() const;
+		void		setBodySize(size_t body_size);
 };
 
 #endif // HTTPMESSAGE_HPP

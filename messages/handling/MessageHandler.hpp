@@ -1,42 +1,43 @@
 #ifndef MESSAGEHANDLER_HPP
 #define MESSAGEHANDLER_HPP
 
-#include "../../errors/errors.hpp"
-#include "../parsing/MessageParser.hpp"
-#include "../parsing/RequestParser.hpp"
+#include "../../config/WebservConfig.hpp"
+#include "../../status/status.hpp"
 #include "../data/HttpMessage.hpp"
 #include "../data/HttpRequest.hpp"
 #include "../data/HttpResponse.hpp"
-#include "../../config/WebservConfig.hpp"
+#include "../parsing/RequestParser.hpp"
+#include "RequestValidator.hpp"
+#include "ResponseGenerator.hpp"
 
- class MessageHandler {
+class MessageHandler {
 
 	private:
-		Error					_error;
-		State					_state;
+		const WebservConfig&	_config;
 		HttpRequest*			_request;
-		HttpResponse*			_response;
+		HttpResponse			_response;
+		Status					_last_status;
 
-	public:
-		MessageHandler(HttpRequest* request);
+		std::string							findConfigLocationName();
+		std::map<std::string, std::string>	findLocationMatch();
+
+		public:
+		MessageHandler(const WebservConfig& config, HttpRequest* request);
 		MessageHandler(const MessageHandler& rhs);
 		MessageHandler& operator=(const MessageHandler& rhs);
-		~MessageHandler();
+		virtual ~MessageHandler();
+		
+		bool	parseRequest(const std::string& raw_request);
+		void	setRequestContext();
+		bool	validateRequest();
+		bool	generateResponse();
 
-		HttpRequest*	getRequest() const;
-		HttpResponse*	getResponse() const;
+		Status	getLastStatus() const;
+		void	setLastStatus(Status status);
 		
-		bool			is_valid_request(const WebservConfig& config);
-		void			process_request();
-		void			generate_response();
-		std::string		serialize_response();
-		
-		void			handle_get();
-		void			handle_post();
-		void			handle_delete();
-		void			handle_head();
+		const HttpResponse	getResponse() const;
 };
 
-void	handle_request(const WebservConfig& config, const std::string &raw);
+void	handle_messages(const WebservConfig& config, const std::string &raw_request);
 
 #endif //MESSAGEHANDLER_HPP

@@ -1,5 +1,5 @@
-#ifndef ERRORS_HPP
-#define ERRORS_HPP
+#ifndef STATUS_HPP
+#define STATUS_HPP
 
 #include <string>
 
@@ -12,34 +12,45 @@ ERROR HANDLING
 4. Http errors -> status enum list of status codes and messages
  */
 
-enum Error {
+enum Status {
+	E_INIT,
 	E_OK,
-
-	// Config file related
 	E_INVALID_FILE,
-
-	// Server related
 	E_FAILED_CONNECTION,
 	E_CLOSED_CONNECTION,
-
-	// Parsing related
+	E_REDIRECT_PERMANENT = 301,
+	E_REDIRECT_TEMPORARY = 302,
 	E_INCOMPLETE_REQUEST,
 	E_INVALID_REQUEST,
-
 	E_INVALID_METHOD,
 	E_INVALID_URI,
 	E_INVALID_VERSION,
+	E_BAD_REQUEST = 400,
+	E_FORBIDDEN = 403,
+	E_NOT_FOUND = 404,
+	E_METHOD_NOT_ALLOWED = 405,
+	E_ENTITY_TOO_LARGE = 413,
+	E_UNSUPPORTED_MEDIA_TYPE = 415,
+	E_EXPECTATION_FAILED = 417,
+	E_UNSUPPORTED_VERSION = 505,
 	E_INVALID_STATUS,
 	E_INVALID_HOST,
+	E_EMPTY_HEADER_HOST,
 	E_INVALID_PORT,
 	E_INVALID_PATH,
+	E_PATH_TRAVERSALS,
+	E_PATH_ESCAPES_ROOT,
 	E_INVALID_HEADER,
 	E_INVALID_CONTENT_LENGTH,
+	E_INVALID_TRANSFER_ENCODING,
+	E_MISSING_CONTENT_TYPE,
+	E_TOO_MANY_HEADERS,
+	E_INVALID_CONNECTION,
+	E_INVALID_REDIRECT,
 
-	// Request/response related
 
 };
 
-std::string	error_msg(Error e);
+std::string	status_msg(Status e);
 
-#endif //ERRORS_HPP
+#endif //STATUS_HPP

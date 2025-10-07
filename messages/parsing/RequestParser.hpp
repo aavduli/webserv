@@ -1,29 +1,32 @@
 #ifndef REQUESTPARSER_HPP
 #define REQUESTPARSER_HPP
 
-#include "MessageParser.hpp"
-#include "../data/HttpRequest.hpp"
+#include "../handling/MessageHandler.hpp"
 
-class RequestParser : public MessageParser {
+class RequestParser {
 
 	private:
-		HttpRequest*	_request;		// for request parsing
+		HttpRequest*	_request;
+		std::string		_raw_request;
+		size_t			_current_pos;	// pos in raw_request string
+		Status			_last_status;
+		
+		bool			parseRequestLine();
+		bool			parseMethod(std::string request_line);
+		bool			parseUri(std::string request_line);
+		bool			parseVersion(std::string request_line);
+		bool			parseHeaders();
+		std::string		parseHeaderName(std::string line);
+		bool			parseBody();
 
 	public:
-		RequestParser();
+		RequestParser(HttpRequest* request, const std::string& raw_request);
 		RequestParser(const RequestParser& rhs);
 		RequestParser& operator=(const RequestParser& rhs);
 		~RequestParser();
-
-		HttpRequest*	parse_request(std::string raw_request);
-		bool			parse_request_line();
-		bool			parse_method(std::string request_line);
-		bool			parse_uri(std::string request_line);
-		bool			parse_version(std::string request_line);
-		bool			parse_headers();
-		std::string		parse_header_name(std::string line);
-		std::vector<std::string>	parse_header_values(std::string line);
-		bool			parse_body();
+	
+		bool	parseRequest();
+		Status	getLastStatus() const;
 };
 
 #endif //REQUESTPARSER_HPP

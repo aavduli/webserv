@@ -2,39 +2,26 @@
 #include "HttpRequest.hpp"
 
 HttpMessage::HttpMessage() {
-	_state = s_msg_dead;
 	_version_major = "";
 	_version_minor = "";
 	_body = "";
 }
-
-HttpMessage::HttpMessage(const HttpMessage& rhs) : _state(rhs._state), _version_major(rhs._version_major), _version_minor(rhs._version_minor), _headers(rhs._headers), _body(rhs._body), _content_length(0) {}
-
+HttpMessage::HttpMessage(const HttpMessage& rhs) : _version_major(rhs._version_major), _version_minor(rhs._version_minor), _headers(rhs._headers), _body(rhs._body), _body_size(0) {}
 HttpMessage& HttpMessage::operator=(const HttpMessage& rhs) {
 	if (this != &rhs) {
-		_state = rhs._state;
 		_version_major = rhs._version_major;
 		_version_minor = rhs._version_minor;
 		_headers = rhs._headers;
 		_body = rhs._body;
-		_content_length = rhs._content_length;
+		_body_size = rhs._body_size;
 	}
 	return *this;
 }
-
 HttpMessage::~HttpMessage() {}
 
-State	HttpMessage::getState() const {
-	return _state;
-}
-
-void	HttpMessage::setState(State state) {
-	_state = state;
-}
-
-std::string	HttpMessage::getHttpVersion() const {
-	return (_version_major + "." + _version_minor);
-}
+std::string	HttpMessage::getHttpVersion() const {return (_version_major + "." + _version_minor);}
+std::string	HttpMessage::getHttpVersionMajor() const {return _version_major;}
+std::string	HttpMessage::getHttpVersionMinor() const {return _version_minor;}
 
 void	HttpMessage::setHttpVersion(std::string major, std::string minor) {
 	_version_major = major;
@@ -64,7 +51,9 @@ void	HttpMessage::addHeader(const std::string& key, const std::vector<std::strin
 		_headers[lower(key)] = values;
 }
 
-std::vector<std::string>	HttpMessage::getHeaderValues(const std::string& key) const {
+std::map<std::string, std::vector<std::string> > HttpMessage::getHeaders() const {return _headers;}
+
+const std::vector<std::string>&	HttpMessage::getHeaderValues(const std::string& key) const {
 	
 	std::string normalized = lower(key);
 	if (this->hasHeader(normalized)) {
@@ -73,7 +62,8 @@ std::vector<std::string>	HttpMessage::getHeaderValues(const std::string& key) co
 		if (it != _headers.end())
 			return it->second;
 	}
-	return std::vector<std::string>();
+	static const std::vector<std::string> empty;
+	return empty;
 }
 
 void	HttpMessage::printHeaders() const {
@@ -89,18 +79,9 @@ void	HttpMessage::printHeaders() const {
 	}
 }
 
-std::string	HttpMessage::getBody() const {
-	return _body;
-}
-
-void	HttpMessage::setBody(const std::string& body) {
-	_body = body;
-}
-
-size_t	HttpMessage::getContentLength() const {
-	return _content_length;
-}
-
-void	HttpMessage::setContentLength(size_t content_length) {
-	_content_length = content_length;
-}
+size_t	HttpMessage::getHeadersSize() const {return _headers_size;}
+void	HttpMessage::setHeadersSize(size_t headers_size) {_headers_size = headers_size;}
+std::string	HttpMessage::getBody() const {return _body;}
+void	HttpMessage::setBody(const std::string& body) {_body = body;}
+size_t	HttpMessage::getBodySize() const {return _body_size;}
+void	HttpMessage::setBodySize(size_t body_size) {_body_size = body_size;}

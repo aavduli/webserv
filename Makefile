@@ -7,6 +7,7 @@ SRCS =	main.cpp \
 		server/onConnection.cpp \
 		event/eventManager.cpp \
 		console/console.cpp \
+		status/status.cpp \
 		config/ConfigParser.cpp \
 		config/ConfigValidator.cpp \
 		config/FileReader.cpp \
@@ -16,11 +17,14 @@ SRCS =	main.cpp \
 		messages/data/HttpResponse.cpp \
 		messages/data/HttpRequest.cpp \
 		messages/data/RequestUri.cpp \
-		messages/handling/MessageHandler.cpp \
-		messages/parsing/MessageParser.cpp \
 		messages/parsing/RequestParser.cpp \
+		messages/handling/MessageHandler.cpp \
+		messages/handling/RequestValidator.cpp \
+		messages/handling/ResponseGenerator.cpp \
 		parsing/Normalization.cpp \
-		parsing/Conversion.cpp
+		parsing/Conversion.cpp \
+		parsing/BNFValidation.cpp \
+		parsing/Paths.cpp
 
 OBJDIR = obj
 
