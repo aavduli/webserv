@@ -14,11 +14,10 @@ MessageHandler::~MessageHandler() {}
 
 Status				MessageHandler::getLastStatus() const {return _last_status;}
 void				MessageHandler::setLastStatus(Status status) {_last_status = status;}
-const HttpResponse	MessageHandler::getResponse() const {return _response;};
 
 // handleMessage() → parseRequest() → validateRequest() → processRequest() → generateResponse()
 // TODO should give a way for server to get Status
-void	handle_messages(const WebservConfig& config, const std::string &raw_request) {
+const std::string&	handle_messages(const WebservConfig& config, const std::string &raw_request) {
 
 	console::log("=============[NEW REQUEST]=============", MSG);
 
@@ -39,8 +38,8 @@ void	handle_messages(const WebservConfig& config, const std::string &raw_request
 		// critical error
 		return ;
 	}
-	HttpResponse response = handler.getResponse();
-	// do something with response
+	const std::string& response = handler.serializeResponse();
+	return response;
 }
 
 bool	MessageHandler::parseRequest(const std::string& raw_request) {
@@ -53,6 +52,46 @@ bool	MessageHandler::parseRequest(const std::string& raw_request) {
 	}
 	_last_status = E_OK;
 	return true;
+}
+
+bool MessageHandler::validateRequest() {
+	
+	RequestValidator	validator(_config, _request);
+	
+	if (!validator.validateRequest()) {
+		_last_status = validator.getLastStatus();
+		return false;
+	}
+	_last_status = E_OK;
+	return true;
+}
+
+bool MessageHandler::generateResponse() {
+	
+	ResponseGenerator	generator(_config, _request, &_response);
+	
+	generator.setLastStatus(_last_status);
+	generator.generateResponse();
+	_last_status = generator.getLastStatus();
+	return true;
+}
+
+std::string MessageHandler::serializeResponse() {
+
+	// if (!_response) {
+	// 	console::log("[ERROR] No response to serialize", MSG);
+	// 	return "";
+	// }
+	
+	// HTTP/1.1 status line
+	// All headers with proper CRLF
+	// Empty line
+	// Body content
+
+	// TODO: Implement response serialization
+	// Format: HTTP/1.1 200 OK\r\nHeaders\r\n\r\nBody
+	console::log("[INFO] Serializing response", MSG);
+	return "HTTP/1.1 200 OK\r\nContent-Length: 13\r\n\r\nHello, World!";
 }
 
 void	MessageHandler::setRequestContext() {
@@ -72,6 +111,10 @@ void	MessageHandler::setRequestContext() {
 	else
 		ctx.setDocumentRoot(root);
 
+	std::string index = config["index"];
+	std::vector<std::string> indexes = str_to_vect(index, " ");
+	ctx.setIndexList(indexes);
+
 	std::string autoindex = config["autoindex"];
 	if (autoindex == "on")
 		ctx.setAutoindexEnabled(true);
@@ -79,28 +122,6 @@ void	MessageHandler::setRequestContext() {
 		ctx.setAutoindexEnabled(false);
 
 	_request->ctx = ctx;
-}
-
-bool MessageHandler::validateRequest() {
-
-	RequestValidator	validator(_config, _request);
-
-	if (!validator.validateRequest()) {
-		_last_status = validator.getLastStatus();
-		return false;
-	}
-	_last_status = E_OK;
-	return true;
-}
-
-bool MessageHandler::generateResponse() {
-
-	ResponseGenerator	generator(_config, _request, &_response);
-
-	generator.setLastStatus(_last_status);
-	generator.generateResponse();
-	_last_status = generator.getLastStatus();
-	return true;
 }
 
 std::string	MessageHandler::findConfigLocationName() {

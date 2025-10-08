@@ -46,6 +46,8 @@ const std::map<std::string, std::string>& RequestContext::getLocationConfig() co
 void RequestContext::setLocationConfig(const std::map<std::string, std::string>& loc_config) {_location_config = loc_config;}
 const std::string& RequestContext::getDocumentRoot() const {return _document_root;}
 void RequestContext::setDocumentRoot(const std::string& root) {_document_root = root;}
+const std::vector<std::string>&	RequestContext::getIndexList() const {return _index_list;}
+void RequestContext::setIndexList(const std::vector<std::string>& indexes) {_index_list = indexes;}
 bool RequestContext::isAutoindexEnabled() const {return _autoindex_enabled;}
 void RequestContext::setAutoindexEnabled(bool value) {_autoindex_enabled = value;}
 bool RequestContext::hasRedirect() const {return _has_redirect;}

@@ -28,13 +28,13 @@ bool is_directory(const std::string& path) {
 	return stat(path.c_str(), &buf) == 0 && S_ISDIR(buf.st_mode);
 }
 
-std::string get_file_extension(const std::string& path) {
+const std::string& get_file_extension(const std::string& path) {
 
 	size_t	dot = path.find_last_of(".");
 	if (dot == std::string::npos || dot == path.length() - 1)
 		return "";
 	
-	std::string extension = path.substr(dot + 1);
+	const std::string& extension = path.substr(dot + 1);
 	return (lower(extension));
 }
 
@@ -47,27 +47,27 @@ bool is_python_CGI(const std::string& path) {
 	return (extension == "py");
 }
 
-std::string extract_relative_path(const std::string& full_path, const std::string& location_prefix) {
+const std::string& extract_relative_path(const std::string& full_path, const std::string& location_prefix) {
 	
 	if (location_prefix.empty() || location_prefix == "/")
 		return full_path;
 	
 	if (full_path.find(location_prefix) == 0) {
-		std::string relative = full_path.substr(location_prefix.length());
+		const std::string& relative = full_path.substr(location_prefix.length());
 		return relative.empty() ? "/" : relative;
 	}
 	return full_path;
 }
 
-std::string build_full_path(const std::string& root, const std::string& relative_path) {
+const std::string& build_full_path(const std::string& begin, const std::string& end) {
 	
-	std::string full_path = root;
+	std::string full_path = begin;
 	
-	if (full_path[full_path.length() - 1] != '/' && relative_path[0] != '/')
+	if (full_path[full_path.length() - 1] != '/' && end[0] != '/')
 		full_path += "/";
 
-	if (relative_path != "/")
-		full_path += relative_path;
+	if (end != "/")
+		full_path += end;
 
 	return full_path;
 }

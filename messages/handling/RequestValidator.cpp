@@ -112,7 +112,6 @@ bool RequestValidator::validateMethod() {
 			return true;
 	}
 	_last_status = E_METHOD_NOT_ALLOWED;
-	console::log("[ERROR] Method not allowed " + method, MSG);
 	return false;
 }
 
@@ -134,6 +133,7 @@ bool RequestValidator::validateBodySize() {
 
 	if (body_size > config_max) {
 		_last_status = E_ENTITY_TOO_LARGE;
+		console::log("[ERROR] Body size too large", MSG);
 		return false;
 	}
 	return true;

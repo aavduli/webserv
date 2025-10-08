@@ -12,6 +12,7 @@ class RequestContext {
 		std::string							_location_name;
 		std::map<std::string, std::string>	_location_config;
 		std::string							_document_root;
+		std::vector<std::string>			_index_list;
 		bool								_autoindex_enabled;
 		bool								_has_redirect;
 
@@ -25,6 +26,8 @@ class RequestContext {
 		void					setLocationConfig(const std::map<std::string, std::string>& loc_config);
 		const std::string&		getDocumentRoot() const;
 		void					setDocumentRoot(const std::string& root);
+		const std::vector<std::string>&	getIndexList() const;
+		void					setIndexList(const std::vector<std::string>& indexes);
 		bool					isAutoindexEnabled() const;
 		void					setAutoindexEnabled(bool value);
 		bool					hasRedirect() const;

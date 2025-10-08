@@ -28,7 +28,6 @@ bool RequestParser::parseRequest() {
 		console::log("[ERROR] Failed to parse body", MSG);
 		return false;
 	}
-	console::log("[INFO] Request parsing success", MSG);
 	return true;
 }
 

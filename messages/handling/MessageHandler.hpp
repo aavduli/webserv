@@ -21,23 +21,22 @@ class MessageHandler {
 		std::string							findConfigLocationName();
 		std::map<std::string, std::string>	findLocationMatch();
 
-		public:
+	public:
 		MessageHandler(const WebservConfig& config, HttpRequest* request);
 		MessageHandler(const MessageHandler& rhs);
 		MessageHandler& operator=(const MessageHandler& rhs);
 		virtual ~MessageHandler();
 		
-		bool	parseRequest(const std::string& raw_request);
-		void	setRequestContext();
-		bool	validateRequest();
-		bool	generateResponse();
+		bool			parseRequest(const std::string& raw_request);
+		void			setRequestContext();
+		bool			validateRequest();
+		bool			generateResponse();
+		std::string		serializeResponse();
 
 		Status	getLastStatus() const;
 		void	setLastStatus(Status status);
-		
-		const HttpResponse	getResponse() const;
 };
 
-void	handle_messages(const WebservConfig& config, const std::string &raw_request);
+const std::string&	handle_messages(const WebservConfig& config, const std::string &raw_request);
 
 #endif //MESSAGEHANDLER_HPP

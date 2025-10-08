@@ -19,11 +19,8 @@ Status	ResponseGenerator::getLastStatus() const {return _last_status;}
 
 void ResponseGenerator::generateResponse() {
 
-	// Set default headers for HTTP/1.1
-	setDefaultHeaders();
-
-	// Determine response type based on request and configuration
-	console::log("[INFO] Last status: " + status_msg(_last_status), MSG);
+	setDefaultHeaders();	// HTTP 1.1
+	console::log("[INFO] Status at generateResponse start: " + status_msg(_last_status), MSG);
 	std::string path = _request->getUri().getEffectivePath();
 	
 	switch (_last_status) {
@@ -36,11 +33,11 @@ void ResponseGenerator::generateResponse() {
 			if (is_python_CGI(path))
 				generateCGIResponse();
 			else if (is_directory(path))
-				generateDirectoryResponse();
+				generateDirectoryResponse(path);
 			// else if (is_post)
 			// else if (is_delete)
 			else
-				generateStaticFileResponse();
+				generateStaticFileResponse(path);
 			break;
 		}
 		default: {
@@ -50,35 +47,14 @@ void ResponseGenerator::generateResponse() {
 	}
 }
 
-std::string ResponseGenerator::serializeResponse() {
+void ResponseGenerator::generateStaticFileResponse(const std::string& effective_path) {
 
-	if (!_response) {
-		console::log("[ERROR] No response to serialize", MSG);
-		return "";
-	}
-	
-	// HTTP/1.1 status line
-	// All headers with proper CRLF
-	// Empty line
-	// Body content
-
-	// TODO: Implement response serialization
-	// Format: HTTP/1.1 200 OK\r\nHeaders\r\n\r\nBody
-	console::log("[INFO] Serializing response", MSG);
-	return "HTTP/1.1 200 OK\r\nContent-Length: 13\r\n\r\nHello, World!";
-}
-
-void ResponseGenerator::generateStaticFileResponse() {
-
-	console::log("[INFO] Generating static file response", MSG);
-	
-	const std::string& effective_path = _request->getUri().getEffectivePath();
 	console::log("[INFO] Serving file: " + effective_path, MSG);
 
 	// Content-Type header
 	std::string extension = get_file_extension(effective_path);
-	std::string content_type = get_mime_type(extension);
-	_response->addHeader("Content-Type", str_to_vect(content_type, ""));
+	std::string content_type = getMimeType(extension);
+	_response->addHeader("Content-Type", str_to_vect(content_type, 0));
 
 	// Opening file
 	std::ifstream file(effective_path.c_str());
@@ -88,7 +64,7 @@ void ResponseGenerator::generateStaticFileResponse() {
 		return generateErrorResponse();
 	}
 	
-	// Content-Length header
+	// Body & Content-Length header
 	std::string	str;
 	std::string	file_contents;
 	size_t		file_size = 0;
@@ -97,26 +73,57 @@ void ResponseGenerator::generateStaticFileResponse() {
 		file_contents += str;
 		file_contents.push_back('\n');
 	}
-	_response->addHeader("Content-Length", str_to_vect(nb_to_string(file_size), ""));
+	_response->setBody(file_contents);
+	_response->setBodySize(file_size);
+	_response->addHeader("Content-Length", str_to_vect(nb_to_string(file_size), 0));
 	_response->setStatus(E_OK);
 }
 
-void ResponseGenerator::generateDirectoryResponse() {
+void ResponseGenerator::generateDirectoryResponse(const std::string& directory_path) {
+
+	if (!_request->ctx.getIndexList().empty()) {
+		const std::vector<std::string>& indexes = _request->ctx.getIndexList();
+		std::vector<std::string>::const_iterator it;
+		for (it = indexes.begin(); it != indexes.end(); it++) {
+			if (is_valid_file_path(build_full_path(directory_path, *it)))
+				break ;
+		}
+		if (it != indexes.end())
+			generateStaticFileResponse(build_full_path(directory_path, *it));
+			// im here
+	}
+	else {
+		if (_request->ctx.isAutoindexEnabled()) {
+			_response->addHeader("Content-Type", str_to_vect("text/html", 0));
+			_response->setBody(generateDirectoryListing(directory_path));
+			_response->setBodySize(_response->getBody().size());
+			_response->addHeader("Content-Length", str_to_vect(nb_to_string(_response->getBodySize()), 0));
+			_response->setStatus(E_OK);
+		}
+		else {
+			console::log("[ERROR] Directory access forbidden", MSG);
+			_last_status = E_FORBIDDEN;
+			generateErrorResponse();
+		}
+
+	}
+}
+
+std::string	generateDirectoryListing(const std::string& path) {
 
 	console::log("[INFO] Generating directory listing response", MSG);
 
-	// Check for index file first
-	// If no index and autoindex enabled -> directory listing
-		// Read directory contents
-		// Generate HTML listing
-		// Proper sorting and formatting
-		// Handle permissions
-	// If no index and autoindex disabled -> 403 Forbidden
+	// Read directory contents
+	// Generate HTML listing with links to folders
+	// Proper sorting and formatting
+	// Handle permissions
 
-	// TODO: Check if autoindex is enabled
-	// TODO: Generate HTML directory listing
-	// TODO: Set Content-Type to text/html
+	// Serve a directory listing (HTML page showing files and subdirectories)
+	// Generate an HTML response with clickable links to files/folders
+
+	return "directory listing response";
 }
+
 
 void ResponseGenerator::generateRedirResponse() {
 
@@ -136,10 +143,8 @@ void ResponseGenerator::generateRedirResponse() {
 
 void ResponseGenerator::generateErrorResponse() {
 
-	console::log("[INFO] Generating error response", MSG);
-	
 	Status status = getLastStatus();
-	console::log("[INFO] Error status: " + status_msg(status), MSG);
+	console::log("[INFO] Generating error response with status: " + status_msg(status), MSG);
 	
 	// Try custom error page from config
 	// Fall back to default error page
@@ -165,6 +170,7 @@ void ResponseGenerator::generateCGIResponse() {
 }
 
 void ResponseGenerator::setDefaultHeaders() {
+
 	/*
 	HTTP/1.1 Changes:
 	Persistent connections are DEFAULT (keep-alive)
@@ -257,7 +263,7 @@ void ResponseGenerator::setDefaultHeaders() {
 // 	return "<!-- File content placeholder -->";
 // }
 
-std::string get_mime_type(const std::string& extension) {
+std::string getMimeType(const std::string& extension) {
 
 	// Text types
 	if (extension == "html" || extension == "htm") {

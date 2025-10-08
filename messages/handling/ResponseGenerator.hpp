@@ -1,6 +1,7 @@
 #ifndef RESPONSEGENERATOR_HPP
 #define RESPONSEGENERATOR_HPP
 
+#include <dirent.h>
 #include "MessageHandler.hpp"
 #include "../../config/WebservConfig.hpp"
 
@@ -11,13 +12,11 @@ class ResponseGenerator {
 		HttpRequest*			_request;
 		HttpResponse*			_response;
 		Status					_last_status;
-
-		std::string		serializeResponse();
 		
-		void			generateStaticFileResponse();
+		void			generateStaticFileResponse(const std::string& path);
 		void			generateRedirResponse();
 		void			generateCGIResponse();
-		void			generateDirectoryResponse();
+		void			generateDirectoryResponse(const std::string& path);
 		void			generateErrorResponse();
 
 	public:
@@ -33,19 +32,16 @@ class ResponseGenerator {
 
 		void			setDefaultHeaders();
 // 		void			setConnectionHeader();
-// 		void			setContentHeaders(size_t content_length);
 // 		void			setDateHeader();
 // 		
 // 		bool			shouldCloseConnection() const;
 // 		std::string		getCurrentHTTPDate() const;
-// 		std::string		getMimeType(const std::string& file_extension) const;
+		std::string		getMimeType(const std::string& extension) const;
 // 		
-// 		std::string		generateDirectoryHTML(const std::string& directory_path) const;
-// 		std::string		readFileContent(const std::string& file_path) const;
-
+		std::string		generateDirectoryListing(const std::string& path) const;
+		// std::string		readFileContent(const std::string& file_path) const;
 };
 
-std::string get_mime_type(const std::string& extension);
 template<typename T>
 std::string nb_to_string(T value);
 
