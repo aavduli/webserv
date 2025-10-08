@@ -48,7 +48,7 @@ void eventProcessor::handleReceiveError(int clientFd, ssize_t recvResult) {
 }
 
 void eventProcessor::sendResponse(int clientFd, const std::string& response) {
-	connectionManager& connection = _connectionManager.getConnection(clientFd);
+	Conn& connection = _connectionManager.getConnection(clientFd);
 	ssize_t bytesSent = NetworkHandler::sendFullData(clientFd, response);
 	if (bytesSent < 0) {
 		console::log("Failed to send responses on FD: ", clientFd, SRV);
@@ -65,10 +65,10 @@ void eventProcessor::sendResponse(int clientFd, const std::string& response) {
 		connection.hasDataToSend = true;
 
 		_eventManager.modFd(clientFd, EPOLLIN | EPOLLOUT | EPOLLRDHUP);
-		console::log("Partial send, waiting for EPOULLOUT on FD: ", clientFd, SRV);
+		console::log("Partial send, waiting for EPOLLOUT on FD: ", clientFd, SRV);
 	}
 	else if (bytesSent == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
-		connection.outBuffer = respone;
+		connection.outBuffer = response;
 		connection.outSent = 0;
 		connection.hasDataToSend = true;
 		_eventManager.modFd(clientFd, EPOLLIN | EPOLLOUT | EPOLLRDHUP);
@@ -81,9 +81,9 @@ void eventProcessor::sendResponse(int clientFd, const std::string& response) {
 }
 
 void eventProcessor::handleClientWriteReady(int clientFd) {
-	connectionManager& connection = _connectionManager.getConnection(clientFd);
+	Conn& connection = _connectionManager.getConnection(clientFd);
 	if (!connection.hasDataToSend) {
-		_eventManager.modFd(clientFd, EPOLLIN | EPOLLOUT | EPOLLRDHUP);
+		_eventManager.modFd(clientFd, EPOLLIN | EPOLLRDHUP);
 		return ;
 	}
 	const char* dataToSend = connection.outBuffer.data() + connection.outSent;
@@ -93,17 +93,18 @@ void eventProcessor::handleClientWriteReady(int clientFd) {
 		connection.outSent += bytesSent;
 		if (connection.outSent >= connection.outBuffer.size()) {
 			connection.hasDataToSend = false;
-			connection.outBuffer.erase();
+			connection.outBuffer.clear();
 			connection.outSent = 0;
-			eventManager::modFd(clientFd, EPOLLIN | EPOLLOUT | EPOLLRDHUP);
+			_eventManager.modFd(clientFd, EPOLLIN | EPOLLRDHUP);
 			handleClientDisconnection(clientFd);
 		}
-		else if (bytesSent == -1 && (errno == EAGAIN || errno == EWOULDBLOCK))
-			return ; //not ready to send keep waiting for EPOLLOUT
-		else {
-			console::log("Send error during EPOULLOUT on FD: ", clientFd, SRV);
-			handleClientDisconnection(clientFd);
-		}
+	}
+	else if (bytesSent == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+		return ; //not ready to send keep waiting for EPOLLOUT
+	}
+	else {
+		console::log("Send error during EPOLLOUT on FD: ", clientFd, SRV);
+		handleClientDisconnection(clientFd);
 	}
 }
 
@@ -129,7 +130,7 @@ void eventProcessor::runEventLoop(const WebservConfig& config) {
 			else if (isDataReadyEvent(events)) {
 				handleClientData(fd, config);
 			}
-			else (isDataSendEvent(events))
+			else if (isDataSendEvent(events))
 				handleClientWriteReady(fd);
 		}
 	}
