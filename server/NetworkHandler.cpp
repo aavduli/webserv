@@ -89,10 +89,10 @@ ssize_t NetworkHandler::sendData(int fd, char *buffer, ssize_t size) {
 }
 
 //For handling parsed data send
-ssize_t NetworkHandler::sendFullData(int fd, char *buffer, ssize_t size) {
+ssize_t NetworkHandler::sendFullData(int fd, char *buffer, ssize_t remainingBytes) {
 	ssize_t totalSend = 0;
-	while (totalSend < size) {
-		ssize_t sent = send(fd, buffer + totalSend, size - totalSend, 0);
+	while (totalSend < remainingBytes) {
+		ssize_t sent = send(fd, buffer + totalSend, remainingBytes - totalSend, 0);
 		if (sent < 0) {
 			if (errno == EAGAIN || errno == EWOULDBLOCK) continue;
 			return sent;

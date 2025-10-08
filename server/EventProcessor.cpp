@@ -1,5 +1,22 @@
 #include "EventProcessor.hpp"
 
+std::string build_http_response(
+    int status_code,
+    const std::string& status_text,
+    const std::string& body,
+    const std::string& content_type = "text/plain"
+) {
+    std::ostringstream oss;
+    oss << "HTTP/1.1 " << status_code << " " << status_text << "\r\n"
+        << "Content-Type: " << content_type << "\r\n"
+        << "Content-Length: " << body.size() << "\r\n"
+        << "Connection: close\r\n"
+        << "\r\n"
+        << body;
+    return oss.str();
+}
+
+
 // 1. Generate 100KB response
 // 2. send() → 30KB sent, 70KB remaining
 // 3. Add EPOLLOUT to epoll
@@ -49,7 +66,7 @@ void eventProcessor::handleReceiveError(int clientFd, ssize_t recvResult) {
 
 void eventProcessor::sendResponse(int clientFd, const std::string& response) {
 	Conn& connection = _connectionManager.getConnection(clientFd);
-	ssize_t bytesSent = NetworkHandler::sendFullData(clientFd, response);
+	ssize_t bytesSent = NetworkHandler::sendData(clientFd, const_cast<char*>(response.data()), response.size());
 	if (bytesSent < 0) {
 		console::log("Failed to send responses on FD: ", clientFd, SRV);
 		handleClientDisconnection(clientFd);
@@ -67,7 +84,7 @@ void eventProcessor::sendResponse(int clientFd, const std::string& response) {
 		_eventManager.modFd(clientFd, EPOLLIN | EPOLLOUT | EPOLLRDHUP);
 		console::log("Partial send, waiting for EPOLLOUT on FD: ", clientFd, SRV);
 	}
-	else if (bytesSent == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+	else if (errno == EAGAIN || errno == EWOULDBLOCK) {
 		connection.outBuffer = response;
 		connection.outSent = 0;
 		connection.hasDataToSend = true;
@@ -88,7 +105,7 @@ void eventProcessor::handleClientWriteReady(int clientFd) {
 	}
 	const char* dataToSend = connection.outBuffer.data() + connection.outSent;
 	size_t remainingBytes = connection.outBuffer.size() - connection.outSent;
-	ssize_t bytesSent = NetworkHandler::sendData(clientFd, dataToSend, remainingBytes);
+	ssize_t bytesSent = NetworkHandler::sendData(clientFd, const_cast<char*>(dataToSend), remainingBytes);
 	if (bytesSent > 0) {
 		connection.outSent += bytesSent;
 		if (connection.outSent >= connection.outBuffer.size()) {
@@ -122,7 +139,7 @@ void eventProcessor::runEventLoop(const WebservConfig& config) {
 			int fd = _eventManager[i].data.fd;
 			uint32_t events = _eventManager[i].events;
 			if (isServerSocket(fd)) {
-				handleServerEvents(fd);
+				handleServerEvents();
 			}
 			else if (isDisconnectionEvent(events)) {
 				handleClientDisconnection(fd);
@@ -141,7 +158,7 @@ void eventProcessor::stopEventLoop() {
 	console::log("Event stop loop requested", SRV);
 }
 
-void eventProcessor::handleServerEvents(int serverFd) {
+void eventProcessor::handleServerEvents() {
 	acceptNewConnections();
 }
 void eventProcessor::handleClientDisconnection(int clientFd) {
@@ -150,6 +167,7 @@ void eventProcessor::handleClientDisconnection(int clientFd) {
 } 
 
 void eventProcessor::handleClientData(int clientFd, const WebservConfig& config) {
+	(void)config;
 	Conn& connection = _connectionManager.getConnection(clientFd); 
 	char buffer[8192];
 	ssize_t bytesRead = NetworkHandler::receiveData(clientFd, buffer, sizeof(buffer));
@@ -161,7 +179,8 @@ void eventProcessor::handleClientData(int clientFd, const WebservConfig& config)
 	size_t requestEndPos;
 	if (onConn::update_and_ready(connection, requestEndPos)) {
 		std::string completeRequest = connection.in.substr(0, requestEndPos);
-		std::string response = handle_request(config, completeRequest);
+		// std::string response = handle_request(config, completeRequest);
+		std::string response = build_http_response(200, "OK", "IT NOT WORK");
 		sendResponse(clientFd, response);
 		connection.in.erase(0, requestEndPos);
 	}

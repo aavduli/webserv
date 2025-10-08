@@ -26,7 +26,7 @@ enum NetworkError {
 
 class NetworkHandler {
 	private:
-		NetworkHandler() = delete; //static class only
+		NetworkHandler();
 		static void logNetworkError(const std::string& operation, const std::string& error);
 	public:
 		//server creation and configuration
@@ -42,7 +42,7 @@ class NetworkHandler {
 		//handle data
 		static ssize_t receiveData(int fd, char *buffer, ssize_t size);
 		static ssize_t sendData(int fd, char *buffer, ssize_t size);
-		static ssize_t sendFullData(int fd, char *buffer, ssize_t size);
+		static ssize_t sendFullData(int fd, char *buffer, ssize_t remainingBytes);
 		
 		//utility
 		static void ignoreSigPipe();

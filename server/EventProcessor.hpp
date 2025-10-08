@@ -5,22 +5,23 @@
 #include "../console/console.hpp"
 #include <iostream>
 #include "eventManager.hpp"
+#include "../config/WebservConfig.hpp"
 #include "NetworkHandler.hpp"
 #include "ConnectionManager.hpp"
 #include "server.hpp"
+#include "../messages/handling/MessageHandler.hpp"
 
 class eventProcessor {
 	private:
 		eventManager& _eventManager;
 		connectionManager& _connectionManager;
-		RequestProcessor& _requestProcessor; //todo
 		int _serverFd;
 		bool _shouldStop;
 
 	private:
 		void acceptNewConnections();
 		void handleReceiveError(int clientFd, ssize_t recvResult);
-		void sendResponse(int clientFd, const std::string response);
+		void sendResponse(int clientFd, const std::string& response);
 
 	public:
 		eventProcessor(eventManager& em, connectionManager& cm, int serverFd);
@@ -29,7 +30,7 @@ class eventProcessor {
 		void runEventLoop(const WebservConfig& config);
 		void stopEventLoop();
 
-		void handleServerEvents(int serverFd);
+		void handleServerEvents();
 		void handleClientDisconnection(int clientFd);
 		void handleClientData(int clientFd, const WebservConfig& config);
 		void handleClientWriteReady(int clientFd);

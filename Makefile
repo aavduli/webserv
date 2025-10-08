@@ -6,6 +6,9 @@ SRCS =	main.cpp \
 		server/server.cpp \
 		server/onConnection.cpp \
 		server/eventManager.cpp \
+		server/NetworkHandler.cpp \
+		server/ConnectionManager.cpp \
+		server/EventProcessor.cpp \
 		console/console.cpp \
 		config/ConfigLocation.cpp \
 		config/ConfigParser.cpp \

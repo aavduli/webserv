@@ -1,9 +1,9 @@
 #include "ConnectionManager.hpp"
 
 connectionManager::connectionManager(eventManager& em, size_t maxConn) :_maxConn(maxConn), _eventManager(em) {
-	if (maxConn < 0)
+	if (maxConn <= 0)
 		throw std::runtime_error("Max connections has to be at least 1");
-	console::log("ConnectionManager initialized with max connections: " + intToString(maxConn), SRV);
+	console::log("ConnectionManager initialized with max connections: ", maxConn, SRV);
 }
 
 connectionManager::~connectionManager() {}
@@ -28,13 +28,13 @@ bool connectionManager::addConnection(int clientFD) {
 	return true;
 }
 
-void connectionManager::removeConnections(int clientFD) {
+void connectionManager::removeConnection(int clientFD) {
 	 std::map<int, Conn>::iterator it = _connections.find(clientFD);
 	 if (it == _connections.end()) {
 		console::log("Attempted to remove non existent connection: " + intToString(clientFD), ERROR);
 		return ;
 	 }
-	 console::log("Removed connection: " + intToString(clientFD), SRV);
+	 console::log("Removed connection: ", clientFD, SRV);
 	 _eventManager.delFd(clientFD);
 	 NetworkHandler::closeConnection(clientFD);
 	 _connections.erase(it);
@@ -56,7 +56,7 @@ Conn& connectionManager::getConnection(int clientFD) {
 	return it->second;
 }
 
-const Conn& connectionManager::getConnection(const int clientFD) {
+const Conn& connectionManager::getConnection(int clientFD) const {
 	std::map<int, Conn>::const_iterator it = _connections.find(clientFD);
 	if (it == _connections.end()) {
 		throw std::runtime_error("Connection not found for fd: " + intToString(clientFD));
@@ -66,7 +66,7 @@ const Conn& connectionManager::getConnection(const int clientFD) {
 
 void connectionManager::removeAllConnection() {
 	console::log("Removing all connection: " + intToString(_connections.size()), SRV);
-	for (std::map<int, Conn>::iterator it = _connections.begin(); it != _connections.end(); ++it) {
+	for (std::map<int, Conn>::const_iterator it = _connections.begin(); it != _connections.end(); ++it) {
 		int fd = it->first;
 		_eventManager.delFd(fd);
 		NetworkHandler::closeConnection(fd);
@@ -97,8 +97,8 @@ void connectionManager::cleanUpStaleConn() {
 	}
 	for (std::vector<int>::iterator it = staleConn.begin(); it != staleConn.end(); ++it) {
 		int fd = *it;
-		console::log("Removing stale connection: " + intToString(fd), SRV);
-		removeConnections(fd);
+		console::log("Removing stale connection: ", fd, SRV);
+		removeConnection(fd);
 	}
 }
 

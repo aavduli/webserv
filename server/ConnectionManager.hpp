@@ -22,12 +22,12 @@ class connectionManager {
 		~connectionManager();
 
 		bool addConnection(int clientFD);
-		void removeConnections(int clientFD);
+		void removeConnection(int clientFD);
 		bool hasConnection(int clientFD) const;
 		size_t getConnectionCount();
 
 		Conn& getConnection(int clientFD);
-		const Conn& getConnection(const int clientFD);
+		const Conn& getConnection(int clientFD) const;
 		void removeAllConnection();
 		std::vector<int> getConnectionFds() const;
 
