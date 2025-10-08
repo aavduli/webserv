@@ -32,8 +32,10 @@ class eventProcessor {
 		void handleServerEvents(int serverFd);
 		void handleClientDisconnection(int clientFd);
 		void handleClientData(int clientFd, const WebservConfig& config);
+		void handleClientWriteReady(int clientFd);
 
 		bool isServerSocket(int fd) const;
 		bool isDisconnectionEvent(uint32_t event) const;
 		bool isDataReadyEvent(uint32_t event) const;
+		bool isDataSendEvent(uint32_t event) const;
 };

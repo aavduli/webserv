@@ -1,8 +1,16 @@
 #include "EventProcessor.hpp"
 
-eventProcessor::eventProcessor(eventManager& em, connectionManager& cm, int serverFd) : _eventManager(em), _connectionManager(cm), _serverFd(serverFd) {
-	_requestProcessor = NULL; //todo
-	_shouldStop = false;
+// 1. Generate 100KB response
+// 2. send() → 30KB sent, 70KB remaining
+// 3. Add EPOLLOUT to epoll
+// 4. EPOLLOUT event → socket ready
+// 5. send() → 50KB sent, 20KB remaining  
+// 6. EPOLLOUT event → socket ready
+// 7. send() → 20KB sent, 0KB remaining
+// 8. Remove EPOLLOUT from epoll
+// 9. Close connection
+
+eventProcessor::eventProcessor(eventManager& em, connectionManager& cm, int serverFd) : _eventManager(em), _connectionManager(cm), _serverFd(serverFd), _shouldStop(false) {
 }
 
 eventProcessor::~eventProcessor() {}
@@ -29,24 +37,74 @@ void eventProcessor::handleReceiveError(int clientFd, ssize_t recvResult) {
 		if (errno == EAGAIN || errno == EWOULDBLOCK)
 			return ;
 		if (errno == EINTR) {
-			console::log("Recv got interupted, closing connection on FD: ", clientFd, SRV);
+			console::log("Recv got interrupted, closing connection on FD: ", clientFd, SRV);
 			handleClientDisconnection(clientFd);
 		}
 		else {
 			console::log("Real error, closing connection on FD: ", clientFd, SRV);
+			handleClientDisconnection(clientFd);
 		}
 	}
 }
 
-void eventProcessor::sendResponse(int clientFd, const std::string response) {
+void eventProcessor::sendResponse(int clientFd, const std::string& response) {
+	connectionManager& connection = _connectionManager.getConnection(clientFd);
 	ssize_t bytesSent = NetworkHandler::sendFullData(clientFd, response);
 	if (bytesSent < 0) {
-		console::log("Failed to send responses on FD: ", clientFd, SRV)''
+		console::log("Failed to send responses on FD: ", clientFd, SRV);
 		handleClientDisconnection(clientFd);
 		return ;
 	}
-	console::log("Response sent successfuly on FD: ", clientFd, SRV);
-	handleClientDisconnection(clientFd); //not keep alive for the moment
+	if (bytesSent == (ssize_t)response.size()) {
+		console::log("Send full response on FD: ", clientFd, SRV);
+		handleClientDisconnection(clientFd);
+	}
+	else if (bytesSent > 0) {
+		connection.outBuffer = response;
+		connection.outSent = bytesSent;
+		connection.hasDataToSend = true;
+
+		_eventManager.modFd(clientFd, EPOLLIN | EPOLLOUT | EPOLLRDHUP);
+		console::log("Partial send, waiting for EPOULLOUT on FD: ", clientFd, SRV);
+	}
+	else if (bytesSent == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+		connection.outBuffer = respone;
+		connection.outSent = 0;
+		connection.hasDataToSend = true;
+		_eventManager.modFd(clientFd, EPOLLIN | EPOLLOUT | EPOLLRDHUP);
+		console::log("Send would block, waiting EPOLLOUT on FD: ", clientFd, SRV);
+	}
+	else {
+		console::log("Send error, closing FD", clientFd, SRV);
+		handleClientDisconnection(clientFd);
+	}
+}
+
+void eventProcessor::handleClientWriteReady(int clientFd) {
+	connectionManager& connection = _connectionManager.getConnection(clientFd);
+	if (!connection.hasDataToSend) {
+		_eventManager.modFd(clientFd, EPOLLIN | EPOLLOUT | EPOLLRDHUP);
+		return ;
+	}
+	const char* dataToSend = connection.outBuffer.data() + connection.outSent;
+	size_t remainingBytes = connection.outBuffer.size() - connection.outSent;
+	ssize_t bytesSent = NetworkHandler::sendData(clientFd, dataToSend, remainingBytes);
+	if (bytesSent > 0) {
+		connection.outSent += bytesSent;
+		if (connection.outSent >= connection.outBuffer.size()) {
+			connection.hasDataToSend = false;
+			connection.outBuffer.erase();
+			connection.outSent = 0;
+			eventManager::modFd(clientFd, EPOLLIN | EPOLLOUT | EPOLLRDHUP);
+			handleClientDisconnection(clientFd);
+		}
+		else if (bytesSent == -1 && (errno == EAGAIN || errno == EWOULDBLOCK))
+			return ; //not ready to send keep waiting for EPOLLOUT
+		else {
+			console::log("Send error during EPOULLOUT on FD: ", clientFd, SRV);
+			handleClientDisconnection(clientFd);
+		}
+	}
 }
 
 //public events handler
@@ -71,6 +129,8 @@ void eventProcessor::runEventLoop(const WebservConfig& config) {
 			else if (isDataReadyEvent(events)) {
 				handleClientData(fd, config);
 			}
+			else (isDataSendEvent(events))
+				handleClientWriteReady(fd);
 		}
 	}
 }
@@ -107,7 +167,7 @@ void eventProcessor::handleClientData(int clientFd, const WebservConfig& config)
 	bool alive = true;
 	size_t endpos = 0;
 	onConn::onDiscon(connection, alive, endpos);
-	if(!alive) {
+	if (!alive) {
 		handleClientDisconnection(clientFd);
 	}
 }
@@ -124,6 +184,12 @@ bool eventProcessor::isDisconnectionEvent(uint32_t event) const {
 }
 bool eventProcessor::isDataReadyEvent(uint32_t event) const {
 	if (event & EPOLLIN)
+		return true;
+	return false;
+}
+
+bool eventProcessor::isDataSendEvent(uint32_t event) const {
+	if (event & EPOLLOUT)
 		return true;
 	return false;
 }
