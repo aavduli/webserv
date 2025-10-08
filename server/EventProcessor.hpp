@@ -19,7 +19,6 @@ class eventProcessor {
 
 	private:
 		void acceptNewConnections();
-		void processIncomingData(int clientFd, const WebServConfig& config);
 		void handleReceiveError(int clientFd, ssize_t recvResult);
 		void sendResponse(int clientFd, const std::string response);
 
@@ -27,12 +26,12 @@ class eventProcessor {
 		eventProcessor(eventManager& em, connectionManager& cm, int serverFd);
 		~eventProcessor();
 
-		void runEventLoop(const Webservconfig& config);
+		void runEventLoop(const WebservConfig& config);
 		void stopEventLoop();
 
 		void handleServerEvents(int serverFd);
-		void handleClientDisconnection(int clientFd); //EPOLLUP | EPOLLERR | EPOLLRDUP
-		void handleClientData(int serverFd);
+		void handleClientDisconnection(int clientFd);
+		void handleClientData(int clientFd, const WebservConfig& config);
 
 		bool isServerSocket(int fd) const;
 		bool isDisconnectionEvent(uint32_t event) const;
