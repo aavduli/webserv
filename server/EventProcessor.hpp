@@ -9,6 +9,7 @@
 #include "NetworkHandler.hpp"
 #include "ConnectionManager.hpp"
 #include "server.hpp"
+#include "ServerConstants.hpp"
 #include "../messages/handling/MessageHandler.hpp"
 
 class eventProcessor {

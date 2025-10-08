@@ -74,7 +74,7 @@ void eventProcessor::sendResponse(int clientFd, const std::string& response) {
 	}
 	if (bytesSent == (ssize_t)response.size()) {
 		console::log("Send full response on FD: ", clientFd, SRV);
-		handleClientDisconnection(clientFd);
+		_eventManager.modFd(clientFd, EPOLLIN | EPOLLRDHUP);
 	}
 	else if (bytesSent > 0) {
 		connection.outBuffer = response;
@@ -113,7 +113,7 @@ void eventProcessor::handleClientWriteReady(int clientFd) {
 			connection.outBuffer.clear();
 			connection.outSent = 0;
 			_eventManager.modFd(clientFd, EPOLLIN | EPOLLRDHUP);
-			handleClientDisconnection(clientFd);
+			// Don't immediately close - wait for client to close
 		}
 	}
 	else if (bytesSent == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
@@ -169,12 +169,25 @@ void eventProcessor::handleClientDisconnection(int clientFd) {
 void eventProcessor::handleClientData(int clientFd, const WebservConfig& config) {
 	(void)config;
 	Conn& connection = _connectionManager.getConnection(clientFd); 
-	char buffer[8192];
+	
+	// Define constants for safety
+	static const size_t MAX_REQUEST_SIZE = ServerConstants::MAX_REQUEST_SIZE;
+	static const size_t BUFFER_SIZE = ServerConstants::BUFFER_SIZE;
+	
+	char buffer[BUFFER_SIZE];
 	ssize_t bytesRead = NetworkHandler::receiveData(clientFd, buffer, sizeof(buffer));
 	if (bytesRead <= 0) {
 		handleReceiveError(clientFd, bytesRead);
 		return ;
 	}
+	
+	// Check for request size limit to prevent DoS
+	if (connection.in.size() + static_cast<size_t>(bytesRead) > MAX_REQUEST_SIZE) {
+		console::log("Request too large, closing connection on FD: ", clientFd, SRV);
+		handleClientDisconnection(clientFd);
+		return ;
+	}
+	
 	connection.in.append(buffer, static_cast<size_t>(bytesRead));
 	size_t requestEndPos;
 	if (onConn::update_and_ready(connection, requestEndPos)) {

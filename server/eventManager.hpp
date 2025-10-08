@@ -7,6 +7,7 @@
 # include <sys/epoll.h>
 # include <unistd.h>
 # include <cstring>
+# include <new>
 # include "../console/console.hpp"
 # include <cstdlib>
 

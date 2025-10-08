@@ -112,6 +112,15 @@ void NetworkHandler::ignoreSigPipe() {
 
 bool NetworkHandler::isSocketError(int fd) {
 	if (fd == -1) return true;
+	
+	// Check if socket is actually valid by trying to get socket options
+	int error = 0;
+	socklen_t len = sizeof(error);
+	int result = getsockopt(fd, SOL_SOCKET, SO_ERROR, &error, &len);
+	
+	if (result != 0) return true;  // getsockopt failed
+	if (error != 0) return true;   // Socket has an error condition
+	
 	return false;
 }
 
