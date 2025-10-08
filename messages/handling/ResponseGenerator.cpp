@@ -54,7 +54,7 @@ void ResponseGenerator::generateStaticFileResponse(const std::string& effective_
 	// Content-Type header
 	std::string extension = get_file_extension(effective_path);
 	std::string content_type = getMimeType(extension);
-	_response->addHeader("Content-Type", str_to_vect(content_type, 0));
+	_response->addHeader("Content-Type", str_to_vect(content_type, ""));
 
 	// Opening file
 	std::ifstream file(effective_path.c_str());
@@ -75,7 +75,7 @@ void ResponseGenerator::generateStaticFileResponse(const std::string& effective_
 	}
 	_response->setBody(file_contents);
 	_response->setBodySize(file_size);
-	_response->addHeader("Content-Length", str_to_vect(nb_to_string(file_size), 0));
+	_response->addHeader("Content-Length", str_to_vect(nb_to_string(file_size), ""));
 	_response->setStatus(E_OK);
 }
 
@@ -94,10 +94,10 @@ void ResponseGenerator::generateDirectoryResponse(const std::string& directory_p
 	}
 	else {
 		if (_request->ctx.isAutoindexEnabled()) {
-			_response->addHeader("Content-Type", str_to_vect("text/html", 0));
+			_response->addHeader("Content-Type", str_to_vect("text/html", ""));
 			_response->setBody(generateDirectoryListing(directory_path));
 			_response->setBodySize(_response->getBody().size());
-			_response->addHeader("Content-Length", str_to_vect(nb_to_string(_response->getBodySize()), 0));
+			_response->addHeader("Content-Length", str_to_vect(nb_to_string(_response->getBodySize()), ""));
 			_response->setStatus(E_OK);
 		}
 		else {
@@ -109,10 +109,10 @@ void ResponseGenerator::generateDirectoryResponse(const std::string& directory_p
 	}
 }
 
-std::string	generateDirectoryListing(const std::string& path) {
+std::string	ResponseGenerator::generateDirectoryListing(const std::string& path) const {
 
 	console::log("[INFO] Generating directory listing response", MSG);
-
+	(void)path;
 	// Read directory contents
 	// Generate HTML listing with links to folders
 	// Proper sorting and formatting
@@ -263,7 +263,7 @@ void ResponseGenerator::setDefaultHeaders() {
 // 	return "<!-- File content placeholder -->";
 // }
 
-std::string getMimeType(const std::string& extension) {
+std::string ResponseGenerator::getMimeType(const std::string& extension) const {
 
 	// Text types
 	if (extension == "html" || extension == "htm") {

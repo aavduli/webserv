@@ -37,6 +37,6 @@ class MessageHandler {
 		void	setLastStatus(Status status);
 };
 
-const std::string&	handle_messages(const WebservConfig& config, const std::string &raw_request);
+std::string	handle_messages(const WebservConfig& config, const std::string &raw_request);
 
 #endif //MESSAGEHANDLER_HPP

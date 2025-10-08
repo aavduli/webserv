@@ -38,10 +38,10 @@ bool				is_valid_path(const std::string& path);
 bool				is_valid_file_path(const std::string& path);
 bool				is_directory(const std::string& path);
 bool				is_python_CGI(const std::string& path);
-const std::string&	get_file_extension(const std::string& path);
+std::string	get_file_extension(const std::string& path);
 
-const std::string&	extract_relative_path(const std::string& full_path, const std::string& location_prefix);
-const std::string&	build_full_path(const std::string& root, const std::string& relative_path);
+std::string	extract_relative_path(const std::string& full_path, const std::string& location_prefix);
+std::string	build_full_path(const std::string& root, const std::string& relative_path);
 std::string			resolve_index_file(const std::string& directory_path, const std::string& index_file);
 bool				contains_traversal(const std::string& path);
 std::string			canonicalize_path(const std::string& path);

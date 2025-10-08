@@ -17,11 +17,12 @@ void				MessageHandler::setLastStatus(Status status) {_last_status = status;}
 
 // handleMessage() → parseRequest() → validateRequest() → processRequest() → generateResponse()
 // TODO should give a way for server to get Status
-const std::string&	handle_messages(const WebservConfig& config, const std::string &raw_request) {
+std::string	handle_messages(const WebservConfig& config, const std::string &raw_request) {
 
 	console::log("=============[NEW REQUEST]=============", MSG);
 
 	HttpRequest		request;
+	std::string		response;
 	MessageHandler	handler(config, &request);
 
 	if (raw_request.empty()) {
@@ -36,9 +37,9 @@ const std::string&	handle_messages(const WebservConfig& config, const std::strin
 	if (!handler.generateResponse()) {
 		console::log("[ERROR] Response generation failed: " + status_msg(handler.getLastStatus()), MSG);
 		// critical error
-		return ;
+		return response;
 	}
-	const std::string& response = handler.serializeResponse();
+	response = handler.serializeResponse();
 	return response;
 }
 
