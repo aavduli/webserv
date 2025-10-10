@@ -5,15 +5,16 @@ HttpMessage::HttpMessage() {
 	_version_major = "";
 	_version_minor = "";
 	_body = "";
+	_body = E_INIT;
 }
-HttpMessage::HttpMessage(const HttpMessage& rhs) : _version_major(rhs._version_major), _version_minor(rhs._version_minor), _headers(rhs._headers), _body(rhs._body), _body_size(0) {}
+HttpMessage::HttpMessage(const HttpMessage& rhs) : _version_major(rhs._version_major), _version_minor(rhs._version_minor), _headers(rhs._headers), _body(rhs._body), _body_type(rhs._body_type) {}
 HttpMessage& HttpMessage::operator=(const HttpMessage& rhs) {
 	if (this != &rhs) {
 		_version_major = rhs._version_major;
 		_version_minor = rhs._version_minor;
 		_headers = rhs._headers;
 		_body = rhs._body;
-		_body_size = rhs._body_size;
+		_body_type = rhs._body_type;
 	}
 	return *this;
 }
@@ -83,3 +84,5 @@ size_t	HttpMessage::getHeadersSize() const {return _headers_size;}
 void	HttpMessage::setHeadersSize(size_t headers_size) {_headers_size = headers_size;}
 std::string	HttpMessage::getBody() const {return _body;}
 void	HttpMessage::setBody(const std::string& body) {_body = body;}
+BodyType	HttpMessage::getBodyType() const {return _body_type;}
+void	HttpMessage::setBodyType(BodyType body_type) {_body_type = body_type;}

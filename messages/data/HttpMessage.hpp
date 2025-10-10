@@ -14,6 +14,15 @@
 class HttpRequest;
 class HttpResponse;
 
+enum BodyType {
+	B_INIT,		// Initial/unset state
+	B_FILE,		// Static files (MIME type from extension)
+	B_HTML,		// Generated HTML (text/html)
+	B_CGI,		// CGI script output (Content-Type from CGI headers)
+	B_JSON,		// JSON responses (application/json)
+	B_EMPTY		// No body (HEAD, 204, 304 responses)
+};
+
 class HttpMessage {
 
 	protected:
@@ -22,7 +31,7 @@ class HttpMessage {
 		std::map<std::string, std::vector<std::string> >	_headers;
 		size_t			_headers_size;
 		std::string		_body;
-		size_t			_body_size;
+		BodyType		_body_type;
 		
 	public:
 		HttpMessage();
@@ -45,6 +54,8 @@ class HttpMessage {
 
 		std::string	getBody() const;
 		void		setBody(const std::string& body);
+		BodyType	getBodyType() const;
+		void		setBodyType(BodyType body_type);
 };
 
 #endif // HTTPMESSAGE_HPP
