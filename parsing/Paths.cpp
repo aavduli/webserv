@@ -38,15 +38,6 @@ std::string get_file_extension(const std::string& path) {
 	return (lower(extension));
 }
 
-bool is_python_CGI(const std::string& path) {
-
-	if (path.empty() || !is_valid_file_path(path))
-		return false;
-
-	std::string extension = get_file_extension(path);
-	return (extension == "py");
-}
-
 std::string extract_relative_path(const std::string& full_path, const std::string& location_prefix) {
 	
 	if (location_prefix.empty() || location_prefix == "/")
