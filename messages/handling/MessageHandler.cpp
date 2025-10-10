@@ -93,7 +93,7 @@ std::string MessageHandler::serializeResponse() {
 	// Format: HTTP/1.1 200 OK\r\nHeaders\r\n\r\nBody
 
 
-	std::cout << GREEN << _response.getBody() << RESET << std::endl;
+	// std::cout << GREEN << _response.getBody() << RESET << std::endl;
 
 	console::log("[INFO] Serializing response", MSG);
 	return "HTTP/1.1 200 OK\r\nContent-Length: 13\r\n\r\nHello, World!";

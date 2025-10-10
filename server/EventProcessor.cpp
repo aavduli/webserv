@@ -192,8 +192,8 @@ void eventProcessor::handleClientData(int clientFd, const WebservConfig& config)
 	size_t requestEndPos;
 	if (onConn::update_and_ready(connection, requestEndPos)) {
 		std::string completeRequest = connection.in.substr(0, requestEndPos);
-		// std::string response = handle_request(config, completeRequest);
-		std::string response = build_http_response(200, "OK", "IT NOT WORK");
+		std::string response = handle_messages(config, completeRequest);
+		// std::string response = build_http_response(200, "OK", "IT NOT WORK");
 		sendResponse(clientFd, response);
 		connection.in.erase(0, requestEndPos);
 	}

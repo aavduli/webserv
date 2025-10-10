@@ -2,6 +2,7 @@
 #define MESSAGEHANDLER_HPP
 
 #include "../../config/WebservConfig.hpp"
+#include "../../parsing/Parsing.hpp"
 #include "../../status/status.hpp"
 #include "../data/HttpMessage.hpp"
 #include "../data/HttpRequest.hpp"
