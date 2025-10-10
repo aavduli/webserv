@@ -12,13 +12,14 @@ class ResponseGenerator {
 		HttpRequest*			_request;
 		HttpResponse*			_response;
 		Status					_last_status;
+		bool					_done;
 		
-		void			generateStaticFileResponse(const std::string& path);
-		void			generateRedirResponse();
-		void			generateCGIResponse();
-		void			generateDirectoryResponse(const std::string& path);
-		void			generateErrorResponse();
-
+		void	generateStaticFileResponse();
+		void	generateRedirResponse();
+		void	generateCGIResponse();
+		void	generateDirectoryResponse();
+		void	generateErrorResponse();
+		
 	public:
 		ResponseGenerator(const WebservConfig& config, HttpRequest* request, HttpResponse* response);
 		ResponseGenerator(const ResponseGenerator& rhs);
@@ -29,19 +30,25 @@ class ResponseGenerator {
 		void	setLastStatus(Status last_status);
 
 		void	generateResponse();
-
-		void			setDefaultHeaders();
+		void	setDefaultHeaders();
+		void	setContentHeaders();
 // 		void			setConnectionHeader();
 // 		void			setDateHeader();
 // 		
 // 		bool			shouldCloseConnection() const;
 // 		std::string		getCurrentHTTPDate() const;
-		std::string		getMimeType(const std::string& extension) const;
-// 		
-		std::string		generateDirectoryListing(const std::string& path) const;
-		// std::string		readFileContent(const std::string& file_path) const;
+		std::string		readFileContent(std::ifstream& file) const;
+		std::string		generateDirectoryHTML(DIR *dir);
+		std::string		generateDefaultErrorHTML();
+		std::string		generateRedirHTML();
+		bool			isValidCGI() const;
+		void			addValidIndex();
+		// 		
 };
 
+std::string		getMimeType(const std::string& extension);
+Status			findErrorStatus(const std::string& path);
+	
 template<typename T>
 std::string nb_to_string(T value);
 
