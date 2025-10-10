@@ -45,8 +45,6 @@ class HttpMessage {
 
 		std::string	getBody() const;
 		void		setBody(const std::string& body);
-		size_t		getBodySize() const;
-		void		setBodySize(size_t body_size);
 };
 
 #endif // HTTPMESSAGE_HPP

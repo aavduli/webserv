@@ -91,36 +91,40 @@ std::string MessageHandler::serializeResponse() {
 
 	// TODO: Implement response serialization
 	// Format: HTTP/1.1 200 OK\r\nHeaders\r\n\r\nBody
+
+
+	std::cout << GREEN << _response.getBody() << RESET << std::endl;
+
 	console::log("[INFO] Serializing response", MSG);
 	return "HTTP/1.1 200 OK\r\nContent-Length: 13\r\n\r\nHello, World!";
 }
 
 void	MessageHandler::setRequestContext() {
 
-	RequestContext ctx(_config);
+	RequestContext ctx;
 	
-	ctx.setLocationName(findConfigLocationName());
-	if (ctx.getLocationName().empty())
-		ctx.setLocationConfig(_config.getServer());
+	ctx._location_name = findConfigLocationName();
+	if (ctx._location_name.empty())
+		ctx._location_config = _config.getServer();
 	else
-		ctx.setLocationConfig(findLocationMatch());
+		ctx._location_config = findLocationMatch();
 
-	std::map<std::string, std::string> config = ctx.getLocationConfig();
+	std::map<std::string, std::string> config = ctx._location_config;
 	std::string root = config["root"];
 	if (root.empty())
-		ctx.setDocumentRoot(_config.getRoot());
+		ctx._document_root = _config.getRoot();
 	else
-		ctx.setDocumentRoot(root);
+		ctx._document_root = root;
 
 	std::string index = config["index"];
 	std::vector<std::string> indexes = str_to_vect(index, " ");
-	ctx.setIndexList(indexes);
+	ctx._index_list = indexes;
 
 	std::string autoindex = config["autoindex"];
 	if (autoindex == "on")
-		ctx.setAutoindexEnabled(true);
+		ctx._autoindex_enabled = true;
 	else
-		ctx.setAutoindexEnabled(false);
+		ctx._autoindex_enabled = false;
 
 	_request->ctx = ctx;
 }

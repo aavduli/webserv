@@ -83,5 +83,3 @@ size_t	HttpMessage::getHeadersSize() const {return _headers_size;}
 void	HttpMessage::setHeadersSize(size_t headers_size) {_headers_size = headers_size;}
 std::string	HttpMessage::getBody() const {return _body;}
 void	HttpMessage::setBody(const std::string& body) {_body = body;}
-size_t	HttpMessage::getBodySize() const {return _body_size;}
-void	HttpMessage::setBodySize(size_t body_size) {_body_size = body_size;}
