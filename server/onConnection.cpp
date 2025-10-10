@@ -59,7 +59,7 @@ void onConn::inspect_headers_minimally (Conn &c) {
 	const std::string headers = c.in.substr(0, c.headers_end);
 	const std::string low = to_lower(headers);
 	{
-		const std::string key = "content-lenght:";
+		const std::string key = "content-length:";
 		size_t p = low.find(key);
 		if (p != std::string::npos) {
 			p += key.size();
@@ -73,7 +73,7 @@ void onConn::inspect_headers_minimally (Conn &c) {
 		}
 	}
 	{
-		const std::string key = "transfert-encoding:";
+		const std::string key = "transfer-encoding:";
 		size_t p = low.find(key);
 		if (p != std::string::npos) {
 			size_t eol = low.find("\r\n", p);
@@ -88,7 +88,8 @@ bool onConn::chunked_complete(const std::string& body, size_t &cut_after) {
 		cut_after = body.size();
 		return true;
 	}
-	size_t p = body.find("\r\n0\r\n\r\n"); {
+	size_t p = body.find("\r\n0\r\n\r\n");
+	if (p != std::string::npos) {
 		cut_after = p + 7;
 		return true;
 	}

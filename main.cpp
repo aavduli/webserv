@@ -34,13 +34,3 @@ int main(int ac, char **av) {
 	console::closeFile();
 	return 0;
 }
-
-// int main() {
-// 	console::openFile();
-// 	console::log("coucou", SRV);
-// 	console::log("coucou", SRV);
-// 	console::log("coucou", MSG);
-// 	console::log("coucou", ERROR);
-// 	console::log("coucou", CONF);
-// 	console::closeFile();
-// }

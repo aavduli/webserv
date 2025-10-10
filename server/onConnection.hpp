@@ -15,6 +15,10 @@ struct Conn {
 	size_t body_have;
 	size_t headers_end;
 
+	std::string outBuffer;
+	size_t outSent;
+	bool hasDataToSend;
+
 	Conn();
 };
 

@@ -1,14 +1,22 @@
 #include "eventManager.hpp"
 
-eventManager::eventManager(int max_events) :  _epfd(-1), _events(NULL), _maxEvents(max_events > 0 ? max_events : 64) {
+eventManager::eventManager(int max_events) :  _epfd(-1), _events(NULL), _maxEvents(max_events > 0 ? max_events : 1024) {
 	_epfd = epoll_create1(0);
 	if (_epfd == -1) {
-		std::cerr << RED << "epoll_create1 failed" << RESET << std::endl;
+		console::log("epoll_create1 failed", std::strerror(errno), ERROR);
 		_maxEvents = 0;
 		return ;
 	}
-	_events = new epoll_event[_maxEvents];
-	std::memset(_events, 0, sizeof(epoll_event) * _maxEvents);
+	try {
+		_events = new epoll_event[_maxEvents];
+		std::memset(_events, 0, sizeof(epoll_event) * _maxEvents);
+	} catch (const std::bad_alloc& e) {
+		console::log("Failed to allocate memory for events array", ERROR);
+		close(_epfd);
+		_epfd = -1;
+		_maxEvents = 0;
+		_events = NULL;
+	}
 }
 
 eventManager::~eventManager() {
