@@ -5,10 +5,6 @@ RequestValidator::RequestValidator(const WebservConfig& config, HttpRequest* req
 	 _request = request;
 	 _last_status = E_INIT;
 	_host_header = _request->getHeaderValues("host");
-	if (_host_header.empty()) {
-		_last_status = E_EMPTY_HEADER_HOST;
-		return ;
-	}
 }
 RequestValidator::RequestValidator(const RequestValidator& rhs) : _config(rhs._config), _request(rhs._request), _last_status(rhs._last_status) {}
 RequestValidator& RequestValidator::operator=(const RequestValidator& rhs) {
@@ -46,7 +42,7 @@ bool RequestValidator::validateHost() {
 	RequestUri	uri = _request->getUri();
 	std::string config_host = _config.getHost();
 	
-	if (uri.getHost().empty()) {
+	if (uri.getHost().empty() && !_host_header.empty()) {
 		std::string tmp_host = _host_header.at(0);
 		size_t colon = tmp_host.find(":");
 		if (colon != std::string::npos)
@@ -118,7 +114,9 @@ bool RequestValidator::validateMethod() {
 // need default version MACRO?
 bool RequestValidator::validateVersion() {
 
-	const std::string& version = _request->getHttpVersion();
+	std::ostringstream oss;
+	oss << _request->getHttpVersionMajor() << "." << _request->getHttpVersionMinor();
+	const std::string& version = oss.str();
 	if (version != "1.1" && version != "1.0" && version != "0.9") {
 		_last_status = E_UNSUPPORTED_VERSION;
 		return false;
@@ -148,8 +146,7 @@ bool RequestValidator::validatePath() {
 		return false;
 	}
 	
-	std::string relative_path = extract_relative_path(path, _request->ctx._location_name);
-	std::string full_path = build_full_path(_request->ctx._document_root, relative_path);
+	std::string full_path = build_full_path(_request->ctx._document_root, path, _request->ctx._location_name);
 	std::string final_path  = canonicalize_path(full_path);
 
 	if (!is_valid_path(final_path)) {
@@ -188,7 +185,7 @@ bool RequestValidator::validateTransferEncoding() {
 	// RFC 7230: If both Transfer-Encoding and Content-Length present, ignore Content-Length
 	// This is because chunked encoding makes Content-Length meaningless
 	// The body size is determined by the chunk sizes, not by Content-Length
-	if (_request->hasHeader("content-length")) {
+	if (_request->hasHeader("Content-Length")) {
 		console::log("[WARNING] Both Transfer-Encoding and Content-Length present, ignoring Content-Length", MSG);
 		
 		// CRITICAL: Signal to handler that Content-Length must be ignored
@@ -250,7 +247,9 @@ bool RequestValidator::validateExpectHeader() {
 	if (expect_headers.empty())
 		return true;
 
-	const std::string& version = _request->getHttpVersion();
+	std::ostringstream oss;
+	oss << _request->getHttpVersionMajor() << "." << _request->getHttpVersionMinor();
+	const std::string& version = oss.str();
 	if (version == "1.0" || version == "0.9") {
 		console::log("[INFO] Ignoring Expect header for HTTP/" + version + " request (RFC compliant)", MSG);
 		return true;
