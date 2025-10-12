@@ -26,12 +26,12 @@ enum BodyType {
 class HttpMessage {
 
 	protected:
-		std::string		_version_major;
-		std::string		_version_minor;
+		std::string											_version_major;
+		std::string											_version_minor;
 		std::map<std::string, std::vector<std::string> >	_headers;
-		size_t			_headers_size;
-		std::string		_body;
-		BodyType		_body_type;
+		size_t												_headers_size;
+		std::string											_body;
+		BodyType											_body_type;
 		
 	public:
 		HttpMessage();
@@ -39,23 +39,25 @@ class HttpMessage {
 		HttpMessage& operator=(const HttpMessage& rhs);
 		virtual ~HttpMessage();
 
-		std::string	getHttpVersion() const;
-		std::string	getHttpVersionMajor() const;
-		std::string	getHttpVersionMinor() const;
-		void		setHttpVersion(std::string major, std::string minor);
+		std::string		getHttpVersionMajor() const;
+		std::string		getHttpVersionMinor() const;
+		void			setHttpVersion(std::string major, std::string minor);
 
-		bool		hasHeader(const std::string& key) const;
-		void		addHeader(const std::string& key, const std::vector<std::string>& values);
+		bool												hasHeader(const std::string& key) const;
 		std::map<std::string, std::vector<std::string> >	getHeaders() const;
-		const std::vector<std::string>&	getHeaderValues(const std::string& key) const;
-		void 		printHeaders() const;
-		size_t		getHeadersSize() const;
-		void		setHeadersSize(size_t headers_size);
+		std::string											serializeHeaders() const;
+		const std::vector<std::string>&						getHeaderValues(const std::string& key) const;
+		size_t												getHeadersSize() const;
 
+		void		addHeader(const std::string& key, const std::vector<std::string>& values);
+		void		setHeadersSize(size_t headers_size);
+		
 		std::string	getBody() const;
 		void		setBody(const std::string& body);
 		BodyType	getBodyType() const;
 		void		setBodyType(BodyType body_type);
+
+		void		printHeaders() const;
 };
 
 #endif // HTTPMESSAGE_HPP

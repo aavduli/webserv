@@ -25,7 +25,7 @@ void	print_request(HttpRequest* request) {
 	// Print request line
 	std::cout << "Method:		" << request->getMethod() << std::endl;
 	std::cout << "URI:		" << request->getUri().getRawUri() << std::endl;
-	std::cout << "HTTP Version:	" << request->getHttpVersion() << std::endl;
+	std::cout << "HTTP Version:	" << request->getHttpVersionMajor() << "." << request->getHttpVersionMinor() << std::endl;
 	std::cout << "Headers:" << std::endl;
 	request->printHeaders();
 	std::string body = request->getBody();

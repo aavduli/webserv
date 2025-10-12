@@ -55,10 +55,3 @@ size_t to_size_t(std::string str) {
 	else
 		return st;
 }
-
-template<typename T>
-std::string nb_to_string(T value) {
-	std::ostringstream stream;
-	stream << value;
-	return stream.str();
-}

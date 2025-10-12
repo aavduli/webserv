@@ -8,14 +8,6 @@ bool	move_past_char(size_t* pos, const std::string& str, const std::string del) 
 	return true;
 }
 
-std::string	lower(const std::string& str) {
-	if (str.empty())
-		return str;
-	std::string normalized = str;
-	std::transform(str.begin(), str.end(), normalized.begin(), ::tolower);
-	return normalized;
-}
-
 std::string trim_whitespaces(const std::string& str) {
 	std::string whitespaces = " \t\r\n\v\f";
 	size_t start = str.find_first_not_of(whitespaces);
