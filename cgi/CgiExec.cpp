@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/07 15:20:30 by jim               #+#    #+#             */
-/*   Updated: 2025/10/12 15:09:45 by jim              ###   ########.fr       */
+/*   Updated: 2025/10/12 15:25:57 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,7 +75,7 @@ std::string CgiExec::execute(const HttpRequest* request){
 
 	if (WEXITSTATUS(status) != 0){
 		console::log("[CGI] script execution failed", ERROR);
-		return;
+		return 0;
 	}
 
 	console::log("[CGI] script executed succesfullz", MSG);
