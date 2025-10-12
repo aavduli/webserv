@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/08 16:24:01 by jim               #+#    #+#             */
-/*   Updated: 2025/10/07 15:10:39 by jim              ###   ########.fr       */
+/*   Updated: 2025/10/12 13:59:20 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,8 +25,6 @@
 
 class WebservConfig{
 	private:
-		//ConfigParser  _parser;
-		//ConfigParser  _parser;
 		std::map<std::string, std::string> _server;
 		std::map<std::string, std::map<std::string, std::string> > _locations;
 		std::string		_configFile;
@@ -71,6 +69,10 @@ class WebservConfig{
 		//locations access
 		const std::map<std::string, std::map<std::string, std::string> > &getAllLocations() const;
 		std::map<std::string, std::string> getLocationConfig(const std::string &path) const;
+
+		//CGI support
+		std::string getCgiPath(const std::string& location_path) const;
+		std::vector<std::string> getCgiExtension(const std::string& location_path) const;
 
 		//utils method
 		void printConfig() const;

@@ -15,6 +15,7 @@
 #include <string>
 #include <sstream>
 #include "ParsingUtils.hpp"
+#include <sstream>
 
 WebservConfig::WebservConfig(): _isValid(false){}
 
@@ -283,4 +284,35 @@ bool WebservConfig::isValidHostHeader(const std::string& host) const{
 		return _utils.isValidPort(portStr);
 	}
 	return true;
+}
+
+
+//CGI Supprot
+std::string WebservConfig::getCgiPath(const std::string& location_path) const{
+	std::map<std::string, std::string> loc_config = getLocationConfig(location_path);
+	std::map<std::string, std::string>::const_iterator it = loc_config.find("cgi_path");
+	if (it != loc_config.end()){
+		return  it->second;
+	}
+	return "/usr/bin/python3";
+}
+
+std::vector<std::string> WebservConfig::getCgiExtension(const std::string& location_path) const{
+	std::vector<std::string> extension;
+	//todo accept only .py
+	std::map<std::string, std::string> loc_config = getLocationConfig(location_path);
+	std::map<std::string, std::string>::const_iterator it = loc_config.find("cgi_ext");
+
+	if (it != loc_config.end()){
+		std::string cgi_ext_str = it->second;
+		//if multiple extension parse them
+		std::istringstream iss(cgi_ext_str);
+		std::string ext;
+		while (iss>>ext){
+			if (ext == ".py"){
+				extension.push_back(ext);
+			}
+		}
+	}
+	return extension;
 }

@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/15 14:45:23 by jim               #+#    #+#             */
-/*   Updated: 2025/09/23 12:24:13 by jim              ###   ########.fr       */
+/*   Updated: 2025/10/12 14:16:11 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,10 +50,11 @@ class ConfigValidator{
 		bool validateRedirection(const std::string& redir);
 		bool validateIndex(const std::string& index);
 
-
 		bool validateMBS(const std::string& size);
 		bool validateDirectoryList(const std::string& autoindex);
+
 		bool validateCGIPath(const std::string& cgiPath);
+		bool validateCGIExtension(const std::string& extension);
 
 		bool isPortUsed(int port) const; // not sure if needed
 		bool hasRPerm(const std::string& path) const;

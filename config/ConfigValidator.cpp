@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/15 14:57:26 by jim               #+#    #+#             */
-/*   Updated: 2025/10/06 14:18:03 by jim              ###   ########.fr       */
+/*   Updated: 2025/10/12 14:22:25 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -255,8 +255,7 @@ bool ConfigValidator::validateErrorParge(const std::string& errorPageLine){
 }
 
 bool ConfigValidator::validateLocationSConfig(const LocationsConfig& config) {
-	for (std::map<std::string, LocationConfig>::const_iterator it =
-config.locations.begin();
+	for (std::map<std::string, LocationConfig>::const_iterator it = config.locations.begin();
 		it != config.locations.end(); ++it) {
 		if (!validateLocationConfig(it->second))
 			if (BLOCKINGERROR) return false;
@@ -293,6 +292,10 @@ bool ConfigValidator::validateLocationConfig(const LocationConfig& config){
 					return false;
 			}
 			if (key == "cgi_path" && !validateCGIPath(value)) {
+				if (BLOCKINGERROR)
+					return false;
+			}
+			if (key == "cgi_ext" && !validateCGIExtension(value)){
 				if (BLOCKINGERROR)
 					return false;
 			}
@@ -336,7 +339,7 @@ bool ConfigValidator::validateHTTPMethods(const std::string& methods){
 
 bool ConfigValidator::validateMBS(const std::string& size){
 	if (!isValidNumber(size)){
-		setError("Invalid client max body size format: " +size); 
+		setError("Invalid client max body size format: " +size);
 		console::log(_lastError, CONF);
 		if (BLOCKINGERROR) return false;
 	}
@@ -362,6 +365,35 @@ bool ConfigValidator::validateCGIPath(const std::string& cgiPath){
 	if (!isValidPath(cgiPath)){
 		setError("CGI path not found: " + cgiPath);
 		return false;
+	}
+	return true;
+}
+
+bool ConfigValidator::validateCGIExtension(const std::string& extensions){
+	if (extensions.empty()){
+		setError("Emtpy CGI Extensions");
+		console::log(_lastError, CONF);
+		return false;
+	}
+
+	std::istringstream iss(extensions);
+	std::string ext;
+	bool has_pyhton = false;
+
+	while(iss >> ext){
+		if (ext == ".py"){
+			has_pyhton = true;
+		} else {
+			setError("Unsupported CGI extension: " + ext + "(use '.pt')");
+			console::log(_lastError, CONF);
+			if (BLOCKINGERROR) return false;
+		}
+	}
+
+	if (!has_pyhton){
+		setError("No valid python extension found in cgi_ext");
+		console::log(_lastError, CONF);
+		if (BLOCKINGERROR) return false;
 	}
 	return true;
 }
