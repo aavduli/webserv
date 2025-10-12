@@ -21,11 +21,9 @@ Status	ResponseGenerator::getLastStatus() const {return _last_status;}
 void ResponseGenerator::generateResponse() {
 
 	setDefaultHeaders();
-	console::log("[INFO] Status at generateResponse start: " + status_msg(_last_status), MSG);
 
 	if (_request->getMethod() == "GET") {
 		addValidIndex();
-		console::log("[INFO] Effective path: " + _request->getUri().getEffectivePath(), MSG);
 		if (_last_status == E_REDIRECT_PERMANENT || _last_status == E_REDIRECT_TEMPORARY)
 			generateRedirResponse();
 		else if (is_directory(_request->getUri().getEffectivePath()))
@@ -45,9 +43,9 @@ void ResponseGenerator::generateResponse() {
 }
 
 void ResponseGenerator::generateStaticFileResponse() {
-
+	
 	const std::string& path = _request->getUri().getEffectivePath();
-	console::log("[INFO] Serving file: " + path, MSG);
+	console::log("[INFO] Serving static file: " + path, MSG);
 	
 	std::ifstream file(path.c_str());
 	if (!file.is_open()){
@@ -61,6 +59,7 @@ void ResponseGenerator::generateStaticFileResponse() {
 }
 
 void ResponseGenerator::generateDirectoryResponse() {
+
 	console::log("[INFO] Generating directory listing response", MSG);
 	
 	if (!_request->ctx._autoindex_enabled) {
@@ -76,8 +75,7 @@ void ResponseGenerator::generateDirectoryResponse() {
 		_last_status = findErrorStatus(path);
 		return generateErrorResponse();
 	}
-
-	_response->setBody(generateDirectoryHTML(dir));
+	_response->setBody(generateDirectoryHTML());
 	_response->setBodyType(B_HTML);
 	_response->setStatus(E_OK);
 	closedir(dir);
@@ -85,7 +83,6 @@ void ResponseGenerator::generateDirectoryResponse() {
 
 void ResponseGenerator::generateRedirResponse() {
 
-	console::log("[INFO] Generating redirect response", MSG);
 	const std::string& destination = _request->getUri().getRedirDestination();
 	
 	_response->setStatus(_last_status);
@@ -95,8 +92,6 @@ void ResponseGenerator::generateRedirResponse() {
 }
 
 void ResponseGenerator::generateErrorResponse() {
-
-	console::log("[INFO] Generating error response with status: " + status_msg(getLastStatus()), MSG);
 
 	_response->setStatus(_last_status);
 	std::string error_page_path = _config.getErrorPage(_last_status);
@@ -153,8 +148,6 @@ void ResponseGenerator::setDefaultHeaders() {
 
 void ResponseGenerator::setContentHeaders() {
 
-	console::log("[INFO] Setting content headers", MSG);
-
 	if (_response->getBodyType() == B_FILE) {
 		std::string path = _request->getUri().getEffectivePath();
 		std::string extension = get_file_extension(path);
@@ -170,8 +163,13 @@ void ResponseGenerator::setContentHeaders() {
 
 	if (_response->getBodyType() == B_EMPTY)
 		_response->addHeader("Content-Length", str_to_vect("0", ""));
-	else
-		_response->addHeader("Content-Length", str_to_vect(nb_to_string(_response->getBody().size()), ""));
+	else {
+		std::string body_size = nb_to_string(_response->getBody().size());
+		_response->addHeader("Content-Length", str_to_vect(body_size, ""));
+	}
+
+	console::log("[DEBUG] Response body size: " + nb_to_string(_response->getBody().size()), MSG);
+	console::log("[DEBUG] Setting Content-Length: " + nb_to_string(_response->getBody().size()), MSG);
 }
 
 // void ResponseGenerator::setConnectionHeader() {
@@ -197,7 +195,7 @@ void ResponseGenerator::setContentHeaders() {
 
 // bool ResponseGenerator::shouldCloseConnection() const {
 // 	// Check if client requested connection close
-// 	if (getRequest()->hasHeader("connection")) {
+// 	if (getRequest()->hasHeader("Connection")) {
 // 		const std::vector<std::string>& conn_headers = getRequest()->getHeaderValues("connection");
 // 		for (size_t i = 0; i < conn_headers.size(); i++) {
 // 			if (conn_headers[i] == "close") {
@@ -234,49 +232,65 @@ std::string	ResponseGenerator::readFileContent(std::ifstream& file) const {
 	return file_contents;
 }
 
-std::string	ResponseGenerator::generateDirectoryHTML(DIR *dir) {
+std::string	ResponseGenerator::generateDirectoryHTML() {
 
-	// 	Read directory contents
-	// 	Generate HTML listing with links to folders
-	// 	Proper sorting and formatting
-	// 	Handle permissions
-
-	// 	Serve a directory listing (HTML page showing files and subdirectories)
-	// 	Generate an HTML response with clickable links to files/folders
-
-	(void)dir;
-	const std::string& directory_path = _request->getUri().getEffectivePath();
-	
-	// TODO: Implement directory listing HTML generation
-	console::log("[INFO] Generating directory HTML for: " + directory_path, MSG);
-	
+	const std::string& path = _request->getUri().getEffectivePath();
+	DIR* dir = opendir(path.c_str());
+	if (!dir)
+		return "<html><body><h1>Error: Cannot open directory</h1></body></html>";
+		
+	struct dirent *en;
 	std::stringstream html;
 	html << "<!DOCTYPE html>\n";
-	html << "<html><head><title>Directory Listing</title></head>\n";
-	html << "<body><h1>Directory Listing</h1>\n";
-	html << "<p>Directory: " << directory_path << "</p>\n";
-	html << "<!-- TODO: Add actual directory contents -->\n";
+	html << "<html>\n<head>\n";
+	html << "<title>Index of " << path << "</title>\n";
+	html << "<body><h1>Index of " << path << "</h1>\n";
+
+	// Parent directory link (if not root)
+	std::string current_path = _request->getUri().getEffectivePath();
+	if (current_path != "/" && current_path.length() > 1) {
+
+		// Remove trailing slash if present
+		if (current_path[current_path.length() - 1] == '/') {
+			current_path = current_path.substr(0, current_path.size() - 1);
+		}
+
+		// Find parent directory
+		std::string parent_path;
+		size_t last_slash = current_path.find_last_of('/');
+		if (last_slash == 0)
+			parent_path = "/";
+		else
+			parent_path = current_path.substr(0, last_slash);
+		html << "<p><a href=\"" << parent_path << "\">../</a>\n</p>";
+	}
+
+	while ((en = readdir(dir)) != NULL) {
+		std::string name = en->d_name;
+		if (name == "." || name == "..")
+			continue;
+		std::string full_path = build_full_path(path, name, "");
+		html << "<p><a href=\"" << full_path << "\">" << name << "</a>\n</p>";
+	}
+	closedir(dir); //close all directory
 	html << "</body></html>\n";
-	
 	return html.str();
 }
 
 std::string	ResponseGenerator::generateDefaultErrorHTML() {
 
-	console::log("[INFO] Generating default error HTML for status: " + _response->getStatus(), MSG);
-	
 	std::stringstream html;
 	html << "<!DOCTYPE html>\n";
-	html << "<html><head><title>Error</title></head>\n";
-	html << "<body><h1>Error " << status_msg(_response->getStatus()) << "</h1>\n";
+	html << "<html><head><title>" << getLastStatus() << " - " << status_msg(_response->getStatus()) << "</title></head>\n";
+	html << "<body><h1>" << getLastStatus() << " - " << status_msg(_response->getStatus()) << "</h1>\n";
+	html << "<p>Very sad.</p>";
+	html << "<p><a href=\"/\">Return to homepage</a></p>\n";
 	html << "</body></html>\n";
 	return html.str();
 }
 
 std::string	ResponseGenerator::generateRedirHTML() {
 
-	console::log("[INFO] Generating redirection info HTML for status: " + _response->getStatus(), MSG);
-	
 	std::stringstream html;
 	html << "<!DOCTYPE html>\n";
 	html << "<html><head><title>Redirected</title></head>\n";
@@ -288,14 +302,14 @@ std::string	ResponseGenerator::generateRedirHTML() {
 }
 
 void	ResponseGenerator::addValidIndex() {
-
+	
 	std::string path = _request->getUri().getEffectivePath();
 	
 	if (is_directory(path) && !_request->ctx._index_list.empty()) {
 		const std::vector<std::string>& indexes = _request->ctx._index_list;
 		std::vector<std::string>::const_iterator it;
 		for (it = indexes.begin(); it != indexes.end(); it++) {
-			std::string full_index_path = build_full_path(path, *it);
+			std::string full_index_path = build_full_path(path, *it, _request->ctx._location_name);
 			if (is_valid_file_path(full_index_path)) {
 				RequestUri uri(_request->getUri());
 				uri.setEffectivePath(full_index_path);
@@ -432,11 +446,4 @@ std::string getMimeType(const std::string& extension) {
 
 	// Default for unknown extensions
 	return "application/octet-stream";
-}
-
-template<typename T>
-std::string nb_to_string(T value) {
-	std::ostringstream stream;
-	stream << value;
-	return stream.str();
 }

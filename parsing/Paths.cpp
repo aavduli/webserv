@@ -35,42 +35,26 @@ std::string get_file_extension(const std::string& path) {
 		return "";
 	
 	std::string extension = path.substr(dot + 1);
-	return (lower(extension));
+	return (extension);
 }
 
-std::string extract_relative_path(const std::string& full_path, const std::string& location_prefix) {
-	
-	if (location_prefix.empty() || location_prefix == "/")
-		return full_path;
-	
-	if (full_path.find(location_prefix) == 0) {
-		const std::string& relative = full_path.substr(location_prefix.length());
-		return relative.empty() ? "/" : relative;
-	}
-	return full_path;
-}
+std::string build_full_path(const std::string& start, const std::string& end, const std::string& location_prefix) {
 
-std::string build_full_path(const std::string& begin, const std::string& end) {
-	
-	std::string full_path = begin;
-	
-	if (full_path[full_path.length() - 1] != '/' && end[0] != '/')
-		full_path += "/";
+	// remove location prefix
+	std::string relative_path = end;
+	if (!location_prefix.empty() && end.find(location_prefix) == 0)
+		relative_path = end.substr(location_prefix.length());
 
-	if (end != "/")
-		full_path += end;
+	// ensure terminating /
+	std::string root = start;
+	if (!root.empty() && root[root.length() - 1] != '/')
+		root += "/";
 
-	return full_path;
-}
+	// remove leading /
+	if (!relative_path.empty() && relative_path[0] == '/')
+		relative_path = relative_path.substr(1);
 
-std::string resolve_index_file(const std::string& directory_path, const std::string& index_file) {
-
-	std::string resolved = directory_path;
-	
-	if (resolved[resolved.length() - 1] != '/')
-		resolved += "/";
-	resolved += index_file;
-	return resolved;
+	return root + relative_path;
 }
 
 // traversal = use of ../ sequences (or other patterns) to escape document root

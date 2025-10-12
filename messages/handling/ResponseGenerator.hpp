@@ -38,7 +38,7 @@ class ResponseGenerator {
 // 		bool			shouldCloseConnection() const;
 // 		std::string		getCurrentHTTPDate() const;
 		std::string		readFileContent(std::ifstream& file) const;
-		std::string		generateDirectoryHTML(DIR *dir);
+		std::string		generateDirectoryHTML();
 		std::string		generateDefaultErrorHTML();
 		std::string		generateRedirHTML();
 		bool			isValidCGI() const;
@@ -48,8 +48,5 @@ class ResponseGenerator {
 
 std::string		getMimeType(const std::string& extension);
 Status			findErrorStatus(const std::string& path);
-	
-template<typename T>
-std::string nb_to_string(T value);
 
 #endif // RESPONSEGENERATOR_HPP
