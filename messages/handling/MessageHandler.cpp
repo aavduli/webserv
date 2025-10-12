@@ -12,35 +12,32 @@ MessageHandler& MessageHandler::operator=(const MessageHandler& rhs) {
 }
 MessageHandler::~MessageHandler() {}
 
-Status				MessageHandler::getLastStatus() const {return _last_status;}
-void				MessageHandler::setLastStatus(Status status) {_last_status = status;}
+Status		MessageHandler::getLastStatus() const {return _last_status;}
+void		MessageHandler::setLastStatus(Status status) {_last_status = status;}
 
-// handleMessage() → parseRequest() → validateRequest() → processRequest() → generateResponse()
 // TODO should give a way for server to get Status
 std::string	handle_messages(const WebservConfig& config, const std::string &raw_request) {
 
 	console::log("=============[NEW REQUEST]=============", MSG);
 
-	HttpRequest		request;
-	std::string		response;
-	MessageHandler	handler(config, &request);
+	HttpRequest			request;
+	MessageHandler		handler(config, &request);
 
 	if (raw_request.empty()) {
 		console::log("[ERROR] Empty request", MSG);
 		handler.setLastStatus(E_BAD_REQUEST);
 	}
 	else if (handler.parseRequest(raw_request)) {
-		// only set context if parsing OK
 		handler.setRequestContext();
 		handler.validateRequest();
 	}
-	if (!handler.generateResponse()) {
-		console::log("[ERROR] Response generation failed: " + status_msg(handler.getLastStatus()), MSG);
-		// critical error
-		return response;
-	}
-	response = handler.serializeResponse();
-	return response;
+	handler.generateResponse();
+
+	std::string complete_response = handler.serializeResponse();
+	console::log("[DEBUG] Complete response length: " + nb_to_string(complete_response.length()), MSG);
+	console::log("[DEBUG] Response preview: " + complete_response.substr(0, 200) + "...", MSG);
+
+	return handler.serializeResponse();
 }
 
 bool	MessageHandler::parseRequest(const std::string& raw_request) {
@@ -77,26 +74,18 @@ bool MessageHandler::generateResponse() {
 	return true;
 }
 
-std::string MessageHandler::serializeResponse() {
+std::string	MessageHandler::serializeResponse() {
 
-	// if (!_response) {
-	// 	console::log("[ERROR] No response to serialize", MSG);
-	// 	return "";
-	// }
-	
-	// HTTP/1.1 status line
-	// All headers with proper CRLF
-	// Empty line
-	// Body content
+	int status_code = _response.getStatus();
+	const std::string& reason_phrase = status_msg(_response.getStatus());
+	const std::string& body = _response.getBody();
 
-	// TODO: Implement response serialization
-	// Format: HTTP/1.1 200 OK\r\nHeaders\r\n\r\nBody
-
-
-	// std::cout << GREEN << _response.getBody() << RESET << std::endl;
-
-	console::log("[INFO] Serializing response", MSG);
-	return "HTTP/1.1 200 OK\r\nContent-Length: 13\r\n\r\nHello, World!";
+	std::ostringstream oss;
+	oss << "HTTP/1.1 " << status_code << " " << reason_phrase << "\r\n";
+	oss << _response.serializeHeaders() << "\r\n";
+	oss << "\r\n";
+	oss << body;
+	return oss.str();
 }
 
 void	MessageHandler::setRequestContext() {

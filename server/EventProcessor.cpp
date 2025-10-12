@@ -1,20 +1,20 @@
 #include "EventProcessor.hpp"
-
-std::string build_http_response(
-    int status_code,
-    const std::string& status_text,
-    const std::string& body,
-    const std::string& content_type = "text/plain"
-) {
-    std::ostringstream oss;
-    oss << "HTTP/1.1 " << status_code << " " << status_text << "\r\n"
-        << "Content-Type: " << content_type << "\r\n"
-        << "Content-Length: " << body.size() << "\r\n"
-        << "Connection: close\r\n"
-        << "\r\n"
-        << body;
-    return oss.str();
-}
+// 
+// std::string build_http_response(
+//     int status_code,
+//     const std::string& status_text,
+//     const std::string& body,
+//     const std::string& content_type = "text/plain"
+// ) {
+//     std::ostringstream oss;
+//     oss << "HTTP/1.1 " << status_code << " " << status_text << "\r\n"
+//         << "Content-Type: " << content_type << "\r\n"
+//         << "Content-Length: " << body.size() << "\r\n"
+//         << "Connection: close\r\n"
+//         << "\r\n"
+//         << body;
+//     return oss.str();
+// }
 
 
 // 1. Generate 100KB response
@@ -192,8 +192,8 @@ void eventProcessor::handleClientData(int clientFd, const WebservConfig& config)
 	size_t requestEndPos;
 	if (onConn::update_and_ready(connection, requestEndPos)) {
 		std::string completeRequest = connection.in.substr(0, requestEndPos);
-		std::string response = handle_messages(config, completeRequest);
-		// std::string response = build_http_response(200, "OK", "IT NOT WORK");
+		const std::string& response = handle_messages(config, completeRequest);
+		// std::string response = build_http_response(200, "OK", response_str);
 		sendResponse(clientFd, response);
 		connection.in.erase(0, requestEndPos);
 	}

@@ -28,16 +28,16 @@ class MessageHandler {
 		MessageHandler& operator=(const MessageHandler& rhs);
 		virtual ~MessageHandler();
 		
-		bool			parseRequest(const std::string& raw_request);
-		void			setRequestContext();
-		bool			validateRequest();
-		bool			generateResponse();
-		std::string		serializeResponse();
+		bool				parseRequest(const std::string& raw_request);
+		void				setRequestContext();
+		bool				validateRequest();
+		bool				generateResponse();
+		std::string			serializeResponse();
 
 		Status	getLastStatus() const;
 		void	setLastStatus(Status status);
 };
 
-std::string	handle_messages(const WebservConfig& config, const std::string &raw_request);
+std::string	handle_messages(const WebservConfig& config, const std::string& raw_request);
 
 #endif //MESSAGEHANDLER_HPP
