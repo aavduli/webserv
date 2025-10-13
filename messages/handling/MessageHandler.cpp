@@ -53,9 +53,9 @@ bool	MessageHandler::parseRequest(const std::string& raw_request) {
 }
 
 bool MessageHandler::validateRequest() {
-	
+
 	RequestValidator	validator(_config, _request);
-	
+
 	if (!validator.validateRequest()) {
 		_last_status = validator.getLastStatus();
 		return false;
@@ -65,9 +65,9 @@ bool MessageHandler::validateRequest() {
 }
 
 bool MessageHandler::generateResponse() {
-	
+
 	ResponseGenerator	generator(_config, _request, &_response);
-	
+
 	generator.setLastStatus(_last_status);
 	generator.generateResponse();
 	_last_status = generator.getLastStatus();
@@ -76,7 +76,14 @@ bool MessageHandler::generateResponse() {
 
 std::string	MessageHandler::serializeResponse() {
 
-	int status_code = _response.getStatus();
+	//modification for testing
+	//int status_code = _response.getStatus();
+	int status_code;
+	if (_response.getStatus() == E_OK) status_code = 200;
+	else if (_response.getStatus() == E_NOT_FOUND) status_code = 404;
+	else if (_response.getStatus() == E_INTERNAL_SERVER_ERROR) status_code = 500;
+	else status_code = 200; // default
+
 	const std::string& reason_phrase = status_msg(_response.getStatus());
 	const std::string& body = _response.getBody();
 
@@ -91,7 +98,7 @@ std::string	MessageHandler::serializeResponse() {
 void	MessageHandler::setRequestContext() {
 
 	RequestContext ctx;
-	
+
 	ctx._location_name = findConfigLocationName();
 	if (ctx._location_name.empty())
 		ctx._location_config = _config.getServer();
@@ -119,11 +126,11 @@ void	MessageHandler::setRequestContext() {
 }
 
 std::string	MessageHandler::findConfigLocationName() {
-	
+
 	std::string path = _request->getUri().getPath();
 	if (_config.hasLocation(path))
 		return path;
-	
+
 	std::string match = "";
 	std::string test_path = path;
 	while (!test_path.empty()) {
@@ -151,11 +158,11 @@ std::string	MessageHandler::findConfigLocationName() {
 
 // Uses longest prefix matching
 std::map<std::string, std::string>	MessageHandler::findLocationMatch() {
-	
+
 	std::string path = _request->getUri().getPath();
 	if (_config.hasLocation(path))
 		return _config.getLocationConfig(path);
-	
+
 	std::string match = "";
 	std::string test_path = path;
 	std::map<std::string, std::string> best_config;

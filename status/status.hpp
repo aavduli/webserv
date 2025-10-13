@@ -3,9 +3,9 @@
 
 #include <string>
 
-/* 
+/*
 ERROR HANDLING
-1. Syscall and other possible errors (invalid input, unexpected EOF) 
+1. Syscall and other possible errors (invalid input, unexpected EOF)
 	-> return error codes and stop exec if needed + error enum list and related msg
 2. Logical/program specific errors -> prevention with conditions, argument validation, flags
 3. Improbable/exceptional errors (no more space) = exceptions + try blocks
@@ -32,6 +32,7 @@ enum Status {
 	E_ENTITY_TOO_LARGE = 413,
 	E_UNSUPPORTED_MEDIA_TYPE = 415,
 	E_EXPECTATION_FAILED = 417,
+	E_INTERNAL_SERVER_ERROR = 500,
 	E_UNSUPPORTED_VERSION = 505,
 	E_INVALID_STATUS,
 	E_INVALID_HOST,
@@ -47,7 +48,6 @@ enum Status {
 	E_TOO_MANY_HEADERS,
 	E_INVALID_CONNECTION,
 	E_INVALID_REDIRECT,
-	E_INTERNAL_SERVER_ERROR
 
 };
 
