@@ -196,17 +196,16 @@ std::string	ResponseGenerator::generateDirectoryHTML() {
 	std::stringstream html;
 	html << "<!DOCTYPE html>\n";
 	html << "<html>\n<head>\n";
-	html << "<title>Index of " << path << "</title>\n";
-	html << "<body><h1>Index of " << path << "</h1>\n";
+	html << "<title>Index of " << _request->ctx._location_name << "</title>\n";
+	html << "<body><h1>Index of " << _request->ctx._location_name << "</h1>\n";
 
 	// Parent directory link (if not root)
-	std::string current_path = _request->getUri().getEffectivePath();
+	std::string current_path = _request->getUri().getPath();	// Use URL path, not filesystem path
 	if (current_path != "/" && current_path.length() > 1) {
 
 		// Remove trailing slash if present
-		if (current_path[current_path.length() - 1] == '/') {
+		if (current_path[current_path.length() - 1] == '/')
 			current_path = current_path.substr(0, current_path.size() - 1);
-		}
 
 		// Find parent directory
 		std::string parent_path;
@@ -222,10 +221,22 @@ std::string	ResponseGenerator::generateDirectoryHTML() {
 		std::string name = en->d_name;
 		if (name == "." || name == "..")
 			continue;
-		std::string full_path = build_full_path(path, name, "");
-		html << "<p><a href=\"" << full_path << "\">" << name << "</a>\n</p>";
+
+		// Build URL-relative path, not filesystem path
+		std::string current_loc = _request->getUri().getPath();
+		std::string file_path;
+		if (current_loc == "/")
+			file_path = "/" + name;
+		else {
+			// check trailing slash
+			if (current_loc[current_loc.length() - 1] == '/')
+				file_path = current_loc + name;
+			else
+				file_path = current_loc + "/" + name;
+		}
+		html << "<p><a href=\"" << file_path << "\">" << name << "</a>\n</p>";
 	}
-	closedir(dir); //close all directory
+	closedir(dir);
 	html << "</body></html>\n";
 	return html.str();
 }
