@@ -4,9 +4,9 @@ MessageHandler::MessageHandler(const WebservConfig& config, HttpRequest* request
 MessageHandler::MessageHandler(const MessageHandler& rhs) : _config(rhs._config), _request(rhs._request), _response(rhs._response), _last_status(rhs._last_status) {}
 MessageHandler& MessageHandler::operator=(const MessageHandler& rhs) {
 	if (this != &rhs) {
-		_last_status = rhs._last_status;
 		_request = rhs._request;
 		_response = rhs._response;
+		_last_status = rhs._last_status;
 	}
 	return *this;
 }
@@ -15,7 +15,6 @@ MessageHandler::~MessageHandler() {}
 Status		MessageHandler::getLastStatus() const {return _last_status;}
 void		MessageHandler::setLastStatus(Status status) {_last_status = status;}
 
-// TODO should give a way for server to get Status
 std::string	handle_messages(const WebservConfig& config, const std::string &raw_request) {
 
 	console::log("=============[NEW REQUEST]=============", MSG);
@@ -24,44 +23,43 @@ std::string	handle_messages(const WebservConfig& config, const std::string &raw_
 	MessageHandler		handler(config, &request);
 
 	if (raw_request.empty()) {
-		console::log("[ERROR] Empty request", MSG);
+		console::log("[ERROR][HANDLE MESSAGES] Empty request", MSG);
 		handler.setLastStatus(E_BAD_REQUEST);
 	}
-	else if (handler.parseRequest(raw_request)) {
-		handler.setRequestContext();
+	else if (handler.parseRequest(raw_request))
 		handler.validateRequest();
-	}
 	handler.generateResponse();
 
 	std::string complete_response = handler.serializeResponse();
-	console::log("[DEBUG] Complete response length: " + nb_to_string(complete_response.length()), MSG);
-	console::log("[DEBUG] Response preview: " + complete_response.substr(0, 200) + "...", MSG);
+	console::log("[DEBUG] Response length: " + nb_to_string(complete_response.length()), MSG);
 
-	return handler.serializeResponse();
+	return complete_response;
 }
 
 bool	MessageHandler::parseRequest(const std::string& raw_request) {
 
-	RequestParser	parser(_request, raw_request);
+	RequestParser	parser(_config, _request, raw_request);
 
 	if (!parser.parseRequest()) {
 		_last_status = parser.getLastStatus();
 		return false;
 	}
+	parser.setRequestContext();
 	_last_status = E_OK;
 	return true;
 }
 
 bool MessageHandler::validateRequest() {
 
+void MessageHandler::validateRequest() {
+
 	RequestValidator	validator(_config, _request);
 
 	if (!validator.validateRequest()) {
+
+	if (!validator.validateRequest())
 		_last_status = validator.getLastStatus();
-		return false;
-	}
 	_last_status = E_OK;
-	return true;
 }
 
 bool MessageHandler::generateResponse() {
@@ -69,9 +67,11 @@ bool MessageHandler::generateResponse() {
 	ResponseGenerator	generator(_config, _request, &_response);
 
 	generator.setLastStatus(_last_status);
+void MessageHandler::generateResponse() {
+
+	ResponseGenerator	generator(_config, _request, &_response, _last_status);
 	generator.generateResponse();
 	_last_status = generator.getLastStatus();
-	return true;
 }
 
 std::string	MessageHandler::serializeResponse() {
@@ -88,8 +88,8 @@ std::string	MessageHandler::serializeResponse() {
 	const std::string& body = _response.getBody();
 
 	std::ostringstream oss;
-	oss << "HTTP/1.1 " << status_code << " " << reason_phrase << "\r\n";
-	oss << _response.serializeHeaders() << "\r\n";
+	oss << "HTTP/1.0 " << status_code << " " << reason_phrase << "\r\n";
+	oss << _response.serializeHeaders();
 	oss << "\r\n";
 	oss << body;
 	return oss.str();

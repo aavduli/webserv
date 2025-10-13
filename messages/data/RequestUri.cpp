@@ -37,7 +37,7 @@ bool	RequestUri::parse() {
 	// decode_uri();
 
 	if (_raw_uri.empty())
-		_raw_uri = "/";		// If the abs_path is not present in the URL, it MUST be given as "/"
+		_raw_uri = "/";
 	else if (isAbsoluteUri(_raw_uri))
 		*this = parseAbsoluteUri(_raw_uri);
 	else if (_raw_uri[0] == '/')
@@ -125,8 +125,6 @@ RequestUri	RequestUri::parseAbsolutePath(const std::string& raw) {
 	uri.parseUriPath(raw);
 	return uri;
 }
-
-// UTILS
 
 std::string RequestUri::extractComponent(size_t* pos, const std::string& str, const std::string& del) {
 

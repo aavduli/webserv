@@ -4,8 +4,8 @@
 #include <ctime>
 #include <sstream>
 
-ResponseGenerator::ResponseGenerator(const WebservConfig& config, HttpRequest* request, HttpResponse* response) : _config(config), _request(request), _response(response), _done(false) {}
-ResponseGenerator::ResponseGenerator(const ResponseGenerator& rhs) : _config(rhs._config), _request(rhs._request), _response(rhs._response), _done(rhs._done) {}
+ResponseGenerator::ResponseGenerator(const WebservConfig& config, HttpRequest* request, HttpResponse* response, Status status) : _config(config), _request(request), _response(response), _last_status(status), _done(false) {}
+ResponseGenerator::ResponseGenerator(const ResponseGenerator& rhs) : _config(rhs._config), _request(rhs._request), _response(rhs._response), _last_status(rhs._last_status), _done(rhs._done) {}
 ResponseGenerator& ResponseGenerator::operator=(const ResponseGenerator& rhs) {
 	if (this != &rhs) {
 		_request = rhs._request;
@@ -16,7 +16,6 @@ ResponseGenerator& ResponseGenerator::operator=(const ResponseGenerator& rhs) {
 	return *this;
 }
 ResponseGenerator::~ResponseGenerator() {}
-void	ResponseGenerator::setLastStatus(Status last_status) {_last_status = last_status;}
 Status	ResponseGenerator::getLastStatus() const {return _last_status;}
 
 void ResponseGenerator::generateResponse() {
@@ -30,7 +29,7 @@ void ResponseGenerator::generateResponse() {
 		else if (is_directory(_request->getUri().getEffectivePath()))
 			generateDirectoryResponse();	// need HTML generation
 		else if (isValidCGI())
-			generateCGIResponse();	// Jimmy
+			generateCGIResponse();
 		else
 			generateStaticFileResponse();
 	}
@@ -50,7 +49,7 @@ void ResponseGenerator::generateStaticFileResponse() {
 
 	std::ifstream file(path.c_str());
 	if (!file.is_open()){
-		console::log("[ERROR] Failed to read: " + path, MSG);
+		console::log("[ERROR][GENERATE RESPONSE] Failed to read: " + path, MSG);
 		_last_status = findErrorStatus(path);
 		return generateErrorResponse();
 	}
@@ -64,7 +63,7 @@ void ResponseGenerator::generateDirectoryResponse() {
 	console::log("[INFO] Generating directory listing response", MSG);
 
 	if (!_request->ctx._autoindex_enabled) {
-		console::log("[ERROR] Directory access forbidden", MSG);
+		console::log("[ERROR][GENERATE RESPONSE] Directory access forbidden", MSG);
 		_last_status = E_FORBIDDEN;
 		return generateErrorResponse();
 	}
@@ -72,7 +71,7 @@ void ResponseGenerator::generateDirectoryResponse() {
 	const std::string& path = _request->getUri().getEffectivePath();
 	DIR* dir = opendir(path.c_str());
 	if (!dir) {
-		console::log("[ERROR] Couldn't open directory", MSG);
+		console::log("[ERROR][GENERATE RESPONSE] Couldn't open directory", MSG);
 		_last_status = findErrorStatus(path);
 		return generateErrorResponse();
 	}
@@ -104,7 +103,7 @@ void ResponseGenerator::generateErrorResponse() {
 			_response->setBodyType(B_FILE);
 			return ;
 		}
-		console::log("[ERROR] Failed to read custom error path: " + error_page_path, MSG);
+		console::log("[ERROR][GENERATE RESPONSE] Failed to read custom error path: " + error_page_path, MSG);
 	}
 	_response->setBody(generateDefaultErrorHTML());
 	_response->setBodyType(B_HTML);
@@ -114,6 +113,16 @@ void ResponseGenerator::generateCGIResponse() {
 
 	console::log("[INFO] Generating CGI response", MSG);
 
+	// Execute CGI script
+	// Parse CGI output headers
+	// Handle CGI errors
+	// Set appropriate response
+
+	// TODO: Execute CGI script
+	// TODO: Parse CGI output
+	// TODO: Set headers from CGI response
+
+	_response->setBodyType(B_CGI);	// CGI sets its own Content-Type
 	const std::string& script_path = _request->getUri().getEffectivePath();
 	std::string python_path = _config.getCgiPath(_request->ctx._location_name);
 
@@ -174,18 +183,19 @@ void ResponseGenerator::setDefaultHeaders() {
 	Only close if client sends Connection: close or error occurs
 	Must handle pipelined requests
 
+	Connection
 	Accurate Content-Length for all responses
 	Last-Modified headers for static files
 	Server identification header
 	Proper Date headers
 	*/
 
-	console::log("[INFO] Setting default HTTP/1.1 headers", MSG);
+	console::log("[INFO] Setting default HTTP/1.0 headers", MSG);
 
-	// TODO: Set HTTP version to 1.1
-	// TODO: Add required headers
 	// setDateHeader();
-	// setConnectionHeader();
+	// std::string date = getCurrentHTTPDate();
+
+	_response->addHeader("Connection", str_to_vect("close", ""));
 }
 
 void ResponseGenerator::setContentHeaders() {
@@ -253,6 +263,8 @@ void ResponseGenerator::setContentHeaders() {
 // 	return false;
 // }
 //
+}
+
 // std::string ResponseGenerator::getCurrentHTTPDate() const {
 // 	time_t now = time(0);
 // 	struct tm* gmt = gmtime(&now);
@@ -285,17 +297,16 @@ std::string	ResponseGenerator::generateDirectoryHTML() {
 	std::stringstream html;
 	html << "<!DOCTYPE html>\n";
 	html << "<html>\n<head>\n";
-	html << "<title>Index of " << path << "</title>\n";
-	html << "<body><h1>Index of " << path << "</h1>\n";
+	html << "<title>Index of " << _request->ctx._location_name << "</title></head>\n";
+	html << "<body><h1>Index of " << _request->ctx._location_name << "</h1>\n";
 
 	// Parent directory link (if not root)
-	std::string current_path = _request->getUri().getEffectivePath();
+	std::string current_path = _request->getUri().getPath();	// Use URL path, not filesystem path
 	if (current_path != "/" && current_path.length() > 1) {
 
 		// Remove trailing slash if present
-		if (current_path[current_path.length() - 1] == '/') {
+		if (current_path[current_path.length() - 1] == '/')
 			current_path = current_path.substr(0, current_path.size() - 1);
-		}
 
 		// Find parent directory
 		std::string parent_path;
@@ -311,11 +322,23 @@ std::string	ResponseGenerator::generateDirectoryHTML() {
 		std::string name = en->d_name;
 		if (name == "." || name == "..")
 			continue;
-		std::string full_path = build_full_path(path, name, "");
-		html << "<p><a href=\"" << full_path << "\">" << name << "</a>\n</p>";
+
+		// Build URL-relative path, not filesystem path
+		std::string current_loc = _request->getUri().getPath();
+		std::string file_path;
+		if (current_loc == "/")
+			file_path = "/" + name;
+		else {
+			// check trailing slash
+			if (current_loc[current_loc.length() - 1] == '/')
+				file_path = current_loc + name;
+			else
+				file_path = current_loc + "/" + name;
+		}
+		html << "<p><a href=\"" << file_path << "\">" << name << "</a>\n</p>";
 	}
-	closedir(dir); //close all directory
-	html << "</body></html>\n";
+	closedir(dir);
+	html << "</body></html>";
 	return html.str();
 }
 
@@ -327,7 +350,7 @@ std::string	ResponseGenerator::generateDefaultErrorHTML() {
 	html << "<body><h1>" << getLastStatus() << " - " << status_msg(_response->getStatus()) << "</h1>\n";
 	html << "<p>Very sad.</p>";
 	html << "<p><a href=\"/\">Return to homepage</a></p>\n";
-	html << "</body></html>\n";
+	html << "</body></html>";
 	return html.str();
 }
 
@@ -339,7 +362,7 @@ std::string	ResponseGenerator::generateRedirHTML() {
 	html << "<body>\n";
 	html << "<h1>" << (_last_status == E_REDIRECT_PERMANENT ? "Moved Permanently" : "Moved Temporarily") << "</h1>\n";
 	html << "<p>The document has moved <a href=\"" << _request->getUri().getRedirDestination() << "\">here</a>.</p>\n";
-	html << "</body></html>\n";
+	html << "</body></html>";
 	return html.str();
 }
 

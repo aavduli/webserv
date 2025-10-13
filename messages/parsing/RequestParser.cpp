@@ -1,7 +1,7 @@
 #include "RequestParser.hpp"
 
-RequestParser::RequestParser(HttpRequest* request, const std::string& raw_request) : _request(request), _raw_request(raw_request), _current_pos(0), _last_status(E_INIT) {}
-RequestParser::RequestParser(const RequestParser& rhs) : _request(rhs._request), _raw_request(rhs._raw_request), _current_pos(rhs._current_pos), _last_status(rhs._last_status) {}
+RequestParser::RequestParser(const WebservConfig& config, HttpRequest* request, const std::string& raw_request) : _config(config), _request(request), _raw_request(raw_request), _current_pos(0), _last_status(E_INIT) {}
+RequestParser::RequestParser(const RequestParser& rhs) : _config(rhs._config), _request(rhs._request), _raw_request(rhs._raw_request), _current_pos(rhs._current_pos), _last_status(rhs._last_status) {}
 RequestParser& RequestParser::operator=(const RequestParser& rhs) {
 	if (this != &rhs) {
 		_request = rhs._request;
@@ -12,20 +12,21 @@ RequestParser& RequestParser::operator=(const RequestParser& rhs) {
 	return *this;
 }
 RequestParser::~RequestParser() {}
+
 Status RequestParser::getLastStatus() const {return _last_status;}
 
 bool RequestParser::parseRequest() {
 
 	if (!parseRequestLine()) {
-		console::log("[ERROR] Failed to parse request line", MSG);
+		console::log("[DEBUG] Failed to parse request line", MSG);
 		return false;
 	}
 	if (!parseHeaders()) {
-		console::log("[ERROR] Failed to parse headers", MSG);
+		console::log("[DEBUG] Failed to parse headers", MSG);
 		return false;
 	}
 	if (!parseBody()) {
-		console::log("[ERROR] Failed to parse body", MSG);
+		console::log("[DEBUG] Failed to parse body", MSG);
 		return false;
 	}
 	return true;
@@ -35,7 +36,8 @@ bool RequestParser::parseRequestLine() {
 
 	size_t line_end = _raw_request.find("\r\n", _current_pos);
 	if (line_end == std::string::npos) {
-		console::log("No CRLF found in request line", ERROR);
+		console::log("[ERROR][REQUEST PARSER] No CRLF found in request line", MSG);
+		_last_status = E_UNSUPPORTED_VERSION;
 		return false;
 	}
 	std::string request_line = _raw_request.substr(_current_pos, line_end - _current_pos);
@@ -55,20 +57,22 @@ bool RequestParser::parseMethod(std::string request_line) {
 
 	size_t method_end = request_line.find(" ", _current_pos);
 	if (method_end == std::string::npos) {
-		console::log("[ERROR] No SP found after method", MSG);
-		// 501 Not Implemented
+		console::log("[ERROR][REQUEST PARSER] No SP found after method", MSG);
+		_last_status = E_NOT_IMPLEMENTED;
 		return false;
 	}
 	std::string method = request_line.substr(_current_pos, method_end - _current_pos);
 	if (method.empty()) {
-		console::log("[ERROR] No request method found", MSG);
-		// 501 Not Implemented
+		console::log("[ERROR][REQUEST PARSER] No request method found", MSG);
+		_last_status = E_NOT_IMPLEMENTED;
 		return false;
 	}
-	if (method.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ") != std::string::npos) {
-		console::log("[ERROR] Invalid method name", MSG);
-		// 501 Not Implemented
-		return false;
+	for (size_t i = 0; i < method.size(); i++) {
+		if (!is_token(method[i])) {
+			console::log("[ERROR][REQUEST PARSER] Invalid token in method name", MSG);
+			_last_status = E_NOT_IMPLEMENTED;
+			return false;
+		}
 	}
 	_request->setMethod(method);
 	_current_pos = request_line.find_first_not_of(" ", method_end);
@@ -79,8 +83,8 @@ bool RequestParser::parseUri(std::string request_line) {
 
 	size_t uri_end = request_line.find(" ", _current_pos);
 	if (uri_end == std::string::npos) {
-		console::log("[ERROR] No SP found after URI", MSG);
-		// 404 Not Found
+		console::log("[ERROR][REQUEST PARSER] No SP found after URI", MSG);
+		_last_status = E_NOT_FOUND;
 		return false;
 	}
 	std::string raw_uri = request_line.substr(_current_pos, uri_end - _current_pos);
@@ -88,13 +92,16 @@ bool RequestParser::parseUri(std::string request_line) {
 	if (raw_uri.empty()) 
 		raw_uri = "/";
 	if (raw_uri.length() > MAX_URI_LENGTH) {
-		console::log("[ERROR] Request URI too long", MSG);
-		// 414 Request-URI Too Long
+		console::log("[ERROR][REQUEST PARSER] Request URI too long", MSG);
+		_last_status = E_URI_TOO_LONG;
 		return false;
 	}
 	RequestUri uri(raw_uri);
-	if (!uri.parse())
+	if (!uri.parse()) {
+		console::log("[ERROR][REQUEST PARSER] Invalid URI", MSG);
+		_last_status = E_NOT_FOUND;
 		return false;
+	}
 	_request->setUri(uri);
 	_current_pos = request_line.find_first_not_of(" ", uri_end);
 	return true;
@@ -111,8 +118,8 @@ bool RequestParser::parseVersion(std::string request_line) {
 		_request->setHttpVersion(major, minor);
 		return true;
 	}
-	console::log("Invalid HTTP version in request", ERROR);
-	// 505 HTTP Version Not Supported
+	console::log("[ERROR][REQUEST PARSER] Invalid HTTP version", MSG);
+	_last_status = E_UNSUPPORTED_VERSION;
 	return false;
 }
  
@@ -126,7 +133,8 @@ bool RequestParser::parseHeaders() {
 	while (_current_pos < _raw_request.length()) {
 		size_t line_end = _raw_request.find("\r\n", _current_pos);
 		if (line_end == std::string::npos) {
-			console::log("No CRLF found in headers", ERROR);
+			console::log("[ERROR][REQUEST PARSER] No CRLF found in headers", MSG);
+			_last_status = E_BAD_REQUEST;
 			return false;
 		}
 		std::string header_line = _raw_request.substr(_current_pos, line_end - _current_pos);
@@ -135,22 +143,25 @@ bool RequestParser::parseHeaders() {
 			break;
 		size_t colon_pos = header_line.find(':');
 		if (colon_pos == std::string::npos) {
-			console::log("Missing colon in header line: ", ERROR);
+			console::log("[ERROR][REQUEST PARSER] Missing colon in header line", MSG);
+			_last_status = E_BAD_REQUEST;
 			return false;
 		}
 		std::string name = trim_lws(header_line.substr(0, colon_pos));
 		if (name.empty()) {
-			console::log("Empty header name", MSG);
+			console::log("[ERROR][REQUEST PARSER] Empty header name", MSG);
+			_last_status = E_BAD_REQUEST;
 			return false;
 		}
 		std::string value = trim_lws(header_line.substr(colon_pos + 1));
 		std::vector<std::string> values;
 		if (value.find(',') != std::string::npos)
-			values = str_to_vect_exept_between(value, ",", "(", ")");	// Comments allowed in User-Agent/Server/Via fields only
+			values = str_to_vect_exept_between(value, ",", "(", ")");
 		else
 			values.push_back(trim_lws(value));
 		if (values.empty()) {
-			console::log("Empty header value", ERROR);
+			console::log("[ERROR][REQUEST PARSER] Empty header value", MSG);
+			_last_status = E_BAD_REQUEST;
 			return false;
 		}
 		_request->addHeader(name, values);
@@ -158,26 +169,126 @@ bool RequestParser::parseHeaders() {
 	return true;
 }
 
-// For HTTP requests, body parsing depends on Content-Length or Transfer-Encoding
 bool RequestParser::parseBody() {
 
 	if (_current_pos < _raw_request.length()) {
 		std::string body = _raw_request.substr(_current_pos);
 		_request->setBody(body);
+		
+		if (!_request->hasHeader("Content-Length")) {
+			console::log("[ERROR][REQUEST PARSER] Missing \"Content-Length\" header", MSG);
+			_last_status = E_LENGTH_REQUIRED;
+			return false;
+		}
+		std::vector<std::string> body_size_value = _request->getHeaderValues("Content-Length");
+		if (body_size_value.at(0) == "") {
+			console::log("[ERROR][REQUEST PARSER] Missing \"Content-Length\" header value", MSG);
+			_last_status = E_LENGTH_REQUIRED;
+			return false;
+		}
+		if (to_size_t(body_size_value.at(0)) != _request->getBody().size()) {
+			console::log("[ERROR][REQUEST PARSER] \"Content-Length\" header value doesn't match body size", MSG);
+			_last_status = E_BAD_REQUEST;
+			return false;
+		}
 	}
 	else
 		_request->setBody("");
-	std::vector<std::string> body_size_value = _request->getHeaderValues("content-length");
-	if (!body_size_value.empty()) {
-		if (body_size_value.at(0) == "") {
-			console::log("Missing \"Content-Length\" header value", MSG);
-			return false;
-		}
-		size_t body_size = to_size_t(body_size_value.at(0));
-		if (body_size != _request->getBody().size()) {
-			console::log("\"Content-Length\" header value doesn't match body size", MSG);
-			return false;
-		}
-	}	
 	return true;
+}
+
+void	RequestParser::setRequestContext() {
+
+	RequestContext ctx;
+	
+	ctx._location_name = findConfigLocationName();
+	if (ctx._location_name.empty())
+		ctx._location_config = _config.getServer();
+	else
+		ctx._location_config = findLocationMatch();
+
+	std::map<std::string, std::string> config = ctx._location_config;
+	std::string root = config["root"];
+	if (root.empty())
+		ctx._document_root = _config.getRoot();
+	else
+		ctx._document_root = root;
+
+	std::string index = config["index"];
+	std::vector<std::string> indexes = str_to_vect(index, " ");
+	ctx._index_list = indexes;
+
+	std::string autoindex = config["autoindex"];
+	if (autoindex == "on")
+		ctx._autoindex_enabled = true;
+	else
+		ctx._autoindex_enabled = false;
+
+	_request->ctx = ctx;
+}
+
+std::string	RequestParser::findConfigLocationName() {
+	
+	std::string path = _request->getUri().getPath();
+	if (_config.hasLocation(path))
+		return path;
+	
+	std::string match = "";
+	std::string test_path = path;
+	while (!test_path.empty()) {
+		if (_config.hasLocation(test_path)) {
+			if (test_path.length() > match.length()) {
+				match = test_path;
+			}
+		}
+		size_t last_slash = test_path.find_last_of('/');
+		if (last_slash == 0) {
+			test_path = "/";
+			if (_config.hasLocation(test_path)) {
+				if (match.empty())
+					match = test_path;
+			}
+			break;
+		}
+		else if (last_slash == std::string::npos)
+			break;
+		else
+			test_path = test_path.substr(0, last_slash);
+	}
+	return match;
+}
+
+std::map<std::string, std::string>	RequestParser::findLocationMatch() {
+	
+	std::string path = _request->getUri().getPath();
+	if (_config.hasLocation(path))
+		return _config.getLocationConfig(path);
+	
+	std::string match = "";
+	std::string test_path = path;
+	std::map<std::string, std::string> best_config;
+	while (!test_path.empty()) {
+		if (_config.hasLocation(test_path)) {
+			std::map<std::string, std::string> config = _config.getLocationConfig(test_path);
+			if (test_path.length() > match.length()) {
+				match = test_path;
+				best_config = config;
+			}
+		}
+		size_t last_slash = test_path.find_last_of('/');
+		if (last_slash == 0) {
+			test_path = "/";
+			if (_config.hasLocation(test_path)) {
+				std::map<std::string, std::string> config = _config.getLocationConfig(test_path);
+				if (match.empty())
+					best_config = config;
+			}
+			break;
+		}
+		else if (last_slash == std::string::npos)
+			break;
+		else
+			test_path = test_path.substr(0, last_slash);
+	}
+	return best_config;
 }

@@ -9,12 +9,12 @@ class WebservConfig;
 struct RequestContext {
 	
 	public:
-	std::string							_location_name;
-	std::map<std::string, std::string>	_location_config;
-	std::string							_document_root;
-	std::vector<std::string>			_index_list;
-	bool								_autoindex_enabled;
-	bool								_has_redirect;
+		std::string							_location_name;
+		std::map<std::string, std::string>	_location_config;
+		std::string							_document_root;
+		std::vector<std::string>			_index_list;
+		bool								_autoindex_enabled;
+		bool								_has_redirect;
 };
 
 class HttpRequest : public HttpMessage {
