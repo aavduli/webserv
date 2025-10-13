@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/07 15:20:30 by jim               #+#    #+#             */
-/*   Updated: 2025/10/13 15:03:16 by jim              ###   ########.fr       */
+/*   Updated: 2025/10/13 15:39:10 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,12 +51,12 @@ std::string CgiExec::execute(const HttpRequest* request){
 
 		//Setup CGI variable env
 		setenv("REQUEST_METHOD", request->getMethod().c_str(), 1);
-		setenv("SERVER_PROTOCOL", "HTTP/1.1", 1); //todo http1.0 ?
-		setenv("GATEWAY_INTERFACE", "CGI/1.1", 1);
+		setenv("SERVER_PROTOCOL", "HTTP/1.0", 1);
+		setenv("GATEWAY_INTERFACE", "CGI/1.0", 1);
 		setenv("SERVER_NAME", _config->getServerName().c_str(), 1);
 		std::ostringstream port;
 		port << _config->getPort();
-		setenv("SERVER_PORT", port.str().c_str(), 1);//todo get from request or file config
+		setenv("SERVER_PORT", port.str().c_str(), 1);
 		setenv("SCRIPT_NAME", request->getUri().getPath().c_str(), 1);
 
 		if (!request->getUri().getQuery().empty()){
@@ -71,7 +71,7 @@ std::string CgiExec::execute(const HttpRequest* request){
 			setenv("CONTENT_TYPE", "application/x-www-form-urlencoded", 1);
 		}
 
-		//HTTP heeaders (https_*)
+		//HTTP heeaders (HTTP_*)
 		std::map<std::string, std::vector<std::string> > headers = request->getHeaders();
 		for (std::map<std::string, std::vector<std::string> >::const_iterator it = headers.begin();
 			it != headers.end(); ++it){
@@ -122,8 +122,3 @@ std::string CgiExec::execute(const HttpRequest* request){
 	console::log("[CGI] script executed succesfullz", MSG);
 	return output;
 }
-
-
-
-
-//todo : tout
