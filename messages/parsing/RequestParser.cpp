@@ -1,7 +1,7 @@
 #include "RequestParser.hpp"
 
-RequestParser::RequestParser(HttpRequest* request, const std::string& raw_request) : _request(request), _raw_request(raw_request), _current_pos(0), _last_status(E_INIT) {}
-RequestParser::RequestParser(const RequestParser& rhs) : _request(rhs._request), _raw_request(rhs._raw_request), _current_pos(rhs._current_pos), _last_status(rhs._last_status) {}
+RequestParser::RequestParser(const WebservConfig& config, HttpRequest* request, const std::string& raw_request) : _config(config), _request(request), _raw_request(raw_request), _current_pos(0), _last_status(E_INIT) {}
+RequestParser::RequestParser(const RequestParser& rhs) : _config(rhs._config), _request(rhs._request), _raw_request(rhs._raw_request), _current_pos(rhs._current_pos), _last_status(rhs._last_status) {}
 RequestParser& RequestParser::operator=(const RequestParser& rhs) {
 	if (this != &rhs) {
 		_request = rhs._request;
@@ -12,6 +12,7 @@ RequestParser& RequestParser::operator=(const RequestParser& rhs) {
 	return *this;
 }
 RequestParser::~RequestParser() {}
+
 Status RequestParser::getLastStatus() const {return _last_status;}
 
 bool RequestParser::parseRequest() {
@@ -194,4 +195,100 @@ bool RequestParser::parseBody() {
 	else
 		_request->setBody("");
 	return true;
+}
+
+void	RequestParser::setRequestContext() {
+
+	RequestContext ctx;
+	
+	ctx._location_name = findConfigLocationName();
+	if (ctx._location_name.empty())
+		ctx._location_config = _config.getServer();
+	else
+		ctx._location_config = findLocationMatch();
+
+	std::map<std::string, std::string> config = ctx._location_config;
+	std::string root = config["root"];
+	if (root.empty())
+		ctx._document_root = _config.getRoot();
+	else
+		ctx._document_root = root;
+
+	std::string index = config["index"];
+	std::vector<std::string> indexes = str_to_vect(index, " ");
+	ctx._index_list = indexes;
+
+	std::string autoindex = config["autoindex"];
+	if (autoindex == "on")
+		ctx._autoindex_enabled = true;
+	else
+		ctx._autoindex_enabled = false;
+
+	_request->ctx = ctx;
+}
+
+std::string	RequestParser::findConfigLocationName() {
+	
+	std::string path = _request->getUri().getPath();
+	if (_config.hasLocation(path))
+		return path;
+	
+	std::string match = "";
+	std::string test_path = path;
+	while (!test_path.empty()) {
+		if (_config.hasLocation(test_path)) {
+			if (test_path.length() > match.length()) {
+				match = test_path;
+			}
+		}
+		size_t last_slash = test_path.find_last_of('/');
+		if (last_slash == 0) {
+			test_path = "/";
+			if (_config.hasLocation(test_path)) {
+				if (match.empty())
+					match = test_path;
+			}
+			break;
+		}
+		else if (last_slash == std::string::npos)
+			break;
+		else
+			test_path = test_path.substr(0, last_slash);
+	}
+	return match;
+}
+
+std::map<std::string, std::string>	RequestParser::findLocationMatch() {
+	
+	std::string path = _request->getUri().getPath();
+	if (_config.hasLocation(path))
+		return _config.getLocationConfig(path);
+	
+	std::string match = "";
+	std::string test_path = path;
+	std::map<std::string, std::string> best_config;
+	while (!test_path.empty()) {
+		if (_config.hasLocation(test_path)) {
+			std::map<std::string, std::string> config = _config.getLocationConfig(test_path);
+			if (test_path.length() > match.length()) {
+				match = test_path;
+				best_config = config;
+			}
+		}
+		size_t last_slash = test_path.find_last_of('/');
+		if (last_slash == 0) {
+			test_path = "/";
+			if (_config.hasLocation(test_path)) {
+				std::map<std::string, std::string> config = _config.getLocationConfig(test_path);
+				if (match.empty())
+					best_config = config;
+			}
+			break;
+		}
+		else if (last_slash == std::string::npos)
+			break;
+		else
+			test_path = test_path.substr(0, last_slash);
+	}
+	return best_config;
 }

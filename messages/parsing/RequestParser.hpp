@@ -6,10 +6,11 @@
 class RequestParser {
 
 	private:
-		HttpRequest*	_request;
-		std::string		_raw_request;
-		size_t			_current_pos;	// pos in raw_request string
-		Status			_last_status;
+		const WebservConfig&	_config;
+		HttpRequest*			_request;
+		std::string				_raw_request;
+		size_t					_current_pos;
+		Status					_last_status;
 		
 		bool			parseRequestLine();
 		bool			parseMethod(std::string request_line);
@@ -19,13 +20,17 @@ class RequestParser {
 		std::string		parseHeaderName(std::string line);
 		bool			parseBody();
 
+		std::string							findConfigLocationName();
+		std::map<std::string, std::string>	findLocationMatch();
+		
 	public:
-		RequestParser(HttpRequest* request, const std::string& raw_request);
+		RequestParser(const WebservConfig& config, HttpRequest* request, const std::string& raw_request);
 		RequestParser(const RequestParser& rhs);
 		RequestParser& operator=(const RequestParser& rhs);
 		~RequestParser();
-	
+		
 		bool	parseRequest();
+		void	setRequestContext();
 		Status	getLastStatus() const;
 };
 
