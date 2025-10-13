@@ -22,6 +22,7 @@ jobs:
       - name: Build Project
         run: |
           make all
+          
 
       - name: Check if binary files has been created
         run: |
@@ -44,7 +45,7 @@ jobs:
       #     # Start server with valgrind in background
       #     valgrind --leak-check=yes --error-exitcode=1 ./webserv config/def.conf &
       #     VALGRIND_PID=$!
-      #     sleep 2
+      #     sleep 4
           
       #     curl http://localhost:8080 || true
           

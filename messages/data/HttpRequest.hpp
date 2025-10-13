@@ -6,29 +6,15 @@
 
 class WebservConfig;
 
-class RequestContext {
+struct RequestContext {
 	
-	private:
-		std::string							_location_name;
-		std::map<std::string, std::string>	_location_config;
-		std::string							_document_root;
-		bool								_autoindex_enabled;
-		bool								_has_redirect;
-
 	public:
-		RequestContext();
-		RequestContext(const WebservConfig& config);
-
-		const std::string&		getLocationName() const;
-		void					setLocationName(const std::string& name);
-		const std::map<std::string, std::string>& getLocationConfig() const;
-		void					setLocationConfig(const std::map<std::string, std::string>& loc_config);
-		const std::string&		getDocumentRoot() const;
-		void					setDocumentRoot(const std::string& root);
-		bool					isAutoindexEnabled() const;
-		void					setAutoindexEnabled(bool value);
-		bool					hasRedirect() const;
-		void					setRedirect(bool value);
+	std::string							_location_name;
+	std::map<std::string, std::string>	_location_config;
+	std::string							_document_root;
+	std::vector<std::string>			_index_list;
+	bool								_autoindex_enabled;
+	bool								_has_redirect;
 };
 
 class HttpRequest : public HttpMessage {

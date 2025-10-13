@@ -5,7 +5,10 @@ CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -g
 SRCS =	main.cpp \
 		server/server.cpp \
 		server/onConnection.cpp \
-		event/eventManager.cpp \
+		server/eventManager.cpp \
+		server/NetworkHandler.cpp \
+		server/ConnectionManager.cpp \
+		server/EventProcessor.cpp \
 		console/console.cpp \
 		status/status.cpp \
 		config/ConfigParser.cpp \

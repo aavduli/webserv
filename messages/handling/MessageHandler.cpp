@@ -12,35 +12,32 @@ MessageHandler& MessageHandler::operator=(const MessageHandler& rhs) {
 }
 MessageHandler::~MessageHandler() {}
 
-Status				MessageHandler::getLastStatus() const {return _last_status;}
-void				MessageHandler::setLastStatus(Status status) {_last_status = status;}
-const HttpResponse	MessageHandler::getResponse() const {return _response;};
+Status		MessageHandler::getLastStatus() const {return _last_status;}
+void		MessageHandler::setLastStatus(Status status) {_last_status = status;}
 
-// handleMessage() → parseRequest() → validateRequest() → processRequest() → generateResponse()
 // TODO should give a way for server to get Status
-void	handle_messages(const WebservConfig& config, const std::string &raw_request) {
+std::string	handle_messages(const WebservConfig& config, const std::string &raw_request) {
 
 	console::log("=============[NEW REQUEST]=============", MSG);
 
-	HttpRequest		request;
-	MessageHandler	handler(config, &request);
+	HttpRequest			request;
+	MessageHandler		handler(config, &request);
 
 	if (raw_request.empty()) {
 		console::log("[ERROR] Empty request", MSG);
 		handler.setLastStatus(E_BAD_REQUEST);
 	}
 	else if (handler.parseRequest(raw_request)) {
-		// only set context if parsing OK
 		handler.setRequestContext();
 		handler.validateRequest();
 	}
-	if (!handler.generateResponse()) {
-		console::log("[ERROR] Response generation failed: " + status_msg(handler.getLastStatus()), MSG);
-		// critical error
-		return ;
-	}
-	HttpResponse response = handler.getResponse();
-	// do something with response
+	handler.generateResponse();
+
+	std::string complete_response = handler.serializeResponse();
+	console::log("[DEBUG] Complete response length: " + nb_to_string(complete_response.length()), MSG);
+	console::log("[DEBUG] Response preview: " + complete_response.substr(0, 200) + "...", MSG);
+
+	return handler.serializeResponse();
 }
 
 bool	MessageHandler::parseRequest(const std::string& raw_request) {
@@ -55,36 +52,10 @@ bool	MessageHandler::parseRequest(const std::string& raw_request) {
 	return true;
 }
 
-void	MessageHandler::setRequestContext() {
-
-	RequestContext ctx(_config);
-	
-	ctx.setLocationName(findConfigLocationName());
-	if (ctx.getLocationName().empty())
-		ctx.setLocationConfig(_config.getServer());
-	else
-		ctx.setLocationConfig(findLocationMatch());
-
-	std::map<std::string, std::string> config = ctx.getLocationConfig();
-	std::string root = config["root"];
-	if (root.empty())
-		ctx.setDocumentRoot(_config.getRoot());
-	else
-		ctx.setDocumentRoot(root);
-
-	std::string autoindex = config["autoindex"];
-	if (autoindex == "on")
-		ctx.setAutoindexEnabled(true);
-	else
-		ctx.setAutoindexEnabled(false);
-
-	_request->ctx = ctx;
-}
-
 bool MessageHandler::validateRequest() {
-
+	
 	RequestValidator	validator(_config, _request);
-
+	
 	if (!validator.validateRequest()) {
 		_last_status = validator.getLastStatus();
 		return false;
@@ -94,13 +65,57 @@ bool MessageHandler::validateRequest() {
 }
 
 bool MessageHandler::generateResponse() {
-
+	
 	ResponseGenerator	generator(_config, _request, &_response);
-
+	
 	generator.setLastStatus(_last_status);
 	generator.generateResponse();
 	_last_status = generator.getLastStatus();
 	return true;
+}
+
+std::string	MessageHandler::serializeResponse() {
+
+	int status_code = _response.getStatus();
+	const std::string& reason_phrase = status_msg(_response.getStatus());
+	const std::string& body = _response.getBody();
+
+	std::ostringstream oss;
+	oss << "HTTP/1.1 " << status_code << " " << reason_phrase << "\r\n";
+	oss << _response.serializeHeaders() << "\r\n";
+	oss << "\r\n";
+	oss << body;
+	return oss.str();
+}
+
+void	MessageHandler::setRequestContext() {
+
+	RequestContext ctx;
+	
+	ctx._location_name = findConfigLocationName();
+	if (ctx._location_name.empty())
+		ctx._location_config = _config.getServer();
+	else
+		ctx._location_config = findLocationMatch();
+
+	std::map<std::string, std::string> config = ctx._location_config;
+	std::string root = config["root"];
+	if (root.empty())
+		ctx._document_root = _config.getRoot();
+	else
+		ctx._document_root = root;
+
+	std::string index = config["index"];
+	std::vector<std::string> indexes = str_to_vect(index, " ");
+	ctx._index_list = indexes;
+
+	std::string autoindex = config["autoindex"];
+	if (autoindex == "on")
+		ctx._autoindex_enabled = true;
+	else
+		ctx._autoindex_enabled = false;
+
+	_request->ctx = ctx;
 }
 
 std::string	MessageHandler::findConfigLocationName() {

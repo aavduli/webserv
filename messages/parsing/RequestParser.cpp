@@ -28,7 +28,6 @@ bool RequestParser::parseRequest() {
 		console::log("[ERROR] Failed to parse body", MSG);
 		return false;
 	}
-	console::log("[INFO] Request parsing success", MSG);
 	return true;
 }
 
@@ -165,12 +164,9 @@ bool RequestParser::parseBody() {
 	if (_current_pos < _raw_request.length()) {
 		std::string body = _raw_request.substr(_current_pos);
 		_request->setBody(body);
-		_request->setBodySize(_request->getBody().size());
 	}
-	else {
+	else
 		_request->setBody("");
-		_request->setBodySize(0);
-	}
 	std::vector<std::string> body_size_value = _request->getHeaderValues("content-length");
 	if (!body_size_value.empty()) {
 		if (body_size_value.at(0) == "") {
@@ -178,7 +174,7 @@ bool RequestParser::parseBody() {
 			return false;
 		}
 		size_t body_size = to_size_t(body_size_value.at(0));
-		if (body_size != _request->getBodySize()) {
+		if (body_size != _request->getBody().size()) {
 			console::log("\"Content-Length\" header value doesn't match body size", MSG);
 			return false;
 		}

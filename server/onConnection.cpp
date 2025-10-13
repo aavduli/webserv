@@ -25,12 +25,12 @@ bool onConn::onDiscon(Conn& c,bool alive, size_t endpos) {
 	}
 	return false;
 }
-
-static std::string to_lower(std::string s) {
-	for (size_t i = 0; i < s.size(); ++i)
-		s[i] = static_cast<char>(std::tolower(s[i]));
-	return s;
-}
+// 
+// static std::string to_lower(std::string s) {
+// 	for (size_t i = 0; i < s.size(); ++i)
+// 		s[i] = static_cast<char>(std::tolower(s[i]));
+// 	return s;
+// }
 
 size_t onConn::headers_end_pos(const std::string &buff) {
 	size_t pos = buff.find("\r\n\r\n");
@@ -57,15 +57,14 @@ void onConn::inspect_headers_minimally (Conn &c) {
 	c.content_len = -1;
 
 	const std::string headers = c.in.substr(0, c.headers_end);
-	const std::string low = to_lower(headers);
 	{
-		const std::string key = "content-lenght:";
-		size_t p = low.find(key);
+		const std::string key = "Content-Length:";
+		size_t p = headers.find(key);
 		if (p != std::string::npos) {
 			p += key.size();
-			while (p < low.size() && std::isspace(low[p])) ++p;
+			while (p < headers.size() && std::isspace(headers[p])) ++p;
 			size_t q = p;
-			while (q < low.size() && std::isdigit(low[q])) ++q;
+			while (q < headers.size() && std::isdigit(headers[q])) ++q;
 			if (q > p) {
 				long v = std::strtol(headers.substr(p, q - p).c_str(), 0, 10);
 				if (v>= 0) c.content_len = v;
@@ -73,11 +72,11 @@ void onConn::inspect_headers_minimally (Conn &c) {
 		}
 	}
 	{
-		const std::string key = "transfert-encoding:";
-		size_t p = low.find(key);
+		const std::string key = "transfer-encoding:";
+		size_t p = headers.find(key);
 		if (p != std::string::npos) {
-			size_t eol = low.find("\r\n", p);
-			std::string line = (eol == std::string::npos) ? low.substr(p) : low.substr(p, eol - p);
+			size_t eol = headers.find("\r\n", p);
+			std::string line = (eol == std::string::npos) ? headers.substr(p) : headers.substr(p, eol - p);
 			if (line.find("chunked") != std::string::npos) c.chunked = true;
 		}
 	}
@@ -88,7 +87,8 @@ bool onConn::chunked_complete(const std::string& body, size_t &cut_after) {
 		cut_after = body.size();
 		return true;
 	}
-	size_t p = body.find("\r\n0\r\n\r\n"); {
+	size_t p = body.find("\r\n0\r\n\r\n");
+	if (p != std::string::npos) {
 		cut_after = p + 7;
 		return true;
 	}

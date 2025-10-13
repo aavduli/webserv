@@ -36,6 +36,7 @@ std::string	status_msg(Status e) {
 		case E_TOO_MANY_HEADERS: return "Too many headers";
 		case E_INVALID_CONNECTION: return "Invalid connection header";
 		case E_INVALID_REDIRECT: return "Invalid redirect configuration";
+		case E_INTERNAL_SERVER_ERROR: return "Internal server error";
 		default: return "Unknown error";
 	}
 }

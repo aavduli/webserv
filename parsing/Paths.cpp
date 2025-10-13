@@ -35,51 +35,26 @@ std::string get_file_extension(const std::string& path) {
 		return "";
 	
 	std::string extension = path.substr(dot + 1);
-	return (lower(extension));
+	return (extension);
 }
 
-bool is_python_CGI(const std::string& path) {
+std::string build_full_path(const std::string& start, const std::string& end, const std::string& location_prefix) {
 
-	if (path.empty() || !is_valid_file_path(path))
-		return false;
+	// remove location prefix
+	std::string relative_path = end;
+	if (!location_prefix.empty() && end.find(location_prefix) == 0)
+		relative_path = end.substr(location_prefix.length());
 
-	std::string extension = get_file_extension(path);
-	return (extension == "py");
-}
+	// ensure terminating /
+	std::string root = start;
+	if (!root.empty() && root[root.length() - 1] != '/')
+		root += "/";
 
-std::string extract_relative_path(const std::string& full_path, const std::string& location_prefix) {
-	
-	if (location_prefix.empty() || location_prefix == "/")
-		return full_path;
-	
-	if (full_path.find(location_prefix) == 0) {
-		std::string relative = full_path.substr(location_prefix.length());
-		return relative.empty() ? "/" : relative;
-	}
-	return full_path;
-}
+	// remove leading /
+	if (!relative_path.empty() && relative_path[0] == '/')
+		relative_path = relative_path.substr(1);
 
-std::string build_full_path(const std::string& root, const std::string& relative_path) {
-	
-	std::string full_path = root;
-	
-	if (full_path[full_path.length() - 1] != '/' && relative_path[0] != '/')
-		full_path += "/";
-
-	if (relative_path != "/")
-		full_path += relative_path;
-
-	return full_path;
-}
-
-std::string resolve_index_file(const std::string& directory_path, const std::string& index_file) {
-
-	std::string resolved = directory_path;
-	
-	if (resolved[resolved.length() - 1] != '/')
-		resolved += "/";
-	resolved += index_file;
-	return resolved;
+	return root + relative_path;
 }
 
 // traversal = use of ../ sequences (or other patterns) to escape document root

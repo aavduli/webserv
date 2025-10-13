@@ -1,6 +1,7 @@
 #ifndef RESPONSEGENERATOR_HPP
 #define RESPONSEGENERATOR_HPP
 
+#include <dirent.h>
 #include "MessageHandler.hpp"
 #include "../../config/WebservConfig.hpp"
 
@@ -11,15 +12,14 @@ class ResponseGenerator {
 		HttpRequest*			_request;
 		HttpResponse*			_response;
 		Status					_last_status;
-
-		std::string		serializeResponse();
+		bool					_done;
 		
-		void			generateStaticFileResponse();
-		void			generateRedirResponse();
-		void			generateCGIResponse();
-		void			generateDirectoryResponse();
-		void			generateErrorResponse();
-
+		void	generateStaticFileResponse();
+		void	generateRedirResponse();
+		void	generateCGIResponse();
+		void	generateDirectoryResponse();
+		void	generateErrorResponse();
+		
 	public:
 		ResponseGenerator(const WebservConfig& config, HttpRequest* request, HttpResponse* response);
 		ResponseGenerator(const ResponseGenerator& rhs);
@@ -30,23 +30,23 @@ class ResponseGenerator {
 		void	setLastStatus(Status last_status);
 
 		void	generateResponse();
-
-		void			setDefaultHeaders();
+		void	setDefaultHeaders();
+		void	setContentHeaders();
 // 		void			setConnectionHeader();
-// 		void			setContentHeaders(size_t content_length);
 // 		void			setDateHeader();
 // 		
 // 		bool			shouldCloseConnection() const;
 // 		std::string		getCurrentHTTPDate() const;
-// 		std::string		getMimeType(const std::string& file_extension) const;
-// 		
-// 		std::string		generateDirectoryHTML(const std::string& directory_path) const;
-// 		std::string		readFileContent(const std::string& file_path) const;
-
+		std::string		readFileContent(std::ifstream& file) const;
+		std::string		generateDirectoryHTML();
+		std::string		generateDefaultErrorHTML();
+		std::string		generateRedirHTML();
+		bool			isValidCGI() const;
+		void			addValidIndex();
+		// 		
 };
 
-std::string get_mime_type(const std::string& extension);
-template<typename T>
-std::string nb_to_string(T value);
+std::string		getMimeType(const std::string& extension);
+Status			findErrorStatus(const std::string& path);
 
 #endif // RESPONSEGENERATOR_HPP
