@@ -2,15 +2,16 @@
 #include <cstring>
 
 RequestValidator::RequestValidator(const WebservConfig& config, HttpRequest* request) : _config(config) {
-	 _request = request;
-	 _last_status = E_INIT;
+	_request = request;
+	_last_status = E_INIT;
 	_host_header = _request->getHeaderValues("host");
 }
-RequestValidator::RequestValidator(const RequestValidator& rhs) : _config(rhs._config), _request(rhs._request), _last_status(rhs._last_status) {}
+RequestValidator::RequestValidator(const RequestValidator& rhs) : _config(rhs._config), _request(rhs._request), _last_status(rhs._last_status), _host_header(rhs._host_header) {}
 RequestValidator& RequestValidator::operator=(const RequestValidator& rhs) {
 	if (this != &rhs) {
 		_request = rhs._request;
 		_last_status = rhs._last_status;
+		_host_header = rhs._host_header;
 	}
 	return *this;
 }
@@ -19,24 +20,33 @@ RequestValidator::~RequestValidator() {}
 Status RequestValidator::getLastStatus() const {return _last_status;}
 
 bool RequestValidator::validateRequest() {
-	_last_status = E_OK;
 
-	if (!validateVersion()) return false;	// 505 HTTP VERSION NOT SUPPORTED
-	if (!validateHost()) return false;		// 400 BAD REQUEST
-	if (!validatePort()) return false;		// 400 BAD REQUEST
-	if (!validateMethod()) return false;	// 405 METHOD NOT ALLOWED
-	if (!validatePath()) return false;		// 404 NOT FOUND / 400 BAD REQUEST
-	if (!validateTransferEncoding()) return false;	// 400 BAD REQUEST
-	if (!validateContentType()) return false;		// 400 BAD REQUEST / 415 UNSUPPORTED MEDIA TYPE
-	if (!validateBodySize()) return false;	// 413 PAYLOAD TOO LARGE
-	if (!validateExpectHeader()) return false;		// 417 EXPECTATION FAILED
-	if (!validateHeaderLimits()) return false;		// 400 BAD REQUEST
-	if (!validateConnectionHeader()) return false;	// 400 BAD REQUEST
-	if (!validateRedirection()) return false;		// 301/302 REDIRECT
+	if (!validateVersion()) return false;
+	if (!validateHost()) return false;
+	if (!validatePort()) return false;
+	if (!validateMethod()) return false;
+	if (!validatePath()) return false;
+	if (!validateContentType()) return false;
+	if (!validateBodySize()) return false;
+	if (!validateHeaderLimits()) return false;
+	if (!validateConnectionHeader()) return false;
+	if (!validateRedirection()) return false;
 	return true;
 }
 
-// TODO Validation format hostname (RFC 1123)
+bool RequestValidator::validateVersion() {
+
+	std::ostringstream oss;
+	oss << _request->getHttpVersionMajor() << "." << _request->getHttpVersionMinor();
+	const std::string& version = oss.str();
+	if (version != "1.1" && version != "1.0" && version != "0.9") {
+		console::log("[REQUEST VALIDATOR] Unsupported HTTP version", ERROR);
+		_last_status = E_UNSUPPORTED_VERSION;
+		return false;
+	}
+	return true;
+}
+
 bool RequestValidator::validateHost() {
 
 	RequestUri	uri = _request->getUri();
@@ -51,7 +61,8 @@ bool RequestValidator::validateHost() {
 			uri.setHost(tmp_host);
 	}
 	if (!uri.getHost().empty() && uri.getHost().compare(config_host) && uri.getHost().compare(_config.getServerName())) {
-		_last_status = E_INVALID_HOST;
+		console::log("[REQUEST VALIDATOR] Invalid Host", ERROR);
+		_last_status = E_BAD_REQUEST;
 		return false;
 	}
 	else if (uri.getHost().empty())
@@ -60,7 +71,6 @@ bool RequestValidator::validateHost() {
 	return true;
 }
 
-// TODO Gestion des ports réservés?
 bool RequestValidator::validatePort() {
 
 	RequestUri	uri = _request->getUri();
@@ -75,14 +85,13 @@ bool RequestValidator::validatePort() {
 			char* endptr;
 			long port_value = std::strtol(header_port.c_str(), &endptr, 10);
 			if (*endptr != '\0' || port_value < 1 || port_value > 65535) {
-				console::log("[ERROR] Invalid port number: " + header_port, MSG);
-				_last_status = E_INVALID_PORT;
+				console::log("[REQUEST VALIDATOR] Invalid port value", ERROR);
+				_last_status = E_BAD_REQUEST;
 				return false;
 			}
-			
 			if (static_cast<int>(port_value) != config_port) {
-				console::log("[ERROR] Request port doesn't match server port", MSG);
-				_last_status = E_INVALID_PORT;
+				console::log("[REQUEST VALIDATOR] Request port doesn't match server config", ERROR);
+				_last_status = E_BAD_REQUEST;
 				return false;
 			}
 			uri.setPort(header_port);
@@ -103,23 +112,65 @@ bool RequestValidator::validateMethod() {
 	else
 		allowed_methods = _config.getAllowedMethods();
 
-	for (std::vector<std::string>::const_iterator it = allowed_methods.begin(); it != allowed_methods.end(); ++it) {
+	std::vector<std::string>::const_iterator it;
+	for (it = allowed_methods.begin(); it != allowed_methods.end(); ++it) {
 		if (method == *it)
 			return true;
 	}
+	console::log("[REQUEST VALIDATOR] Invalid request method", ERROR);
 	_last_status = E_METHOD_NOT_ALLOWED;
 	return false;
 }
 
-// need default version MACRO?
-bool RequestValidator::validateVersion() {
+bool RequestValidator::validatePath() {
 
-	std::ostringstream oss;
-	oss << _request->getHttpVersionMajor() << "." << _request->getHttpVersionMinor();
-	const std::string& version = oss.str();
-	if (version != "1.1" && version != "1.0" && version != "0.9") {
-		_last_status = E_UNSUPPORTED_VERSION;
+	RequestUri	uri = _request->getUri();
+	const std::string& path = uri.getPath();
+	if (contains_traversal(path)) {
+		console::log("[REQUEST VALIDATOR] URI path attempts traversal", ERROR);
+		_last_status = E_BAD_REQUEST;
 		return false;
+	}
+
+	std::string full_path = build_full_path(_request->ctx._document_root, path, _request->ctx._location_name);
+	std::string final_path  = canonicalize_path(full_path);
+	if (!is_valid_path(final_path)) {
+		console::log("[REQUEST VALIDATOR] Invalid path: " + final_path, ERROR);
+		_last_status = E_NOT_FOUND;
+		return false;
+	}
+	if (!is_within_root(final_path, _request->ctx._document_root)) {
+		console::log("[REQUEST VALIDATOR] URI path escapes document root", ERROR);
+		_last_status = E_BAD_REQUEST;
+		return false;
+	}
+	uri.setEffectivePath(final_path);
+	_request->setUri(uri);
+	return true;
+}
+
+// POST always carries data, so Content-Type is mandatory and helps the server know how to parse and handle the request body
+bool RequestValidator::validateContentType() {
+
+	const std::string& method = _request->getMethod();
+	
+	if (method == "POST") {
+		const std::vector<std::string>& ct_headers = _request->getHeaderValues("Content-Type");
+		if (ct_headers.empty()) {
+			console::log("[REQUEST VALIDATOR] POST method requires Content-Type header", ERROR);
+			_last_status = E_BAD_REQUEST;
+			return false;
+		}
+
+		// Basic content type validation (extend based on location config) TODO
+		std::string content_type = ct_headers[0];
+		if (content_type.find("application/") == std::string::npos &&
+			content_type.find("text/") == std::string::npos &&
+			content_type.find("multipart/") == std::string::npos) {
+			console::log("[REQUEST VALIDATOR] Unsupported content type: " + content_type, ERROR);
+			_last_status = E_UNSUPPORTED_MEDIA_TYPE;
+			return false;
+		}
 	}
 	return true;
 }
@@ -130,97 +181,9 @@ bool RequestValidator::validateBodySize() {
 	size_t body_size = _request->getBody().size();
 
 	if (body_size > config_max) {
-		_last_status = E_ENTITY_TOO_LARGE;
-		console::log("[ERROR] Body size too large", MSG);
+		console::log("[REQUEST VALIDATOR] Body size too large", ERROR);
+		_last_status = E_PAYLOAD_TOO_LARGE;
 		return false;
-	}
-	return true;
-}
-
-bool RequestValidator::validatePath() {
-
-	RequestUri	uri = _request->getUri();
-	const std::string& path = uri.getPath();
-	if (contains_traversal(path)) {
-		_last_status = E_PATH_TRAVERSALS;
-		return false;
-	}
-	
-	std::string full_path = build_full_path(_request->ctx._document_root, path, _request->ctx._location_name);
-	std::string final_path  = canonicalize_path(full_path);
-
-	if (!is_valid_path(final_path)) {
-		_last_status = E_NOT_FOUND;
-		console::log("[ERROR] Invalid path: " + final_path, MSG);
-		return false;
-	}
-	if (!is_within_root(final_path, _request->ctx._document_root)) {
-		_last_status = E_PATH_ESCAPES_ROOT;
-		return false;
-	}
-	uri.setEffectivePath(final_path);
-	_request->setUri(uri);
-	return true;
-}
-
-// Transfer-Encoding validation (RFC 7230)
-// Transfer-Encoding is used for chunked data transmission where the body size is unknown
-// Example: "Transfer-Encoding: chunked" - data sent in chunks with size prefixes
-bool RequestValidator::validateTransferEncoding() {
-
-	const std::vector<std::string>& te_headers = _request->getHeaderValues("transfer-encoding");
-	if (te_headers.empty())
-		return true;
-
-	// Check for unsupported encodings - only "chunked" is supported
-	// Other encodings like "gzip", "deflate" are not implemented
-	for (size_t i = 0; i < te_headers.size(); i++) {
-		if (te_headers[i] != "chunked") {
-			console::log("[ERROR] Unsupported transfer encoding: " + te_headers[i], MSG);
-			_last_status = E_INVALID_TRANSFER_ENCODING;
-			return false;
-		}
-	}
-
-	// RFC 7230: If both Transfer-Encoding and Content-Length present, ignore Content-Length
-	// This is because chunked encoding makes Content-Length meaningless
-	// The body size is determined by the chunk sizes, not by Content-Length
-	if (_request->hasHeader("Content-Length")) {
-		console::log("[WARNING] Both Transfer-Encoding and Content-Length present, ignoring Content-Length", MSG);
-		
-		// CRITICAL: Signal to handler that Content-Length must be ignored
-		// Handler MUST use chunked reading instead of fixed-length reading
-		// This prevents reading wrong amount of data or parsing errors
-	}
-	
-	// Signal to handler that chunked transfer encoding is active
-	// Handler must implement chunked reading: size\r\ndata\r\n...0\r\n\r\n
-	console::log("[INFO] Chunked transfer encoding detected, handler will read chunks", MSG);
-	return true;
-}
-
-// POST always carries data, so Content-Type is mandatory and helps the server know how to parse and handle the request body
-bool RequestValidator::validateContentType() {
-
-	const std::string& method = _request->getMethod();
-	
-	if (method == "POST") {
-		const std::vector<std::string>& ct_headers = _request->getHeaderValues("content-type");
-		if (ct_headers.empty()) {
-			console::log("[ERROR] POST request requires Content-Type header", MSG);
-			_last_status = E_MISSING_CONTENT_TYPE;
-			return false;
-		}
-
-		// Basic content type validation (extend based on location config) TODO
-		std::string content_type = ct_headers[0];
-		if (content_type.find("application/") == std::string::npos &&
-			content_type.find("text/") == std::string::npos &&
-			content_type.find("multipart/") == std::string::npos) {
-			console::log("[ERROR] Unsupported content type: " + content_type, MSG);
-			_last_status = E_UNSUPPORTED_MEDIA_TYPE;
-			return false;
-		}
 	}
 	return true;
 }
@@ -229,65 +192,31 @@ bool RequestValidator::validateHeaderLimits() {
 
 	size_t headers_size = _request->getHeadersSize();
 	if (headers_size > MAX_HEADERS_SIZE) {
-		console::log("[ERROR] Header size too large", MSG);
-		_last_status = E_ENTITY_TOO_LARGE;
+		console::log("[REQUEST VALIDATOR] Header size too large", ERROR);
+		_last_status = E_HEADER_TOO_LARGE;
 		return false;
 	}
 	return true;
 }
 
-/*	A server that receives a 100-continue expectation in an HTTP/1.0 request MUST ignore that expectation.
-	Upon receiving an HTTP/1.1 (or later) request that contains a 100-continue expectation, an origin server MUST send either:
-		- an immediate response with a final status code, if that status can be determined by examining just the method, target URI, and header fields, or
-		- an immediate 100 (Continue) response to encourage the client to send the request content.
-*/
-bool RequestValidator::validateExpectHeader() {
-
-	const std::vector<std::string>& expect_headers = _request->getHeaderValues("expect");
-	if (expect_headers.empty())
-		return true;
-
-	std::ostringstream oss;
-	oss << _request->getHttpVersionMajor() << "." << _request->getHttpVersionMinor();
-	const std::string& version = oss.str();
-	if (version == "1.0" || version == "0.9") {
-		console::log("[INFO] Ignoring Expect header for HTTP/" + version + " request (RFC compliant)", MSG);
-		return true;
-	}
-	for (size_t i = 0; i < expect_headers.size(); i++) {
-		if (expect_headers[i] != "100-continue") {
-			console::log("[ERROR] Unsupported expectation: " + expect_headers[i], MSG);
-			_last_status = E_EXPECTATION_FAILED;
-			return false;
-		}
-	}
-
-	// If we reach here with valid expectations, signal to handler that 100-continue is needed
-	// The handler should send "100 Continue" before reading body content
-	console::log("[INFO] Valid 100-continue expectation detected, handler should send 100 Continue", MSG);
-	return true;
-}
-
-// Controls whether connection should be kept alive or closed after response (RFC 7230)
-// Essential for HTTP/1.1 persistent connections and connection management
+// HTTP/1.0 doesnt handle 'upgrade' value and connections are closed by default
 bool RequestValidator::validateConnectionHeader() {
 
-	const std::vector<std::string>& conn_headers = _request->getHeaderValues("connection");
+	const std::vector<std::string>& conn_headers = _request->getHeaderValues("Connection");
 	if (conn_headers.empty())
 		return true;
 
 	for (size_t i = 0; i < conn_headers.size(); i++) {
 		std::string conn = conn_headers[i];
-		if (conn != "close" && conn != "keep-alive" && conn != "upgrade") {
+		if (conn != "close" && conn != "keep-alive") {
 			console::log("[ERROR] Invalid \"Connection\" header value: " + conn, MSG);
-			_last_status = E_INVALID_CONNECTION;
+			_last_status = E_BAD_REQUEST;
 			return false;
 		}
 	}
 	return true;
 }
 
-// Return false to stop processing, but it's a valid redirect if 301 or 302
 bool RequestValidator::validateRedirection() {
 
 	std::map<std::string, std::string> config = _request->ctx._location_config;
@@ -296,29 +225,16 @@ bool RequestValidator::validateRedirection() {
 		return true;
 
 	size_t space = redirect.find(' ');
-	if (space == std::string::npos) {
-		console::log("[ERROR] Invalid redirect format: " + redirect, MSG);
-		_last_status = E_INVALID_REDIRECT;
-		return false;
-	}
-
 	std::string code = redirect.substr(0, space);
-	if (code != "301" && code != "302") {
-		console::log("[ERROR] Unsupported redirect code: " + code, MSG);
-		_last_status = E_INVALID_REDIRECT;
-		return false;
-	}
-	
-	RequestUri	uri = _request->getUri();
 	std::string destination = redirect.substr(space + 1);
+
+	RequestUri	uri = _request->getUri();
 	uri.setRedirDestination(destination);
 	_request->ctx._has_redirect = true;
-
 	if (code == "301")
 		_last_status = E_REDIRECT_PERMANENT;
 	else
 		_last_status = E_REDIRECT_TEMPORARY;
 	_request->setUri(uri);
-	console::log("[INFO] Redirect " + code + " to '" + destination + "' detected for path: " + _request->getUri().getPath(), MSG);
 	return true;
 }

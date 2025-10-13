@@ -21,16 +21,14 @@ class RequestValidator {
 		Status						_last_status;
 		std::vector<std::string>	_host_header;
 
+		bool	validateVersion();
 		bool	validateHost();
 		bool	validatePort();
 		bool	validateMethod();
-		bool	validateVersion();
-		bool	validateBodySize();
 		bool	validatePath();
-		bool	validateTransferEncoding();
 		bool	validateContentType();
+		bool	validateBodySize();
 		bool	validateHeaderLimits();
-		bool	validateExpectHeader();
 		bool	validateConnectionHeader();
 		bool	validateRedirection();
 

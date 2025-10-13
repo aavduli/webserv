@@ -36,7 +36,7 @@ bool RequestParser::parseRequestLine() {
 	size_t line_end = _raw_request.find("\r\n", _current_pos);
 	if (line_end == std::string::npos) {
 		console::log("[REQUEST PARSER] No CRLF found in request line", ERROR);
-		_last_status = E_BAD_REQUEST;
+		_last_status = E_UNSUPPORTED_VERSION;
 		return false;
 	}
 	std::string request_line = _raw_request.substr(_current_pos, line_end - _current_pos);
