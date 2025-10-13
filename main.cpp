@@ -13,7 +13,10 @@ int testCGI(){
 	uri.parse();
 	request.setUri(uri);
 
-	CgiExec executor("./www/cgi/script.py", "/usr/bin/python3");
+	WebservConfig config;
+	config.loadConfig("./config/test.conf");
+
+	CgiExec executor("./www/cgi/script.py", "/usr/bin/python3", &config);
 	std::string output = executor.execute(&request);
 
 	std::cout << "=== CGI OUTPUT ===" << std::endl;

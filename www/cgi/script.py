@@ -1,8 +1,38 @@
 #!/usr/bin/env python3
 
+import os
+import sys
 
+# Headers CGI obligatoires
+print("Content-Type: text/html")
+print("")  # Ligne vide obligatoire
 
-var1 = 8
-var2 = 10
-var3 = var1 * var2
-print(var3)
+# Body HTML avec toutes les variables CGI
+print("<html>")
+print("<head><title>CGI Environment Test</title></head>")
+print("<body>")
+print("<h1>CGI Environment Variables</h1>")
+
+print("<h2>Basic CGI Variables:</h2>")
+print(f"<p><strong>REQUEST_METHOD:</strong> {os.environ.get('REQUEST_METHOD', 'Not set')}</p>")
+print(f"<p><strong>QUERY_STRING:</strong> {os.environ.get('QUERY_STRING', 'Not set')}</p>")
+print(f"<p><strong>CONTENT_LENGTH:</strong> {os.environ.get('CONTENT_LENGTH', 'Not set')}</p>")
+print(f"<p><strong>CONTENT_TYPE:</strong> {os.environ.get('CONTENT_TYPE', 'Not set')}</p>")
+
+print("<h2>Server Variables:</h2>")
+print(f"<p><strong>SERVER_PROTOCOL:</strong> {os.environ.get('SERVER_PROTOCOL', 'Not set')}</p>")
+print(f"<p><strong>GATEWAY_INTERFACE:</strong> {os.environ.get('GATEWAY_INTERFACE', 'Not set')}</p>")
+print(f"<p><strong>SERVER_NAME:</strong> {os.environ.get('SERVER_NAME', 'Not set')}</p>")
+print(f"<p><strong>SERVER_PORT:</strong> {os.environ.get('SERVER_PORT', 'Not set')}</p>")
+print(f"<p><strong>SCRIPT_NAME:</strong> {os.environ.get('SCRIPT_NAME', 'Not set')}</p>")
+
+print("<h2>HTTP Headers:</h2>")
+for key, value in os.environ.items():
+	if key.startswith('HTTP_'):
+		print(f"<p><strong>{key}:</strong> {value}</p>")
+
+print("<h2>Working Directory:</h2>")
+print(f"<p><strong>Current Dir:</strong> {os.getcwd()}</p>")
+
+print("</body>")
+print("</html>")

@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/07 15:20:30 by jim               #+#    #+#             */
-/*   Updated: 2025/10/12 15:25:57 by jim              ###   ########.fr       */
+/*   Updated: 2025/10/13 15:03:16 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,8 +18,8 @@
 
 //coinstr
 //todo Check for python path, what to do
-CgiExec::CgiExec(const std::string& script_path, const std::string& python_path) :
-	_script_path(script_path), _python_path(python_path){}
+CgiExec::CgiExec(const std::string& script_path, const std::string& python_path, const WebservConfig* config) :
+	_script_path(script_path), _python_path(python_path), _config(config){}
 
 CgiExec::~CgiExec(){}
 
@@ -46,13 +46,54 @@ std::string CgiExec::execute(const HttpRequest* request){
 		dup2(pipefd[1], STDOUT_FILENO);
 		close(pipefd[1]);
 
+		//change dir
+		chdir("./www/cgi");
+
+		//Setup CGI variable env
 		setenv("REQUEST_METHOD", request->getMethod().c_str(), 1);
+		setenv("SERVER_PROTOCOL", "HTTP/1.1", 1); //todo http1.0 ?
+		setenv("GATEWAY_INTERFACE", "CGI/1.1", 1);
+		setenv("SERVER_NAME", _config->getServerName().c_str(), 1);
+		std::ostringstream port;
+		port << _config->getPort();
+		setenv("SERVER_PORT", port.str().c_str(), 1);//todo get from request or file config
+		setenv("SCRIPT_NAME", request->getUri().getPath().c_str(), 1);
+
 		if (!request->getUri().getQuery().empty()){
 			setenv("QUERY_STRING", request->getUri().getQuery().c_str(), 1);
 		}
 
+		//for POST method
+		if (request->getMethod() == "POST"){
+			std::ostringstream oss;
+			oss<<request->getBodySize();
+			setenv("CONTENT_LENGTH", oss.str().c_str(), 1);
+			setenv("CONTENT_TYPE", "application/x-www-form-urlencoded", 1);
+		}
+
+		//HTTP heeaders (https_*)
+		std::map<std::string, std::vector<std::string> > headers = request->getHeaders();
+		for (std::map<std::string, std::vector<std::string> >::const_iterator it = headers.begin();
+			it != headers.end(); ++it){
+				std::string header_name = "HTTP_" + it->first;
+				//upercase and _ instead of -
+				for (size_t i = 0; i < header_name.length(); i++){
+					if (header_name[i] == '-')
+						header_name[i] = '_';
+					header_name[i] = std::toupper(header_name[i]);
+				}
+				if (!it->second.empty()){
+					setenv(header_name.c_str(), it->second[0].c_str(), 1);
+				}
+			}
+
+
 		//execute python script
-		execl(_python_path.c_str(), "python3", _script_path.c_str(), (char*)NULL);
+		if (access(_python_path.c_str(), X_OK) != 0){
+			console::log("[CGI] python not found: " + _python_path, ERROR);
+			exit(1);
+		}
+		execl(_python_path.c_str(), "python3", "script.py", (char*)NULL);
 
 		//if exce fail
 		console::log("[CGI] execl failed", ERROR);
@@ -75,7 +116,7 @@ std::string CgiExec::execute(const HttpRequest* request){
 
 	if (WEXITSTATUS(status) != 0){
 		console::log("[CGI] script execution failed", ERROR);
-		return 0;
+		return "";
 	}
 
 	console::log("[CGI] script executed succesfullz", MSG);
