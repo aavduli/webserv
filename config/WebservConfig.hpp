@@ -25,7 +25,7 @@
 
 class WebservConfig{
 	private:
-		//ConfigParser  _parser;
+		ConfigParser  _parser;
 		std::map<std::string, std::string> _server;
 		std::map<std::string, std::map<std::string, std::string> > _locations;
 		std::string		_configFile;
