@@ -73,7 +73,7 @@ std::string	MessageHandler::serializeResponse() {
 
 	std::ostringstream oss;
 	oss << "HTTP/1.0 " << status_code << " " << reason_phrase << "\r\n";
-	oss << _response.serializeHeaders() << "\r\n";
+	oss << _response.serializeHeaders();
 	oss << "\r\n";
 	oss << body;
 	return oss.str();

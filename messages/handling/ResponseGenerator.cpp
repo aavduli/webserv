@@ -196,7 +196,7 @@ std::string	ResponseGenerator::generateDirectoryHTML() {
 	std::stringstream html;
 	html << "<!DOCTYPE html>\n";
 	html << "<html>\n<head>\n";
-	html << "<title>Index of " << _request->ctx._location_name << "</title>\n";
+	html << "<title>Index of " << _request->ctx._location_name << "</title></head>\n";
 	html << "<body><h1>Index of " << _request->ctx._location_name << "</h1>\n";
 
 	// Parent directory link (if not root)
@@ -237,7 +237,7 @@ std::string	ResponseGenerator::generateDirectoryHTML() {
 		html << "<p><a href=\"" << file_path << "\">" << name << "</a>\n</p>";
 	}
 	closedir(dir);
-	html << "</body></html>\n";
+	html << "</body></html>";
 	return html.str();
 }
 
@@ -249,7 +249,7 @@ std::string	ResponseGenerator::generateDefaultErrorHTML() {
 	html << "<body><h1>" << getLastStatus() << " - " << status_msg(_response->getStatus()) << "</h1>\n";
 	html << "<p>Very sad.</p>";
 	html << "<p><a href=\"/\">Return to homepage</a></p>\n";
-	html << "</body></html>\n";
+	html << "</body></html>";
 	return html.str();
 }
 
@@ -261,7 +261,7 @@ std::string	ResponseGenerator::generateRedirHTML() {
 	html << "<body>\n";
 	html << "<h1>" << (_last_status == E_REDIRECT_PERMANENT ? "Moved Permanently" : "Moved Temporarily") << "</h1>\n";
 	html << "<p>The document has moved <a href=\"" << _request->getUri().getRedirDestination() << "\">here</a>.</p>\n";
-	html << "</body></html>\n";
+	html << "</body></html>";
 	return html.str();
 }
 
