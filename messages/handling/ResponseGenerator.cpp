@@ -3,8 +3,8 @@
 #include <ctime>
 #include <sstream>
 
-ResponseGenerator::ResponseGenerator(const WebservConfig& config, HttpRequest* request, HttpResponse* response) : _config(config), _request(request), _response(response), _done(false) {}
-ResponseGenerator::ResponseGenerator(const ResponseGenerator& rhs) : _config(rhs._config), _request(rhs._request), _response(rhs._response), _done(rhs._done) {}
+ResponseGenerator::ResponseGenerator(const WebservConfig& config, HttpRequest* request, HttpResponse* response, Status status) : _config(config), _request(request), _response(response), _last_status(status), _done(false) {}
+ResponseGenerator::ResponseGenerator(const ResponseGenerator& rhs) : _config(rhs._config), _request(rhs._request), _response(rhs._response), _last_status(rhs._last_status), _done(rhs._done) {}
 ResponseGenerator& ResponseGenerator::operator=(const ResponseGenerator& rhs) {
 	if (this != &rhs) {
 		_request = rhs._request;
@@ -15,7 +15,6 @@ ResponseGenerator& ResponseGenerator::operator=(const ResponseGenerator& rhs) {
 	return *this;
 }
 ResponseGenerator::~ResponseGenerator() {}
-void	ResponseGenerator::setLastStatus(Status last_status) {_last_status = last_status;}
 Status	ResponseGenerator::getLastStatus() const {return _last_status;}
 
 void ResponseGenerator::generateResponse() {
@@ -29,7 +28,7 @@ void ResponseGenerator::generateResponse() {
 		else if (is_directory(_request->getUri().getEffectivePath()))
 			generateDirectoryResponse();	// need HTML generation
 		else if (isValidCGI())
-			generateCGIResponse();	// Jimmy
+			generateCGIResponse();
 		else
 			generateStaticFileResponse();
 	}
@@ -49,7 +48,7 @@ void ResponseGenerator::generateStaticFileResponse() {
 	
 	std::ifstream file(path.c_str());
 	if (!file.is_open()){
-		console::log("[ERROR] Failed to read: " + path, MSG);
+		console::log("[ERROR][GENERATE RESPONSE] Failed to read: " + path, MSG);
 		_last_status = findErrorStatus(path);
 		return generateErrorResponse();
 	}
@@ -63,7 +62,7 @@ void ResponseGenerator::generateDirectoryResponse() {
 	console::log("[INFO] Generating directory listing response", MSG);
 	
 	if (!_request->ctx._autoindex_enabled) {
-		console::log("[ERROR] Directory access forbidden", MSG);
+		console::log("[ERROR][GENERATE RESPONSE] Directory access forbidden", MSG);
 		_last_status = E_FORBIDDEN;
 		return generateErrorResponse();
 	}
@@ -71,7 +70,7 @@ void ResponseGenerator::generateDirectoryResponse() {
 	const std::string& path = _request->getUri().getEffectivePath();
 	DIR* dir = opendir(path.c_str());
 	if (!dir) {
-		console::log("[ERROR] Couldn't open directory", MSG);
+		console::log("[ERROR][GENERATE RESPONSE] Couldn't open directory", MSG);
 		_last_status = findErrorStatus(path);
 		return generateErrorResponse();
 	}
@@ -84,7 +83,6 @@ void ResponseGenerator::generateDirectoryResponse() {
 void ResponseGenerator::generateRedirResponse() {
 
 	const std::string& destination = _request->getUri().getRedirDestination();
-	
 	_response->setStatus(_last_status);
 	_response->addHeader("Location", str_to_vect(destination, ""));		// required
 	_response->setBody(generateRedirHTML());
@@ -103,7 +101,7 @@ void ResponseGenerator::generateErrorResponse() {
 			_response->setBodyType(B_FILE);
 			return ;
 		}
-		console::log("[ERROR] Failed to read custom error path: " + error_page_path, MSG);
+		console::log("[ERROR][GENERATE RESPONSE] Failed to read custom error path: " + error_page_path, MSG);
 	}
 	_response->setBody(generateDefaultErrorHTML());
 	_response->setBodyType(B_HTML);
@@ -121,29 +119,26 @@ void ResponseGenerator::generateCGIResponse() {
 	// TODO: Execute CGI script
 	// TODO: Parse CGI output
 	// TODO: Set headers from CGI response
-	_response->setBodyType(B_CGI);  // CGI sets its own Content-Type
+
+	_response->setBodyType(B_CGI);	// CGI sets its own Content-Type
 }
 
 void ResponseGenerator::setDefaultHeaders() {
 
 	/*
-	HTTP/1.1 Changes:
-	Persistent connections are DEFAULT (keep-alive)
-	Only close if client sends Connection: close or error occurs
-	Must handle pipelined requests
-	
+	Connection
 	Accurate Content-Length for all responses
 	Last-Modified headers for static files
 	Server identification header
 	Proper Date headers
 	*/
 	
-	console::log("[INFO] Setting default HTTP/1.1 headers", MSG);
+	console::log("[INFO] Setting default HTTP/1.0 headers", MSG);
 	
-	// TODO: Set HTTP version to 1.1
-	// TODO: Add required headers
 	// setDateHeader();
-	// setConnectionHeader();
+	// std::string date = getCurrentHTTPDate();
+
+	_response->addHeader("Connection", str_to_vect("close", ""));
 }
 
 void ResponseGenerator::setContentHeaders() {
@@ -167,50 +162,8 @@ void ResponseGenerator::setContentHeaders() {
 		std::string body_size = nb_to_string(_response->getBody().size());
 		_response->addHeader("Content-Length", str_to_vect(body_size, ""));
 	}
-
-	console::log("[DEBUG] Response body size: " + nb_to_string(_response->getBody().size()), MSG);
-	console::log("[DEBUG] Setting Content-Length: " + nb_to_string(_response->getBody().size()), MSG);
 }
 
-// void ResponseGenerator::setConnectionHeader() {
-// 	bool close_connection = shouldCloseConnection();
-// 	console::log("[INFO] Connection will be " + std::string(close_connection ? "closed" : "kept alive"), MSG);
-// 	
-// 	// TODO: Set Connection header
-// }
-// 
-// void ResponseGenerator::setContentHeaders(size_t content_length) {
-// 	console::log("[INFO] Setting content headers, length: " + std::to_string(content_length), MSG);
-// 	
-// 	// TODO: Set Content-Length header
-// 	// TODO: Set Content-Type header based on file or content
-// }
-// 
-// void ResponseGenerator::setDateHeader() {
-// 	std::string date = getCurrentHTTPDate();
-// 	console::log("[INFO] Setting Date header: " + date, MSG);
-// 	
-// 	// TODO: Set Date header (required by HTTP/1.1)
-// }
-
-// bool ResponseGenerator::shouldCloseConnection() const {
-// 	// Check if client requested connection close
-// 	if (getRequest()->hasHeader("Connection")) {
-// 		const std::vector<std::string>& conn_headers = getRequest()->getHeaderValues("connection");
-// 		for (size_t i = 0; i < conn_headers.size(); i++) {
-// 			if (conn_headers[i] == "close") {
-// 				return true;
-// 			}
-// 		}
-// 	}
-// 	
-// 	// TODO: Check for error conditions that require connection close
-// 	// TODO: Check server configuration
-// 	
-// 	// Default: keep-alive for HTTP/1.1
-// 	return false;
-// }
-// 
 // std::string ResponseGenerator::getCurrentHTTPDate() const {
 // 	time_t now = time(0);
 // 	struct tm* gmt = gmtime(&now);

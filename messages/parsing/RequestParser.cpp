@@ -35,7 +35,7 @@ bool RequestParser::parseRequestLine() {
 
 	size_t line_end = _raw_request.find("\r\n", _current_pos);
 	if (line_end == std::string::npos) {
-		console::log("[REQUEST PARSER] No CRLF found in request line", ERROR);
+		console::log("[ERROR][REQUEST PARSER] No CRLF found in request line", MSG);
 		_last_status = E_UNSUPPORTED_VERSION;
 		return false;
 	}
@@ -56,19 +56,19 @@ bool RequestParser::parseMethod(std::string request_line) {
 
 	size_t method_end = request_line.find(" ", _current_pos);
 	if (method_end == std::string::npos) {
-		console::log("[REQUEST PARSER] No SP found after method", ERROR);
+		console::log("[ERROR][REQUEST PARSER] No SP found after method", MSG);
 		_last_status = E_NOT_IMPLEMENTED;
 		return false;
 	}
 	std::string method = request_line.substr(_current_pos, method_end - _current_pos);
 	if (method.empty()) {
-		console::log("[REQUEST PARSER] No request method found", ERROR);
+		console::log("[ERROR][REQUEST PARSER] No request method found", MSG);
 		_last_status = E_NOT_IMPLEMENTED;
 		return false;
 	}
 	for (size_t i = 0; i < method.size(); i++) {
 		if (!is_token(method[i])) {
-			console::log("[REQUEST PARSER] Invalid token in method name", ERROR);
+			console::log("[ERROR][REQUEST PARSER] Invalid token in method name", MSG);
 			_last_status = E_NOT_IMPLEMENTED;
 			return false;
 		}
@@ -82,7 +82,7 @@ bool RequestParser::parseUri(std::string request_line) {
 
 	size_t uri_end = request_line.find(" ", _current_pos);
 	if (uri_end == std::string::npos) {
-		console::log("[REQUEST PARSER] No SP found after URI", ERROR);
+		console::log("[ERROR][REQUEST PARSER] No SP found after URI", MSG);
 		_last_status = E_NOT_FOUND;
 		return false;
 	}
@@ -91,13 +91,13 @@ bool RequestParser::parseUri(std::string request_line) {
 	if (raw_uri.empty()) 
 		raw_uri = "/";
 	if (raw_uri.length() > MAX_URI_LENGTH) {
-		console::log("[REQUEST PARSER] Request URI too long", ERROR);
+		console::log("[ERROR][REQUEST PARSER] Request URI too long", MSG);
 		_last_status = E_URI_TOO_LONG;
 		return false;
 	}
 	RequestUri uri(raw_uri);
 	if (!uri.parse()) {
-		console::log("[REQUEST PARSER] Invalid URI", ERROR);
+		console::log("[ERROR][REQUEST PARSER] Invalid URI", MSG);
 		_last_status = E_NOT_FOUND;
 		return false;
 	}
@@ -117,7 +117,7 @@ bool RequestParser::parseVersion(std::string request_line) {
 		_request->setHttpVersion(major, minor);
 		return true;
 	}
-	console::log("[REQUEST PARSER] Invalid HTTP version", ERROR);
+	console::log("[ERROR][REQUEST PARSER] Invalid HTTP version", MSG);
 	_last_status = E_UNSUPPORTED_VERSION;
 	return false;
 }
@@ -132,7 +132,7 @@ bool RequestParser::parseHeaders() {
 	while (_current_pos < _raw_request.length()) {
 		size_t line_end = _raw_request.find("\r\n", _current_pos);
 		if (line_end == std::string::npos) {
-			console::log("[REQUEST PARSER] No CRLF found in headers", ERROR);
+			console::log("[ERROR][REQUEST PARSER] No CRLF found in headers", MSG);
 			_last_status = E_BAD_REQUEST;
 			return false;
 		}
@@ -142,13 +142,13 @@ bool RequestParser::parseHeaders() {
 			break;
 		size_t colon_pos = header_line.find(':');
 		if (colon_pos == std::string::npos) {
-			console::log("[REQUEST PARSER] Missing colon in header line", ERROR);
+			console::log("[ERROR][REQUEST PARSER] Missing colon in header line", MSG);
 			_last_status = E_BAD_REQUEST;
 			return false;
 		}
 		std::string name = trim_lws(header_line.substr(0, colon_pos));
 		if (name.empty()) {
-			console::log("[REQUEST PARSER] Empty header name", ERROR);
+			console::log("[ERROR][REQUEST PARSER] Empty header name", MSG);
 			_last_status = E_BAD_REQUEST;
 			return false;
 		}
@@ -159,7 +159,7 @@ bool RequestParser::parseHeaders() {
 		else
 			values.push_back(trim_lws(value));
 		if (values.empty()) {
-			console::log("[REQUEST PARSER] Empty header value", ERROR);
+			console::log("[ERROR][REQUEST PARSER] Empty header value", MSG);
 			_last_status = E_BAD_REQUEST;
 			return false;
 		}
@@ -175,18 +175,18 @@ bool RequestParser::parseBody() {
 		_request->setBody(body);
 		
 		if (!_request->hasHeader("Content-Length")) {
-			console::log("[REQUEST PARSER] Missing \"Content-Length\" header", ERROR);
+			console::log("[ERROR][REQUEST PARSER] Missing \"Content-Length\" header", MSG);
 			_last_status = E_LENGTH_REQUIRED;
 			return false;
 		}
 		std::vector<std::string> body_size_value = _request->getHeaderValues("Content-Length");
 		if (body_size_value.at(0) == "") {
-			console::log("[REQUEST PARSER] Missing \"Content-Length\" header value", ERROR);
+			console::log("[ERROR][REQUEST PARSER] Missing \"Content-Length\" header value", MSG);
 			_last_status = E_LENGTH_REQUIRED;
 			return false;
 		}
 		if (to_size_t(body_size_value.at(0)) != _request->getBody().size()) {
-			console::log("[REQUEST PARSER] \"Content-Length\" header value doesn't match body size", ERROR);
+			console::log("[ERROR][REQUEST PARSER] \"Content-Length\" header value doesn't match body size", MSG);
 			_last_status = E_BAD_REQUEST;
 			return false;
 		}

@@ -24,7 +24,7 @@ std::string	handle_messages(const WebservConfig& config, const std::string &raw_
 	MessageHandler		handler(config, &request);
 
 	if (raw_request.empty()) {
-		console::log("[ERROR] Empty request", MSG);
+		console::log("[ERROR][HANDLE MESSAGES] Empty request", MSG);
 		handler.setLastStatus(E_BAD_REQUEST);
 	}
 	else if (handler.parseRequest(raw_request)) {
@@ -32,12 +32,12 @@ std::string	handle_messages(const WebservConfig& config, const std::string &raw_
 		handler.validateRequest();
 	}
 	handler.generateResponse();
+	console::log("[DEBUG] Status after generateResponse: " + status_msg(handler.getLastStatus()), MSG);
 
 	std::string complete_response = handler.serializeResponse();
-	console::log("[DEBUG] Complete response length: " + nb_to_string(complete_response.length()), MSG);
-	console::log("[DEBUG] Response preview: " + complete_response.substr(0, 200) + "...", MSG);
+	console::log("[DEBUG] Response length: " + nb_to_string(complete_response.length()), MSG);
 
-	return handler.serializeResponse();
+	return complete_response;
 }
 
 bool	MessageHandler::parseRequest(const std::string& raw_request) {
@@ -50,42 +50,6 @@ bool	MessageHandler::parseRequest(const std::string& raw_request) {
 	}
 	_last_status = E_OK;
 	return true;
-}
-
-bool MessageHandler::validateRequest() {
-	
-	RequestValidator	validator(_config, _request);
-	
-	if (!validator.validateRequest()) {
-		_last_status = validator.getLastStatus();
-		return false;
-	}
-	_last_status = E_OK;
-	return true;
-}
-
-bool MessageHandler::generateResponse() {
-	
-	ResponseGenerator	generator(_config, _request, &_response);
-	
-	generator.setLastStatus(_last_status);
-	generator.generateResponse();
-	_last_status = generator.getLastStatus();
-	return true;
-}
-
-std::string	MessageHandler::serializeResponse() {
-
-	int status_code = _response.getStatus();
-	const std::string& reason_phrase = status_msg(_response.getStatus());
-	const std::string& body = _response.getBody();
-
-	std::ostringstream oss;
-	oss << "HTTP/1.1 " << status_code << " " << reason_phrase << "\r\n";
-	oss << _response.serializeHeaders() << "\r\n";
-	oss << "\r\n";
-	oss << body;
-	return oss.str();
 }
 
 void	MessageHandler::setRequestContext() {
@@ -116,6 +80,41 @@ void	MessageHandler::setRequestContext() {
 		ctx._autoindex_enabled = false;
 
 	_request->ctx = ctx;
+}
+
+bool MessageHandler::validateRequest() {
+	
+	RequestValidator	validator(_config, _request);
+	
+	if (!validator.validateRequest()) {
+		_last_status = validator.getLastStatus();
+		return false;
+	}
+	_last_status = E_OK;
+	return true;
+}
+
+bool MessageHandler::generateResponse() {
+	
+	ResponseGenerator	generator(_config, _request, &_response, _last_status);
+	
+	generator.generateResponse();
+	_last_status = generator.getLastStatus();
+	return true;
+}
+
+std::string	MessageHandler::serializeResponse() {
+
+	int status_code = _response.getStatus();
+	const std::string& reason_phrase = status_msg(_response.getStatus());
+	const std::string& body = _response.getBody();
+
+	std::ostringstream oss;
+	oss << "HTTP/1.0 " << status_code << " " << reason_phrase << "\r\n";
+	oss << _response.serializeHeaders() << "\r\n";
+	oss << "\r\n";
+	oss << body;
+	return oss.str();
 }
 
 std::string	MessageHandler::findConfigLocationName() {

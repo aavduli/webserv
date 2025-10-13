@@ -21,29 +21,23 @@ class ResponseGenerator {
 		void	generateErrorResponse();
 		
 	public:
-		ResponseGenerator(const WebservConfig& config, HttpRequest* request, HttpResponse* response);
+		ResponseGenerator(const WebservConfig& config, HttpRequest* request, HttpResponse* response, Status status);
 		ResponseGenerator(const ResponseGenerator& rhs);
 		ResponseGenerator& operator=(const ResponseGenerator& rhs);
 		~ResponseGenerator();
 
-		Status	getLastStatus() const;
-		void	setLastStatus(Status last_status);
-
-		void	generateResponse();
-		void	setDefaultHeaders();
-		void	setContentHeaders();
-// 		void			setConnectionHeader();
-// 		void			setDateHeader();
-// 		
-// 		bool			shouldCloseConnection() const;
-// 		std::string		getCurrentHTTPDate() const;
+		Status			getLastStatus() const;
+		void			generateResponse();
+		void			setDefaultHeaders();
+		void			setContentHeaders();
+ 		void			setDateHeader();
+ 		std::string		getCurrentHTTPDate() const;
 		std::string		readFileContent(std::ifstream& file) const;
 		std::string		generateDirectoryHTML();
 		std::string		generateDefaultErrorHTML();
 		std::string		generateRedirHTML();
 		bool			isValidCGI() const;
 		void			addValidIndex();
-		// 		
 };
 
 std::string		getMimeType(const std::string& extension);
