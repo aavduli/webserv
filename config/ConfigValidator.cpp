@@ -135,13 +135,8 @@ bool ConfigValidator::validateServerConfig(const ServerConfig& config) {
 	// check mandatory dircrive
 	if (config.directives.find("listen") == config.directives.end()) {
 		setError("Missing required 'listen' directive");
-<<<<<<< HEAD
 		console::log(_lastError, CONF);
-		return (BLOCKINGERROR ? false : true );
-=======
-		console::log(_lastError, WARNING);
 		return (BLOCKINGERROR ? false : true);
->>>>>>> bf462af (cleanning + parsingutils ameliored)
 	}
 
 	// validate each directive
