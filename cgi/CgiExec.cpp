@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/07 15:20:30 by jim               #+#    #+#             */
-/*   Updated: 2025/10/13 15:39:10 by jim              ###   ########.fr       */
+/*   Updated: 2025/10/13 17:30:00 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,7 +47,7 @@ std::string CgiExec::execute(const HttpRequest* request){
 		close(pipefd[1]);
 
 		//change dir
-		chdir("./www/cgi");
+		chdir("./www/cgi-bin");
 
 		//Setup CGI variable env
 		setenv("REQUEST_METHOD", request->getMethod().c_str(), 1);
@@ -66,7 +66,7 @@ std::string CgiExec::execute(const HttpRequest* request){
 		//for POST method
 		if (request->getMethod() == "POST"){
 			std::ostringstream oss;
-			oss<<request->getBodySize();
+			oss<< request->getBody().size();
 			setenv("CONTENT_LENGTH", oss.str().c_str(), 1);
 			setenv("CONTENT_TYPE", "application/x-www-form-urlencoded", 1);
 		}

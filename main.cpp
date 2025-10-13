@@ -29,7 +29,7 @@ int testCGI(){
 
 int main(int ac, char **av) {
 
-	testCGI();
+	//testCGI();
 	console::openFile();
 	if (ac != 2){
 		console::log("Config file error ", ERROR);

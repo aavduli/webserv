@@ -1,5 +1,6 @@
 #include "ResponseGenerator.hpp"
 #include "../../console/console.hpp"
+#include "../../cgi/CgiExec.hpp"
 #include <ctime>
 #include <sstream>
 
@@ -43,10 +44,10 @@ void ResponseGenerator::generateResponse() {
 }
 
 void ResponseGenerator::generateStaticFileResponse() {
-	
+
 	const std::string& path = _request->getUri().getEffectivePath();
 	console::log("[INFO] Serving static file: " + path, MSG);
-	
+
 	std::ifstream file(path.c_str());
 	if (!file.is_open()){
 		console::log("[ERROR] Failed to read: " + path, MSG);
@@ -61,7 +62,7 @@ void ResponseGenerator::generateStaticFileResponse() {
 void ResponseGenerator::generateDirectoryResponse() {
 
 	console::log("[INFO] Generating directory listing response", MSG);
-	
+
 	if (!_request->ctx._autoindex_enabled) {
 		console::log("[ERROR] Directory access forbidden", MSG);
 		_last_status = E_FORBIDDEN;
@@ -84,7 +85,7 @@ void ResponseGenerator::generateDirectoryResponse() {
 void ResponseGenerator::generateRedirResponse() {
 
 	const std::string& destination = _request->getUri().getRedirDestination();
-	
+
 	_response->setStatus(_last_status);
 	_response->addHeader("Location", str_to_vect(destination, ""));		// required
 	_response->setBody(generateRedirHTML());
@@ -113,15 +114,56 @@ void ResponseGenerator::generateCGIResponse() {
 
 	console::log("[INFO] Generating CGI response", MSG);
 
-	// Execute CGI script
-	// Parse CGI output headers
-	// Handle CGI errors
-	// Set appropriate response
+	const std::string& script_path = _request->getUri().getEffectivePath();
+	std::string python_path = _config.getCgiPath(_request->ctx._location_name);
 
-	// TODO: Execute CGI script
-	// TODO: Parse CGI output
-	// TODO: Set headers from CGI response
+	CgiExec executor(script_path, python_path, &_config);
+	std::string cgi_output = executor.execute(_request);
+
+	if (cgi_output.empty()){
+		console::log("[ERROR] CGI execution failed", MSG);
+		_last_status = E_INTERNAL_SERVER_ERROR;
+		return generateErrorResponse();
+	}
+
+
+	//parsing cgi output
+	parseCGIOutput(cgi_output);
+	_response->setStatus(E_OK);
 	_response->setBodyType(B_CGI);  // CGI sets its own Content-Type
+}
+
+void ResponseGenerator::parseCGIOutput(const std::string& cgi_output){
+	//first find the empty lime, separator header body
+	size_t header_end= cgi_output.find("\n\n");
+	if (header_end == std::string::npos){
+		//no head ? :(
+		_response->setBody(cgi_output);
+		_response->setBodyType(B_CGI);
+		return;
+	}
+
+	//separator header body
+	std::string header_part = cgi_output.substr(0,header_end);
+	std::string body_part = cgi_output.substr(header_end + 2); // count +2 for \n\n
+
+	//parse header line by line
+	std::istringstream header_stream(header_part);
+	std::string line;
+	while(std::getline(header_stream, line)){
+		size_t colon_position = line.find(':');
+		if (colon_position != std::string::npos){
+			std::string header_name = line.substr(0, colon_position);
+			std::string header_value = line.substr(colon_position + 1);
+
+			//delet space
+			while (!header_value.empty() && header_value[0] == ' '){
+				header_value = header_value.substr(1);}
+
+			_response->addHeader(header_name, str_to_vect(header_value, ""));
+		}
+	}
+	_response->setBody(body_part);
 }
 
 void ResponseGenerator::setDefaultHeaders() {
@@ -131,15 +173,15 @@ void ResponseGenerator::setDefaultHeaders() {
 	Persistent connections are DEFAULT (keep-alive)
 	Only close if client sends Connection: close or error occurs
 	Must handle pipelined requests
-	
+
 	Accurate Content-Length for all responses
 	Last-Modified headers for static files
 	Server identification header
 	Proper Date headers
 	*/
-	
+
 	console::log("[INFO] Setting default HTTP/1.1 headers", MSG);
-	
+
 	// TODO: Set HTTP version to 1.1
 	// TODO: Add required headers
 	// setDateHeader();
@@ -175,21 +217,21 @@ void ResponseGenerator::setContentHeaders() {
 // void ResponseGenerator::setConnectionHeader() {
 // 	bool close_connection = shouldCloseConnection();
 // 	console::log("[INFO] Connection will be " + std::string(close_connection ? "closed" : "kept alive"), MSG);
-// 	
+//
 // 	// TODO: Set Connection header
 // }
-// 
+//
 // void ResponseGenerator::setContentHeaders(size_t content_length) {
 // 	console::log("[INFO] Setting content headers, length: " + std::to_string(content_length), MSG);
-// 	
+//
 // 	// TODO: Set Content-Length header
 // 	// TODO: Set Content-Type header based on file or content
 // }
-// 
+//
 // void ResponseGenerator::setDateHeader() {
 // 	std::string date = getCurrentHTTPDate();
 // 	console::log("[INFO] Setting Date header: " + date, MSG);
-// 	
+//
 // 	// TODO: Set Date header (required by HTTP/1.1)
 // }
 
@@ -203,26 +245,26 @@ void ResponseGenerator::setContentHeaders() {
 // 			}
 // 		}
 // 	}
-// 	
+//
 // 	// TODO: Check for error conditions that require connection close
 // 	// TODO: Check server configuration
-// 	
+//
 // 	// Default: keep-alive for HTTP/1.1
 // 	return false;
 // }
-// 
+//
 // std::string ResponseGenerator::getCurrentHTTPDate() const {
 // 	time_t now = time(0);
 // 	struct tm* gmt = gmtime(&now);
-// 	
+//
 // 	char buffer[100];
 // 	strftime(buffer, sizeof(buffer), "%a, %d %b %Y %H:%M:%S GMT", gmt);
-// 	
+//
 // 	return std::string(buffer);
 // }
 
 std::string	ResponseGenerator::readFileContent(std::ifstream& file) const {
-	
+
 	std::string	str;
 	std::string	file_contents;
 	while (std::getline(file, str)) {
@@ -238,7 +280,7 @@ std::string	ResponseGenerator::generateDirectoryHTML() {
 	DIR* dir = opendir(path.c_str());
 	if (!dir)
 		return "<html><body><h1>Error: Cannot open directory</h1></body></html>";
-		
+
 	struct dirent *en;
 	std::stringstream html;
 	html << "<!DOCTYPE html>\n";
@@ -302,9 +344,9 @@ std::string	ResponseGenerator::generateRedirHTML() {
 }
 
 void	ResponseGenerator::addValidIndex() {
-	
+
 	std::string path = _request->getUri().getEffectivePath();
-	
+
 	if (is_directory(path) && !_request->ctx._index_list.empty()) {
 		const std::vector<std::string>& indexes = _request->ctx._index_list;
 		std::vector<std::string>::const_iterator it;
@@ -341,7 +383,7 @@ bool	ResponseGenerator::isValidCGI() const {
 }
 
 Status	findErrorStatus(const std::string& path) {
-	
+
 	struct stat file_stat;
 
 	// stat failed = invalid path
@@ -387,7 +429,7 @@ std::string getMimeType(const std::string& extension) {
 	if (extension == "xml") {
 		return "application/xml";
 	}
-	
+
 	// Image types
 	if (extension == "png") {
 		return "image/png";
@@ -407,7 +449,7 @@ std::string getMimeType(const std::string& extension) {
 	if (extension == "webp") {
 		return "image/webp";
 	}
-	
+
 	// Font types
 	if (extension == "woff") {
 		return "font/woff";
@@ -421,7 +463,7 @@ std::string getMimeType(const std::string& extension) {
 	if (extension == "eot") {
 		return "application/vnd.ms-fontobject";
 	}
-	
+
 	// Document types
 	if (extension == "pdf") {
 		return "application/pdf";
@@ -432,7 +474,7 @@ std::string getMimeType(const std::string& extension) {
 	if (extension == "docx") {
 		return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 	}
-	
+
 	// Archive types
 	if (extension == "zip") {
 		return "application/zip";

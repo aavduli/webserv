@@ -13,13 +13,15 @@ class ResponseGenerator {
 		HttpResponse*			_response;
 		Status					_last_status;
 		bool					_done;
-		
+
 		void	generateStaticFileResponse();
 		void	generateRedirResponse();
 		void	generateCGIResponse();
 		void	generateDirectoryResponse();
 		void	generateErrorResponse();
-		
+
+		void	parseCGIOutput(const std::string& cgi_output);
+
 	public:
 		ResponseGenerator(const WebservConfig& config, HttpRequest* request, HttpResponse* response);
 		ResponseGenerator(const ResponseGenerator& rhs);
@@ -34,7 +36,7 @@ class ResponseGenerator {
 		void	setContentHeaders();
 // 		void			setConnectionHeader();
 // 		void			setDateHeader();
-// 		
+//
 // 		bool			shouldCloseConnection() const;
 // 		std::string		getCurrentHTTPDate() const;
 		std::string		readFileContent(std::ifstream& file) const;
@@ -43,7 +45,7 @@ class ResponseGenerator {
 		std::string		generateRedirHTML();
 		bool			isValidCGI() const;
 		void			addValidIndex();
-		// 		
+		//
 };
 
 std::string		getMimeType(const std::string& extension);
