@@ -3,11 +3,9 @@
 import os
 import sys
 
-# Headers CGI obligatoires
 print("Content-Type: text/html")
-print("")  # Ligne vide obligatoire
+print("")
 
-# Body HTML avec toutes les variables CGI
 print("<html>")
 print("<head><title>CGI Environment Test</title></head>")
 print("<body>")

@@ -24,10 +24,10 @@ class MessageHandler {
 		MessageHandler(const MessageHandler& rhs);
 		MessageHandler& operator=(const MessageHandler& rhs);
 		virtual ~MessageHandler();
-		
+
 		bool			parseRequest(const std::string& raw_request);
 		void			validateRequest();
-		void			generateResponse();
+		bool			generateResponse();
 		std::string		serializeResponse();
 
 		Status			getLastStatus() const;

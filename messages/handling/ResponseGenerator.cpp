@@ -4,7 +4,7 @@
 #include <ctime>
 #include <sstream>
 
-ResponseGenerator::ResponseGenerator(const WebservConfig& config, HttpRequest* request, HttpResponse* response, Status status) : _config(config), _request(request), _response(response), _last_status(status), _done(false) {}
+ResponseGenerator::ResponseGenerator(const WebservConfig& config, HttpRequest* request, HttpResponse* response) : _config(config), _request(request), _response(response), _done(false) {}
 ResponseGenerator::ResponseGenerator(const ResponseGenerator& rhs) : _config(rhs._config), _request(rhs._request), _response(rhs._response), _last_status(rhs._last_status), _done(rhs._done) {}
 ResponseGenerator& ResponseGenerator::operator=(const ResponseGenerator& rhs) {
 	if (this != &rhs) {
@@ -16,6 +16,7 @@ ResponseGenerator& ResponseGenerator::operator=(const ResponseGenerator& rhs) {
 	return *this;
 }
 ResponseGenerator::~ResponseGenerator() {}
+void	ResponseGenerator::setLastStatus(Status last_status) {_last_status = last_status;}
 Status	ResponseGenerator::getLastStatus() const {return _last_status;}
 
 void ResponseGenerator::generateResponse() {
@@ -81,6 +82,7 @@ void ResponseGenerator::generateDirectoryResponse() {
 	closedir(dir);
 }
 
+
 void ResponseGenerator::generateRedirResponse() {
 
 	const std::string& destination = _request->getUri().getRedirDestination();
@@ -91,38 +93,10 @@ void ResponseGenerator::generateRedirResponse() {
 	_response->setBodyType(B_HTML);
 }
 
-void ResponseGenerator::generateErrorResponse() {
-
-	_response->setStatus(_last_status);
-	std::string error_page_path = _config.getErrorPage(_last_status);
-
-	if (!error_page_path.empty()) {		// custom error page
-		std::ifstream file(error_page_path.c_str());
-		if (file.is_open()) {
-			_response->setBody(readFileContent(file));
-			_response->setBodyType(B_FILE);
-			return ;
-		}
-		console::log("[ERROR][GENERATE RESPONSE] Failed to read custom error path: " + error_page_path, MSG);
-	}
-	_response->setBody(generateDefaultErrorHTML());
-	_response->setBodyType(B_HTML);
-}
-
 void ResponseGenerator::generateCGIResponse() {
 
 	console::log("[INFO] Generating CGI response", MSG);
 
-	// Execute CGI script
-	// Parse CGI output headers
-	// Handle CGI errors
-	// Set appropriate response
-
-	// TODO: Execute CGI script
-	// TODO: Parse CGI output
-	// TODO: Set headers from CGI response
-
-	_response->setBodyType(B_CGI);	// CGI sets its own Content-Type
 	const std::string& script_path = _request->getUri().getEffectivePath();
 	std::string python_path = _config.getCgiPath(_request->ctx._location_name);
 
@@ -175,14 +149,27 @@ void ResponseGenerator::parseCGIOutput(const std::string& cgi_output){
 	_response->setBody(body_part);
 }
 
+void ResponseGenerator::generateErrorResponse() {
+
+	_response->setStatus(_last_status);
+	std::string error_page_path = _config.getErrorPage(_last_status);
+
+	if (!error_page_path.empty()) {		// custom error page
+		std::ifstream file(error_page_path.c_str());
+		if (file.is_open()) {
+			_response->setBody(readFileContent(file));
+			_response->setBodyType(B_FILE);
+			return ;
+		}
+		console::log("[ERROR][GENERATE RESPONSE] Failed to read custom error path: " + error_page_path, MSG);
+	}
+	_response->setBody(generateDefaultErrorHTML());
+	_response->setBodyType(B_HTML);
+}
+
 void ResponseGenerator::setDefaultHeaders() {
 
 	/*
-	HTTP/1.1 Changes:
-	Persistent connections are DEFAULT (keep-alive)
-	Only close if client sends Connection: close or error occurs
-	Must handle pipelined requests
-
 	Connection
 	Accurate Content-Length for all responses
 	Last-Modified headers for static files
@@ -219,50 +206,6 @@ void ResponseGenerator::setContentHeaders() {
 		std::string body_size = nb_to_string(_response->getBody().size());
 		_response->addHeader("Content-Length", str_to_vect(body_size, ""));
 	}
-
-	console::log("[DEBUG] Response body size: " + nb_to_string(_response->getBody().size()), MSG);
-	console::log("[DEBUG] Setting Content-Length: " + nb_to_string(_response->getBody().size()), MSG);
-}
-
-// void ResponseGenerator::setConnectionHeader() {
-// 	bool close_connection = shouldCloseConnection();
-// 	console::log("[INFO] Connection will be " + std::string(close_connection ? "closed" : "kept alive"), MSG);
-//
-// 	// TODO: Set Connection header
-// }
-//
-// void ResponseGenerator::setContentHeaders(size_t content_length) {
-// 	console::log("[INFO] Setting content headers, length: " + std::to_string(content_length), MSG);
-//
-// 	// TODO: Set Content-Length header
-// 	// TODO: Set Content-Type header based on file or content
-// }
-//
-// void ResponseGenerator::setDateHeader() {
-// 	std::string date = getCurrentHTTPDate();
-// 	console::log("[INFO] Setting Date header: " + date, MSG);
-//
-// 	// TODO: Set Date header (required by HTTP/1.1)
-// }
-
-// bool ResponseGenerator::shouldCloseConnection() const {
-// 	// Check if client requested connection close
-// 	if (getRequest()->hasHeader("Connection")) {
-// 		const std::vector<std::string>& conn_headers = getRequest()->getHeaderValues("connection");
-// 		for (size_t i = 0; i < conn_headers.size(); i++) {
-// 			if (conn_headers[i] == "close") {
-// 				return true;
-// 			}
-// 		}
-// 	}
-//
-// 	// TODO: Check for error conditions that require connection close
-// 	// TODO: Check server configuration
-//
-// 	// Default: keep-alive for HTTP/1.1
-// 	return false;
-// }
-//
 }
 
 // std::string ResponseGenerator::getCurrentHTTPDate() const {
@@ -386,42 +329,23 @@ void	ResponseGenerator::addValidIndex() {
 }
 
 bool	ResponseGenerator::isValidCGI() const {
-	std::string path = _request->getUri().getEffectivePath();
-	console::log("[DEBUG] isvalidCGI -check path: "+path, MSG);
 
-	if (path.empty() || !is_valid_file_path(path)){
-		console::log("[DEBUG] isvalidCGI - path empty or invalida", MSG);
+	std::string path = _request->getUri().getEffectivePath();
+	if (path.empty() || !is_valid_file_path(path))
 		return false;
-	}
 
 	std::map<std::string, std::string> config = _request->ctx._location_config;
-	std::string cgi_extension = config["cgi_ext"];
-	console::log("[DEBUG] isvalidCGI - cgi_ext from config:" + cgi_extension , MSG);
-
-	if (cgi_extension.empty()){
-		console::log("[DEBUG] isvalidCGI no CGI extension", MSG);
+	std::string cgi_extensions = config["cgi_ext"];
+	if (cgi_extensions.empty())
 		return false;
-	}
 
 	std::string extension = get_file_extension(path);
-	if (!extension.empty() && extension[0] != '.')
-		extension = "." + extension;
-	console::log("[DEBUG] isValidCGI - file extension: '" + extension + "'", MSG);
-
-	std::vector<std::string> valid_cgi_extensions = str_to_vect(cgi_extension, " ");
-	console::log("[DEBUG] isValidCGI - found " + nb_to_string(valid_cgi_extensions.size()) + " validextensions", MSG);
-
+	std::vector<std::string> valid_cgi_extensions = str_to_vect(cgi_extensions, " ");
 	for (size_t i = 0; i < valid_cgi_extensions.size(); i++) {
-		console::log("[DEBUG] isValidCGI - comparing '" + extension + "' with '" + valid_cgi_extensions[i] + "'", MSG);
-		if (extension == valid_cgi_extensions[i]) {
-			console::log("[DEBUG] isValidCGI - MATCH! Returning true", MSG);
+		if (extension == valid_cgi_extensions[i])
 			return true;
-		}
 	}
-	console::log("[DEBUG] isValidCGI - no match found, returning false", MSG);
 	return false;
-
-
 }
 
 Status	findErrorStatus(const std::string& path) {

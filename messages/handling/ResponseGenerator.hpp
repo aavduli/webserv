@@ -23,7 +23,7 @@ class ResponseGenerator {
 		void	parseCGIOutput(const std::string& cgi_output);
 
 	public:
-		ResponseGenerator(const WebservConfig& config, HttpRequest* request, HttpResponse* response, Status status);
+		ResponseGenerator(const WebservConfig& config, HttpRequest* request, HttpResponse* response);
 		ResponseGenerator(const ResponseGenerator& rhs);
 		ResponseGenerator& operator=(const ResponseGenerator& rhs);
 		~ResponseGenerator();
@@ -39,12 +39,6 @@ class ResponseGenerator {
 //
 // 		bool			shouldCloseConnection() const;
 // 		std::string		getCurrentHTTPDate() const;
-		Status			getLastStatus() const;
-		void			generateResponse();
-		void			setDefaultHeaders();
-		void			setContentHeaders();
- 		void			setDateHeader();
- 		std::string		getCurrentHTTPDate() const;
 		std::string		readFileContent(std::ifstream& file) const;
 		std::string		generateDirectoryHTML();
 		std::string		generateDefaultErrorHTML();
