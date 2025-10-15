@@ -268,18 +268,19 @@ std::string	ResponseGenerator::generateRedirHTML() {
 void	ResponseGenerator::addValidIndex() {
 	
 	std::string path = _request->getUri().getEffectivePath();
-	
-	if (is_directory(path) && !_request->ctx._index_list.empty()) {
-		const std::vector<std::string>& indexes = _request->ctx._index_list;
-		std::vector<std::string>::const_iterator it;
-		for (it = indexes.begin(); it != indexes.end(); it++) {
-			std::string full_index_path = build_full_path(path, *it, _request->ctx._location_name);
-			if (is_valid_file_path(full_index_path)) {
-				RequestUri uri(_request->getUri());
-				uri.setEffectivePath(full_index_path);
-				_request->setUri(uri);
-				return ;
-			}
+	if (!is_directory(path) || _request->ctx._index_list.empty())
+		return ;
+
+	const std::vector<std::string>& indexes = _request->ctx._index_list;
+	std::vector<std::string>::const_iterator it;
+	for (it = indexes.begin(); it != indexes.end(); it++) {
+
+		std::string full_index_path = build_full_path(path, *it);
+		if (is_valid_file_path(full_index_path)) {
+			RequestUri uri(_request->getUri());
+			uri.setEffectivePath(full_index_path);
+			_request->setUri(uri);
+			return ;
 		}
 	}
 }

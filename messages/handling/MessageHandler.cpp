@@ -55,7 +55,8 @@ void MessageHandler::validateRequest() {
 	
 	if (!validator.validateRequest())
 		_last_status = validator.getLastStatus();
-	_last_status = E_OK;
+	else
+		_last_status = E_OK;
 }
 
 void MessageHandler::generateResponse() {

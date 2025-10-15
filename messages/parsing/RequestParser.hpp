@@ -20,8 +20,7 @@ class RequestParser {
 		std::string		parseHeaderName(std::string line);
 		bool			parseBody();
 
-		std::string							findConfigLocationName();
-		std::map<std::string, std::string>	findLocationMatch();
+		std::string		findLocationName(const std::string& path);
 		
 	public:
 		RequestParser(const WebservConfig& config, HttpRequest* request, const std::string& raw_request);

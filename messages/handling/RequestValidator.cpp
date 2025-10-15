@@ -1,10 +1,10 @@
 #include "RequestValidator.hpp"
 #include <cstring>
 
-RequestValidator::RequestValidator(const WebservConfig& config, HttpRequest* request) : _config(config) {
-	_request = request;
-	_last_status = E_INIT;
-	_host_header = _request->getHeaderValues("host");
+RequestValidator::RequestValidator(const WebservConfig& config, HttpRequest* request) : _config(config), _request(request), _last_status(E_INIT) {
+	if (_request) {
+		_host_header = _request->getHeaderValues("Host");
+	}
 }
 RequestValidator::RequestValidator(const RequestValidator& rhs) : _config(rhs._config), _request(rhs._request), _last_status(rhs._last_status), _host_header(rhs._host_header) {}
 RequestValidator& RequestValidator::operator=(const RequestValidator& rhs) {
@@ -126,14 +126,17 @@ bool RequestValidator::validatePath() {
 
 	RequestUri	uri = _request->getUri();
 	const std::string& path = uri.getPath();
+
 	if (contains_traversal(path)) {
 		console::log("[ERROR][REQUEST VALIDATOR] URI path attempts traversal", MSG);
 		_last_status = E_BAD_REQUEST;
 		return false;
 	}
 
-	std::string full_path = build_full_path(_request->ctx._document_root, path, _request->ctx._location_name);
+	std::string relative_path = remove_prefix(path, _request->ctx._location_name);
+	std::string full_path = build_full_path(_request->ctx._document_root, relative_path);
 	std::string final_path  = canonicalize_path(full_path);
+
 	if (!is_valid_path(final_path)) {
 		console::log("[ERROR][REQUEST VALIDATOR] Invalid path: " + final_path, MSG);
 		_last_status = E_NOT_FOUND;

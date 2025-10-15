@@ -38,23 +38,29 @@ std::string get_file_extension(const std::string& path) {
 	return (extension);
 }
 
-std::string build_full_path(const std::string& start, const std::string& end, const std::string& location_prefix) {
+std::string	remove_prefix(const std::string& path, const std::string& prefix) {
 
-	// remove location prefix
-	std::string relative_path = end;
-	if (!location_prefix.empty() && end.find(location_prefix) == 0)
-		relative_path = end.substr(location_prefix.length());
+	std::string relative_path = path;
 
+	if (!prefix.empty() && path.find(prefix) == 0)
+		relative_path = path.substr(prefix.length());
+	return relative_path;
+}
+
+std::string build_full_path(const std::string& root_path, const std::string& relative_path) {
+
+	std::string path = relative_path;
+	std::string root = root_path;
+	
 	// ensure terminating /
-	std::string root = start;
-	if (!root.empty() && root[root.length() - 1] != '/')
+	if (!root_path.empty() && root_path[root_path.length() - 1] != '/')
 		root += "/";
 
 	// remove leading /
 	if (!relative_path.empty() && relative_path[0] == '/')
-		relative_path = relative_path.substr(1);
+		path = relative_path.substr(1);
 
-	return root + relative_path;
+	return root + path;
 }
 
 // traversal = use of ../ sequences (or other patterns) to escape document root
