@@ -31,6 +31,8 @@ bool RequestValidator::validateRequest() {
 	if (!validateHeaderLimits()) return false;
 	if (!validateConnectionHeader()) return false;
 	if (!validateRedirection()) return false;
+	if (_last_status == E_INIT)
+		_last_status = E_OK;
 	return true;
 }
 
@@ -236,7 +238,7 @@ bool RequestValidator::validateRedirection() {
 	_request->ctx._has_redirect = true;
 	if (code == "301")
 		_last_status = E_REDIRECT_PERMANENT;
-	else
+	else if (code == "302")
 		_last_status = E_REDIRECT_TEMPORARY;
 	_request->setUri(uri);
 	return true;

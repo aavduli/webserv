@@ -38,13 +38,25 @@ std::string get_file_extension(const std::string& path) {
 	return (extension);
 }
 
-std::string	remove_prefix(const std::string& path, const std::string& prefix) {
+std::string	remove_suffix(const std::string& str, const std::string& suffix) {
 
-	std::string relative_path = path;
+	std::string truncated_str = str;
 
-	if (!prefix.empty() && path.find(prefix) == 0)
-		relative_path = path.substr(prefix.length());
-	return relative_path;
+	if (!suffix.empty() && str.length() >= suffix.length()) {
+		size_t suffix_pos = str.length() - suffix.length();
+		if (str.substr(suffix_pos) == suffix)
+			truncated_str = str.substr(0, suffix_pos);
+	}
+	return truncated_str;
+}
+
+std::string	remove_prefix(const std::string& str, const std::string& prefix) {
+
+	std::string truncated_str = str;
+
+	if (!prefix.empty() && str.find(prefix) == 0)
+		truncated_str = str.substr(prefix.length());
+	return truncated_str;
 }
 
 std::string build_full_path(const std::string& root_path, const std::string& relative_path) {

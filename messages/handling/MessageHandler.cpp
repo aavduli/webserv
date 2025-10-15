@@ -40,28 +40,27 @@ bool	MessageHandler::parseRequest(const std::string& raw_request) {
 
 	RequestParser	parser(_config, _request, raw_request);
 
-	if (!parser.parseRequest()) {
+	if (parser.parseRequest()) {
+		parser.setRequestContext();
 		_last_status = parser.getLastStatus();
-		return false;
+		return true;
 	}
-	parser.setRequestContext();
-	_last_status = E_OK;
-	return true;
+	_last_status = parser.getLastStatus();
+	return false;
 }
 
 void MessageHandler::validateRequest() {
 	
 	RequestValidator	validator(_config, _request);
 	
-	if (!validator.validateRequest())
-		_last_status = validator.getLastStatus();
-	else
-		_last_status = E_OK;
+	validator.validateRequest();
+	_last_status = validator.getLastStatus();
 }
 
 void MessageHandler::generateResponse() {
 	
 	ResponseGenerator	generator(_config, _request, &_response, _last_status);
+
 	generator.generateResponse();
 	_last_status = generator.getLastStatus();
 }
