@@ -19,16 +19,15 @@ Status	ResponseGenerator::getLastStatus() const {return _last_status;}
 
 void ResponseGenerator::generateResponse() {
 
-	console::log("[INFO] Last status: " + status_msg(_last_status), MSG);
-	setDefaultHeaders();
-	
+	//print_request(_request);
+
 	if (_last_status == E_REDIRECT_PERMANENT || _last_status == E_REDIRECT_TEMPORARY)
 		generateRedirResponse();
 	else if (_last_status == E_OK) {
 		if (_request->getMethod() == "GET") {
 			addValidIndex();
 			if (is_directory(_request->getUri().getEffectivePath()))
-				generateDirectoryResponse();	// need HTML generation
+				generateDirectoryResponse();
 			else if (isValidCGI())
 				generateCGIResponse();
 			else
@@ -41,7 +40,9 @@ void ResponseGenerator::generateResponse() {
 	}
 	else
 		generateErrorResponse();
-	setContentHeaders();
+	setHeaders();
+
+	//_response->printHeaders();
 }
 
 void ResponseGenerator::generateStaticFileResponse() {
@@ -55,7 +56,7 @@ void ResponseGenerator::generateStaticFileResponse() {
 		_last_status = findErrorStatus(path);
 		return generateErrorResponse();
 	}
-	_response->setBody(readFileContent(file));
+	_response->setBody(getReadFileContent(file));
 	_response->setBodyType(B_FILE);
 	_response->setStatus(E_OK);
 }
@@ -104,7 +105,7 @@ void ResponseGenerator::generateErrorResponse() {
 	if (!error_page_path.empty()) {		// custom error page
 		std::ifstream file(error_page_path.c_str());
 		if (file.is_open()) {
-			_response->setBody(readFileContent(file));
+			_response->setBody(getReadFileContent(file));
 			_response->setBodyType(B_FILE);
 			return ;
 		}
@@ -130,27 +131,13 @@ void ResponseGenerator::generateCGIResponse() {
 	_response->setBodyType(B_CGI);	// CGI sets its own Content-Type
 }
 
-void ResponseGenerator::setDefaultHeaders() {
-
-	/*
-	Connection
-	Accurate Content-Length for all responses
-	Last-Modified headers for static files
-	Server identification header
-	Proper Date headers
-	*/
+void ResponseGenerator::setHeaders() {
 	
-	// setDateHeader();
-	// std::string date = getCurrentHTTPDate();
-
+	_response->addHeader("Date", str_to_vect(getCurrentGMTDate(), ""));
 	_response->addHeader("Connection", str_to_vect("close", ""));
-}
-
-void ResponseGenerator::setContentHeaders() {
 
 	if (_response->getBodyType() == B_FILE) {
-		std::string path = _request->getUri().getEffectivePath();
-		std::string extension = get_file_extension(path);
+		std::string extension = get_file_extension(_request->getUri().getEffectivePath());
 		std::string content_type = getMimeType(extension);
 		_response->addHeader("Content-Type", str_to_vect(content_type, ""));
 	}
@@ -167,27 +154,6 @@ void ResponseGenerator::setContentHeaders() {
 		std::string body_size = nb_to_string(_response->getBody().size());
 		_response->addHeader("Content-Length", str_to_vect(body_size, ""));
 	}
-}
-
-// std::string ResponseGenerator::getCurrentHTTPDate() const {
-// 	time_t now = time(0);
-// 	struct tm* gmt = gmtime(&now);
-// 	
-// 	char buffer[100];
-// 	strftime(buffer, sizeof(buffer), "%a, %d %b %Y %H:%M:%S GMT", gmt);
-// 	
-// 	return std::string(buffer);
-// }
-
-std::string	ResponseGenerator::readFileContent(std::ifstream& file) const {
-	
-	std::string	str;
-	std::string	file_contents;
-	while (std::getline(file, str)) {
-		file_contents += str;
-		file_contents.push_back('\n');
-	}
-	return file_contents;
 }
 
 std::string	ResponseGenerator::generateDirectoryHTML() {
@@ -397,4 +363,31 @@ std::string getMimeType(const std::string& extension) {
 
 	// Default for unknown extensions
 	return "application/octet-stream";
+}
+
+std::string	getReadFileContent(std::ifstream& file) {
+	
+	std::string	str;
+	std::string	file_contents;
+	while (std::getline(file, str)) {
+		file_contents += str;
+		file_contents.push_back('\n');
+	}
+	return file_contents;
+}
+
+std::string getCurrentGMTDate() {
+
+	time_t now;
+	struct tm* gmt;
+	char buf[100];
+	
+	time(&now);				// get current time
+	gmt = gmtime(&now);		// convert to GMT/UTC
+
+	// format: Sun, 06 Nov 1994 08:49:37 GMT 
+	strftime(buf, sizeof(buf), "%a, %d %b %Y %H:%M:%S GMT", gmt);
+	
+	std::string date(buf);
+	return date;
 }
