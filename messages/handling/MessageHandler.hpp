@@ -27,6 +27,7 @@ class MessageHandler {
 		
 		bool			parseRequest(const std::string& raw_request);
 		void			validateRequest();
+		void			processRequest();
 		void			generateResponse();
 		std::string		serializeResponse();
 

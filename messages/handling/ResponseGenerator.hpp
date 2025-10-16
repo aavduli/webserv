@@ -19,7 +19,9 @@ class ResponseGenerator {
 		void	generateCGIResponse();
 		void	generateDirectoryResponse();
 		void	generateErrorResponse();
-		
+
+		void	generatePostResponse();
+
 	public:
 		ResponseGenerator(const WebservConfig& config, HttpRequest* request, HttpResponse* response, Status status);
 		ResponseGenerator(const ResponseGenerator& rhs);

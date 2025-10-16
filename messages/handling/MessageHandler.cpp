@@ -26,8 +26,10 @@ std::string	handle_messages(const WebservConfig& config, const std::string &raw_
 		console::log("[ERROR][HANDLE MESSAGES] Empty request", MSG);
 		handler.setLastStatus(E_BAD_REQUEST);
 	}
-	else if (handler.parseRequest(raw_request))
+	else if (handler.parseRequest(raw_request)) {
 		handler.validateRequest();
+		handler.processRequest();
+	}
 	handler.generateResponse();
 
 	std::string complete_response = handler.serializeResponse();
@@ -55,6 +57,31 @@ void MessageHandler::validateRequest() {
 	
 	validator.validateRequest();
 	_last_status = validator.getLastStatus();
+}
+
+void MessageHandler::processRequest() {
+
+	if (_request->getMethod() == "GET") {
+
+		/*
+		Destination path resolution (upload dir or CGI handler)
+		Directory creation if upload_dir doesn't exist (optional safety)
+		Unique filename generation for uploads
+
+		For uploads:
+			Check write permissions on destination directory
+			Create file with unique name if needed (avoid overwrites)
+			Write received body to disk using write() (non-blocking aware)
+			Handle disk space errors
+
+		For CGI execution:
+			Set up environment variables (REQUEST_METHOD, CONTENT_LENGTH, CONTENT_TYPE, etc.)
+			Pass full body as stdin to CGI process
+			fork() child process, execute CGI via execve(), waitpid()
+			Read CGI output and response headers
+			Handle CGI timeout/crash scenarios
+		*/
+	}
 }
 
 void MessageHandler::generateResponse() {

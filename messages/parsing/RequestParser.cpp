@@ -191,10 +191,36 @@ bool RequestParser::parseBody() {
 			_last_status = E_BAD_REQUEST;
 			return false;
 		}
+		if (_request->getMethod() == "POST")
+			parsePostBody();
 	}
 	else
 		_request->setBody("");
 	return true;
+}
+	
+void	RequestParser::parsePostBody() {
+
+	/* application/x-www-form-urlencoded: Parse key=value pairs
+	multipart/form-data: Parse multipart boundaries and extract files */
+
+	if (_request->hasHeader("Content-Type")) {
+
+		std::vector<std::string> content_type = _request->getHeaderValues("Content-Type");
+		if (content_type.at(0) == "application/x-www-form-urlencoded") {
+			console::log("[INFO][POST REQUEST PARSER] Parsing urlencoded post body", MSG);
+			return ;
+		}
+		else if (content_type.at(0) == "multipart/form-data") {
+			console::log("[INFO][POST REQUEST PARSER] Parsing form-data post body", MSG);
+			return ;
+		}
+		console::log("[ERROR][POST REQUEST PARSER] Invalid \"Content-Type\" header value", MSG);
+		// _last_status = E_LENGTH_REQUIRED;
+		return ;
+	}
+	console::log("[ERROR][POST REQUEST PARSER] Missing \"Content-Type\" header", MSG);
+	// _last_status = E_LENGTH_REQUIRED;
 }
 
 void	RequestParser::setRequestContext() {

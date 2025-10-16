@@ -33,8 +33,8 @@ void ResponseGenerator::generateResponse() {
 			else
 				generateStaticFileResponse();
 		}
-		// else if (_request->getMethod() == "POST")
-		// 	generatePostResponse();
+		else if (_request->getMethod() == "POST")
+			generatePostResponse();
 		// else if (_request->getMethod() == "DELETE")
 		// 	generateDeleteResponse();
 	}
@@ -43,6 +43,31 @@ void ResponseGenerator::generateResponse() {
 	setHeaders();
 
 	//_response->printHeaders();
+}
+
+void ResponseGenerator::generatePostResponse() {
+
+	// Parse body before!
+	// Content-Type header indicates how the data is passed
+	
+	// application/x-www-form-urlencoded = key/values are encoded in tuples separated by &, with + between key and value
+		// first-name=Frida&last-name=Kahlo
+		// non-alphabetic chars are percent-encoded
+		// data sent in body
+	
+	// multipart/form-data = each value sent as a block of data with a defined delimiter separating each part
+		// boundary="delimiter1234"
+		// used when a form includes files or a lot of data
+
+	// text/plain
+
+	// Content-Disposition header indicates how the form data should be processed
+
+	// Decode body if needed:
+
+	// application/x-www-form-urlencoded: Parse key=value pairs
+	// multipart/form-data: Parse multipart boundaries and extract files
+	// application/json: Keep as-is (CGI handles it)
 }
 
 void ResponseGenerator::generateStaticFileResponse() {

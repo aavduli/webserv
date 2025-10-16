@@ -19,6 +19,7 @@ class RequestParser {
 		bool			parseHeaders();
 		std::string		parseHeaderName(std::string line);
 		bool			parseBody();
+		void			parsePostBody();
 
 		std::string		findLocationName(const std::string& path);
 		
@@ -27,7 +28,7 @@ class RequestParser {
 		RequestParser(const RequestParser& rhs);
 		RequestParser& operator=(const RequestParser& rhs);
 		~RequestParser();
-		
+
 		bool	parseRequest();
 		void	setRequestContext();
 		Status	getLastStatus() const;
