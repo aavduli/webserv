@@ -27,8 +27,8 @@ std::string	handle_messages(const WebservConfig& config, const std::string &raw_
 		handler.setLastStatus(E_BAD_REQUEST);
 	}
 	else if (handler.parseRequest(raw_request)) {
-		handler.validateRequest();
-		handler.processRequest();
+		if (handler.validateRequest())
+			handler.processRequest();
 	}
 	handler.generateResponse();
 
@@ -51,37 +51,30 @@ bool	MessageHandler::parseRequest(const std::string& raw_request) {
 	return false;
 }
 
-void MessageHandler::validateRequest() {
+bool	MessageHandler::validateRequest() {
 	
 	RequestValidator	validator(_config, _request);
 	
-	validator.validateRequest();
+	if (validator.validateRequest()) {
+		_last_status = validator.getLastStatus();
+		return true;
+	}
 	_last_status = validator.getLastStatus();
+	return false;
 }
 
 void MessageHandler::processRequest() {
 
-	if (_request->getMethod() == "GET") {
+	if (_request->getMethod() == "GET")
+		return ;
 
-		/*
-		Destination path resolution (upload dir or CGI handler)
-		Directory creation if upload_dir doesn't exist (optional safety)
-		Unique filename generation for uploads
+	RequestProcessor	processor(_config, _request);
 
-		For uploads:
-			Check write permissions on destination directory
-			Create file with unique name if needed (avoid overwrites)
-			Write received body to disk using write() (non-blocking aware)
-			Handle disk space errors
-
-		For CGI execution:
-			Set up environment variables (REQUEST_METHOD, CONTENT_LENGTH, CONTENT_TYPE, etc.)
-			Pass full body as stdin to CGI process
-			fork() child process, execute CGI via execve(), waitpid()
-			Read CGI output and response headers
-			Handle CGI timeout/crash scenarios
-		*/
-	}
+	if (_request->getMethod() == "POST")
+		processor.processPostRequest();
+	else
+		processor.processDeleteRequest();
+	_last_status = processor.getLastStatus();
 }
 
 void MessageHandler::generateResponse() {

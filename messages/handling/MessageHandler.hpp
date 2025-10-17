@@ -9,6 +9,7 @@
 #include "../data/HttpResponse.hpp"
 #include "../parsing/RequestParser.hpp"
 #include "RequestValidator.hpp"
+#include "RequestProcessor.hpp"
 #include "ResponseGenerator.hpp"
 
 class MessageHandler {
@@ -26,7 +27,7 @@ class MessageHandler {
 		virtual ~MessageHandler();
 		
 		bool			parseRequest(const std::string& raw_request);
-		void			validateRequest();
+		bool			validateRequest();
 		void			processRequest();
 		void			generateResponse();
 		std::string		serializeResponse();
