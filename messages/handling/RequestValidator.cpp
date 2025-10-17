@@ -27,10 +27,8 @@ bool RequestValidator::validateRequest() {
 	if (!validateMethod()) return false;
 	if (!validatePath()) return false;
 	if (!validateContentLength()) return false;
-	if (_request->getMethod() == "POST" && !validateContentType()) return false;
-	if (_request->getMethod() == "POST" && !validateUploadPermissions()) return false;
+	if (!validateContentType()) return false;
 	if (!validateHeaderLimits()) return false;
-	if (!validateConnectionHeader()) return false;
 	if (!validateRedirection()) return false;
 	if (_last_status == E_INIT)
 		_last_status = E_OK;
@@ -184,32 +182,25 @@ bool RequestValidator::validateContentLength() {
 	return true;
 }
 
-// POST always carries data, so Content-Type is mandatory and helps the server know how to parse and handle the request body
 bool RequestValidator::validateContentType() {
 
-	const std::vector<std::string>& ct_headers = _request->getHeaderValues("Content-Type");
-	if (ct_headers.empty()) {
-		console::log("[ERROR][REQUEST VALIDATOR] POST method requires Content-Type header", MSG);
-		_last_status = E_BAD_REQUEST;
-		return false;
-	}
-
-	std::string content_type = ct_headers[0];
-	if (content_type.find("application/x-www-form-urlencoded") == std::string::npos &&
-		content_type.find("multipart/form-data") == std::string::npos &&
-		content_type.find("text/") == std::string::npos) {
-		console::log("[ERROR][REQUEST VALIDATOR] Unsupported content type: " + content_type, MSG);
-		_last_status = E_UNSUPPORTED_MEDIA_TYPE;
-		return false;
-	}
-	return true;
-}
-
-bool RequestValidator::validateUploadPermissions() {
-
-	size_t body_size = _request->getBody().size();
-	if (_request->getMethod() == "GET" && body_size == 0) {
-		return false;
+	if (_request->getMethod() == "POST") {
+		
+		const std::vector<std::string>& ct_headers = _request->getHeaderValues("Content-Type");
+		if (ct_headers.empty()) {
+			console::log("[ERROR][REQUEST VALIDATOR] POST method requires Content-Type header", MSG);
+			_last_status = E_BAD_REQUEST;
+			return false;
+		}
+	
+		std::string content_type = ct_headers[0];
+		if (content_type.find("application/x-www-form-urlencoded") == std::string::npos &&
+			content_type.find("multipart/form-data") == std::string::npos &&
+			content_type.find("text/") == std::string::npos) {
+			console::log("[ERROR][REQUEST VALIDATOR] Unsupported content type: " + content_type, MSG);
+			_last_status = E_UNSUPPORTED_MEDIA_TYPE;
+			return false;
+		}
 	}
 	return true;
 }
@@ -221,24 +212,6 @@ bool RequestValidator::validateHeaderLimits() {
 		console::log("[ERROR][REQUEST VALIDATOR] Header size too large", MSG);
 		_last_status = E_HEADER_TOO_LARGE;
 		return false;
-	}
-	return true;
-}
-
-// HTTP/1.0 doesnt handle 'upgrade' value and connections are closed by default
-bool RequestValidator::validateConnectionHeader() {
-
-	const std::vector<std::string>& conn_headers = _request->getHeaderValues("Connection");
-	if (conn_headers.empty())
-		return true;
-
-	for (size_t i = 0; i < conn_headers.size(); i++) {
-		std::string conn = conn_headers[i];
-		if (conn != "close" && conn != "keep-alive") {
-			console::log("[ERROR] Invalid \"Connection\" header value: " + conn, MSG);
-			_last_status = E_BAD_REQUEST;
-			return false;
-		}
 	}
 	return true;
 }

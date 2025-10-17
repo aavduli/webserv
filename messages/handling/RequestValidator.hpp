@@ -28,9 +28,7 @@ class RequestValidator {
 		bool	validatePath();
 		bool	validateContentLength();
 		bool	validateContentType();
-		bool	validateUploadPermissions();
 		bool	validateHeaderLimits();
-		bool	validateConnectionHeader();
 		bool	validateRedirection();
 
 	public:
