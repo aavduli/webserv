@@ -47,3 +47,7 @@ bool	is_text_str(const std::string& str) {
 	}
 	return true;
 }
+
+bool	is_hex_digit(char c) {
+	return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f');
+}
