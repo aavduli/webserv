@@ -26,8 +26,9 @@ bool RequestValidator::validateRequest() {
 	if (!validatePort()) return false;
 	if (!validateMethod()) return false;
 	if (!validatePath()) return false;
-	if (!validateContentType()) return false;
-	if (!validateBodySize()) return false;
+	if (!validateContentLength()) return false;
+	if (_request->getMethod() == "POST" && !validateContentType()) return false;
+	if (_request->getMethod() == "POST" && !validateUploadPermissions()) return false;
 	if (!validateHeaderLimits()) return false;
 	if (!validateConnectionHeader()) return false;
 	if (!validateRedirection()) return false;
@@ -154,40 +155,60 @@ bool RequestValidator::validatePath() {
 	return true;
 }
 
-// POST always carries data, so Content-Type is mandatory and helps the server know how to parse and handle the request body
-bool RequestValidator::validateContentType() {
+bool RequestValidator::validateContentLength() {
 
-	const std::string& method = _request->getMethod();
-	
-	if (method == "POST") {
-		const std::vector<std::string>& ct_headers = _request->getHeaderValues("Content-Type");
-		if (ct_headers.empty()) {
-			console::log("[ERROR][REQUEST VALIDATOR] POST method requires Content-Type header", MSG);
-			_last_status = E_BAD_REQUEST;
-			return false;
-		}
+	size_t body_size = _request->getBody().size();
+	if (_request->getMethod() == "GET" && body_size == 0)
+		return true;
 
-		// Basic content type validation (extend based on location config) TODO
-		std::string content_type = ct_headers[0];
-		if (content_type.find("application/") == std::string::npos &&
-			content_type.find("text/") == std::string::npos &&
-			content_type.find("multipart/") == std::string::npos) {
-			console::log("[ERROR][REQUEST VALIDATOR] Unsupported content type: " + content_type, MSG);
-			_last_status = E_UNSUPPORTED_MEDIA_TYPE;
-			return false;
-		}
+	size_t client_max_body_size = _config.getMaxContentLength();
+	if (body_size > client_max_body_size) {
+		console::log("[ERROR][REQUEST VALIDATOR] Body size too large", MSG);
+		_last_status = E_PAYLOAD_TOO_LARGE;
+		return false;
+	}
+
+	const std::vector<std::string>& content_length = _request->getHeaderValues("Content-Length");
+	if (content_length.empty() || content_length[0].empty()) {
+		console::log("[ERROR][REQUEST PARSER] Missing \"Content-Length\" header", MSG);
+		_last_status = E_LENGTH_REQUIRED;
+		return false;
+	}
+
+	size_t cl = to_size_t(content_length[0]);
+	if (cl == std::numeric_limits<size_t>::max() || cl != body_size) {
+		console::log("[ERROR][REQUEST PARSER] Invalid \"Content-Length\" header value", MSG);
+		_last_status = E_BAD_REQUEST;
+		return false;
 	}
 	return true;
 }
 
-bool RequestValidator::validateBodySize() {
+// POST always carries data, so Content-Type is mandatory and helps the server know how to parse and handle the request body
+bool RequestValidator::validateContentType() {
 
-	size_t config_max = _config.getMaxContentLength();
+	const std::vector<std::string>& ct_headers = _request->getHeaderValues("Content-Type");
+	if (ct_headers.empty()) {
+		console::log("[ERROR][REQUEST VALIDATOR] POST method requires Content-Type header", MSG);
+		_last_status = E_BAD_REQUEST;
+		return false;
+	}
+
+	std::string content_type = ct_headers[0];
+	if (content_type.find("application/x-www-form-urlencoded") == std::string::npos &&
+		content_type.find("multipart/form-data") == std::string::npos &&
+		content_type.find("text/") == std::string::npos) {
+		console::log("[ERROR][REQUEST VALIDATOR] Unsupported content type: " + content_type, MSG);
+		_last_status = E_UNSUPPORTED_MEDIA_TYPE;
+		return false;
+	}
+	return true;
+}
+
+bool RequestValidator::validateUploadPermissions() {
+
 	size_t body_size = _request->getBody().size();
-
-	if (body_size > config_max) {
-		console::log("[ERROR][REQUEST VALIDATOR] Body size too large", MSG);
-		_last_status = E_PAYLOAD_TOO_LARGE;
+	if (_request->getMethod() == "GET" && body_size == 0) {
 		return false;
 	}
 	return true;
