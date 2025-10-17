@@ -6,6 +6,16 @@
 
 class WebservConfig;
 
+struct PostValue {
+	std::string		content;
+	std::string		filename;
+	std::string		content_type;
+	bool			is_file;
+
+	PostValue() : is_file(false) {}
+	PostValue(const std::string& simple_content) : content(simple_content), is_file(false) {}	// URL-encoded data
+};
+
 struct RequestContext {
 	
 	public:
@@ -15,13 +25,16 @@ struct RequestContext {
 		std::vector<std::string>			_index_list;
 		bool								_autoindex_enabled;
 		bool								_has_redirect;
+		bool								_upload_enabled;
+		std::string							_upload_dir;
 };
 
 class HttpRequest : public HttpMessage {
 
 	private:
-		std::string		_method;
-		RequestUri		_uri;
+		std::string							_method;
+		RequestUri							_uri;
+		std::map<std::string, PostValue>	_post_data;
 		
 	public:
 		RequestContext	ctx;
@@ -31,10 +44,12 @@ class HttpRequest : public HttpMessage {
 		HttpRequest& operator=(const HttpRequest& rhs);
 		~HttpRequest();
 
-		const std::string&	getMethod() const;
-		void				setMethod(const std::string& method);
-		RequestUri			getUri() const;
-		void				setUri(const RequestUri& uri);
+		const std::string&						getMethod() const;
+		void									setMethod(const std::string& method);
+		RequestUri								getUri() const;
+		void									setUri(const RequestUri& uri);
+		std::map<std::string, PostValue>		getPostData() const;
+		void									setPostData(const std::map<std::string, PostValue>& post_data);
 };
 
 void		print_request(HttpRequest* request);

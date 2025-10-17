@@ -18,6 +18,8 @@ const std::string&	HttpRequest::getMethod() const {return _method;}
 void				HttpRequest::setMethod(const std::string& method) {_method = method;}
 RequestUri			HttpRequest::getUri() const {return _uri;}
 void				HttpRequest::setUri(const RequestUri& uri) {_uri = uri;}
+std::map<std::string, PostValue>	HttpRequest::getPostData() const {return _post_data;}
+void				HttpRequest::setPostData(const std::map<std::string, PostValue>& post_data) {_post_data = post_data;}
 
 void	print_request(HttpRequest* request) {
 	std::cout << "\n\n=== HTTP REQUEST ===" << std::endl;
