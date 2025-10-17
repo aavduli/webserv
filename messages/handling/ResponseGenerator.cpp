@@ -24,12 +24,12 @@ void ResponseGenerator::generateResponse() {
 	if (_last_status == E_REDIRECT_PERMANENT || _last_status == E_REDIRECT_TEMPORARY)
 		generateRedirResponse();
 	else if (_last_status == E_OK) {
-		if (_request->getMethod() == "GET") {
+		if (isValidCGI())
+			generateCGIResponse();		// can be GET or POST
+		else if (_request->getMethod() == "GET") {
 			addValidIndex();
 			if (is_directory(_request->getUri().getEffectivePath()))
 				generateDirectoryResponse();
-			else if (isValidCGI())
-				generateCGIResponse();
 			else
 				generateStaticFileResponse();
 		}

@@ -19,7 +19,6 @@ class RequestParser {
 		bool			parseHeaders();
 		std::string		parseHeaderName(std::string line);
 		bool			parseBody();
-		void			parsePostBody();
 
 		std::string		findLocationName(const std::string& path);
 		
@@ -32,6 +31,9 @@ class RequestParser {
 		bool	parseRequest();
 		void	setRequestContext();
 		Status	getLastStatus() const;
+
 };
+
+bool parseHeaderLine(const std::string& header_line, std::string& name, std::vector<std::string>& values);
 
 #endif //REQUESTPARSER_HPP

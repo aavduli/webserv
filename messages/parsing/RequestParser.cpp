@@ -125,8 +125,6 @@ bool RequestParser::parseVersion(std::string request_line) {
  
 bool RequestParser::parseHeaders() {
 
-	std::map<std::string, std::vector<std::string> > headers;
-	
 	if (_current_pos < _raw_request.length())
 		_request->setHeadersSize(_raw_request.substr(_current_pos).size());
 
@@ -141,31 +139,43 @@ bool RequestParser::parseHeaders() {
 		_current_pos = line_end + 2;
 		if (header_line.empty())
 			break;
-		size_t colon_pos = header_line.find(':');
-		if (colon_pos == std::string::npos) {
-			console::log("[ERROR][REQUEST PARSER] Missing colon in header line", MSG);
-			_last_status = E_BAD_REQUEST;
-			return false;
-		}
-		std::string name = trim_lws(header_line.substr(0, colon_pos));
-		if (name.empty()) {
-			console::log("[ERROR][REQUEST PARSER] Empty header name", MSG);
-			_last_status = E_BAD_REQUEST;
-			return false;
-		}
-		std::string value = trim_lws(header_line.substr(colon_pos + 1));
+		
+		std::string name;
 		std::vector<std::string> values;
-		if (value.find(',') != std::string::npos)
-			values = str_to_vect_exept_between(value, ",", "(", ")");
-		else
-			values.push_back(trim_lws(value));
-		if (values.empty()) {
-			console::log("[ERROR][REQUEST PARSER] Empty header value", MSG);
+		if (!parseHeaderLine(header_line, name, values)) {
+			console::log("[ERROR][REQUEST PARSER] Invalid header line: " + header_line, MSG);
 			_last_status = E_BAD_REQUEST;
 			return false;
 		}
 		_request->addHeader(name, values);
 	}
+	return true;
+}
+
+// non-member function used in MultipartData parsing
+bool parseHeaderLine(const std::string& header_line, std::string& name, std::vector<std::string>& values) {
+	
+	if (header_line.empty())
+		return false;
+	
+	size_t colon_pos = header_line.find(':');
+	if (colon_pos == std::string::npos)
+		return false;
+	
+	name = trim_lws(header_line.substr(0, colon_pos));
+	if (name.empty())
+		return false;
+	
+	std::string value = trim_lws(header_line.substr(colon_pos + 1));
+	values.clear();
+	
+	if (value.find(',') != std::string::npos)
+		values = str_to_vect_exept_between(value, ",", "(", ")");
+	else
+		values.push_back(trim_lws(value));
+	
+	if (values.empty())
+		return false;
 	return true;
 }
 
@@ -207,6 +217,16 @@ void	RequestParser::setRequestContext() {
 		ctx._autoindex_enabled = true;
 	else
 		ctx._autoindex_enabled = false;
+
+	std::string upload_enabled = config["upload_enabled"];
+	if (!upload_enabled.empty())
+		ctx._upload_enabled = true;
+	else
+		ctx._upload_enabled = false;
+
+	std::string upload_dir = config["upload_dir"];
+	if (!upload_dir.empty())
+		ctx._upload_dir = upload_dir;
 
 	_request->ctx = ctx;
 }
