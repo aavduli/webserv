@@ -1,10 +1,10 @@
 #include "RequestValidator.hpp"
 #include <cstring>
 
-RequestValidator::RequestValidator(const WebservConfig& config, HttpRequest* request) : _config(config) {
-	_request = request;
-	_last_status = E_INIT;
-	_host_header = _request->getHeaderValues("host");
+RequestValidator::RequestValidator(const WebservConfig& config, HttpRequest* request) : _config(config), _request(request), _last_status(E_INIT) {
+	if (_request) {
+		_host_header = _request->getHeaderValues("Host");
+	}
 }
 RequestValidator::RequestValidator(const RequestValidator& rhs) : _config(rhs._config), _request(rhs._request), _last_status(rhs._last_status), _host_header(rhs._host_header) {}
 RequestValidator& RequestValidator::operator=(const RequestValidator& rhs) {
@@ -26,11 +26,12 @@ bool RequestValidator::validateRequest() {
 	if (!validatePort()) return false;
 	if (!validateMethod()) return false;
 	if (!validatePath()) return false;
+	if (!validateContentLength()) return false;
 	if (!validateContentType()) return false;
-	if (!validateBodySize()) return false;
 	if (!validateHeaderLimits()) return false;
-	if (!validateConnectionHeader()) return false;
 	if (!validateRedirection()) return false;
+	if (_last_status == E_INIT)
+		_last_status = E_OK;
 	return true;
 }
 
@@ -126,14 +127,17 @@ bool RequestValidator::validatePath() {
 
 	RequestUri	uri = _request->getUri();
 	const std::string& path = uri.getPath();
+
 	if (contains_traversal(path)) {
 		console::log("[ERROR][REQUEST VALIDATOR] URI path attempts traversal", MSG);
 		_last_status = E_BAD_REQUEST;
 		return false;
 	}
 
-	std::string full_path = build_full_path(_request->ctx._document_root, path, _request->ctx._location_name);
+	std::string relative_path = remove_prefix(path, _request->ctx._location_name);
+	std::string full_path = build_full_path(_request->ctx._document_root, relative_path);
 	std::string final_path  = canonicalize_path(full_path);
+
 	if (!is_valid_path(final_path)) {
 		console::log("[ERROR][REQUEST VALIDATOR] Invalid path: " + final_path, MSG);
 		_last_status = E_NOT_FOUND;
@@ -149,41 +153,54 @@ bool RequestValidator::validatePath() {
 	return true;
 }
 
-// POST always carries data, so Content-Type is mandatory and helps the server know how to parse and handle the request body
+bool RequestValidator::validateContentLength() {
+
+	size_t body_size = _request->getBody().size();
+	if (_request->getMethod() == "GET" && body_size == 0)
+		return true;
+
+	size_t client_max_body_size = _config.getMaxContentLength();
+	if (body_size > client_max_body_size) {
+		console::log("[ERROR][REQUEST VALIDATOR] Body size too large", MSG);
+		_last_status = E_PAYLOAD_TOO_LARGE;
+		return false;
+	}
+
+	const std::vector<std::string>& content_length = _request->getHeaderValues("Content-Length");
+	if (content_length.empty() || content_length[0].empty()) {
+		console::log("[ERROR][REQUEST PARSER] Missing \"Content-Length\" header", MSG);
+		_last_status = E_LENGTH_REQUIRED;
+		return false;
+	}
+
+	size_t cl = to_size_t(content_length[0]);
+	if (cl == std::numeric_limits<size_t>::max() || cl != body_size) {
+		console::log("[ERROR][REQUEST PARSER] Invalid \"Content-Length\" header value", MSG);
+		_last_status = E_BAD_REQUEST;
+		return false;
+	}
+	return true;
+}
+
 bool RequestValidator::validateContentType() {
 
-	const std::string& method = _request->getMethod();
-	
-	if (method == "POST") {
+	if (_request->getMethod() == "POST") {
+		
 		const std::vector<std::string>& ct_headers = _request->getHeaderValues("Content-Type");
 		if (ct_headers.empty()) {
 			console::log("[ERROR][REQUEST VALIDATOR] POST method requires Content-Type header", MSG);
 			_last_status = E_BAD_REQUEST;
 			return false;
 		}
-
-		// Basic content type validation (extend based on location config) TODO
+	
 		std::string content_type = ct_headers[0];
-		if (content_type.find("application/") == std::string::npos &&
-			content_type.find("text/") == std::string::npos &&
-			content_type.find("multipart/") == std::string::npos) {
+		if (content_type.find("application/x-www-form-urlencoded") == std::string::npos &&
+			content_type.find("multipart/form-data") == std::string::npos &&
+			content_type.find("text/") == std::string::npos) {
 			console::log("[ERROR][REQUEST VALIDATOR] Unsupported content type: " + content_type, MSG);
 			_last_status = E_UNSUPPORTED_MEDIA_TYPE;
 			return false;
 		}
-	}
-	return true;
-}
-
-bool RequestValidator::validateBodySize() {
-
-	size_t config_max = _config.getMaxContentLength();
-	size_t body_size = _request->getBody().size();
-
-	if (body_size > config_max) {
-		console::log("[ERROR][REQUEST VALIDATOR] Body size too large", MSG);
-		_last_status = E_PAYLOAD_TOO_LARGE;
-		return false;
 	}
 	return true;
 }
@@ -195,24 +212,6 @@ bool RequestValidator::validateHeaderLimits() {
 		console::log("[ERROR][REQUEST VALIDATOR] Header size too large", MSG);
 		_last_status = E_HEADER_TOO_LARGE;
 		return false;
-	}
-	return true;
-}
-
-// HTTP/1.0 doesnt handle 'upgrade' value and connections are closed by default
-bool RequestValidator::validateConnectionHeader() {
-
-	const std::vector<std::string>& conn_headers = _request->getHeaderValues("Connection");
-	if (conn_headers.empty())
-		return true;
-
-	for (size_t i = 0; i < conn_headers.size(); i++) {
-		std::string conn = conn_headers[i];
-		if (conn != "close" && conn != "keep-alive") {
-			console::log("[ERROR] Invalid \"Connection\" header value: " + conn, MSG);
-			_last_status = E_BAD_REQUEST;
-			return false;
-		}
 	}
 	return true;
 }
@@ -233,7 +232,7 @@ bool RequestValidator::validateRedirection() {
 	_request->ctx._has_redirect = true;
 	if (code == "301")
 		_last_status = E_REDIRECT_PERMANENT;
-	else
+	else if (code == "302")
 		_last_status = E_REDIRECT_TEMPORARY;
 	_request->setUri(uri);
 	return true;

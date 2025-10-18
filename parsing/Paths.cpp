@@ -38,23 +38,41 @@ std::string get_file_extension(const std::string& path) {
 	return (extension);
 }
 
-std::string build_full_path(const std::string& start, const std::string& end, const std::string& location_prefix) {
+std::string	remove_suffix(const std::string& str, const std::string& suffix) {
 
-	// remove location prefix
-	std::string relative_path = end;
-	if (!location_prefix.empty() && end.find(location_prefix) == 0)
-		relative_path = end.substr(location_prefix.length());
+	std::string truncated_str = str;
 
+	if (!suffix.empty() && str.length() >= suffix.length()) {
+		size_t suffix_pos = str.length() - suffix.length();
+		if (str.substr(suffix_pos) == suffix)
+			truncated_str = str.substr(0, suffix_pos);
+	}
+	return truncated_str;
+}
+
+std::string	remove_prefix(const std::string& str, const std::string& prefix) {
+
+	std::string truncated_str = str;
+
+	if (!prefix.empty() && str.find(prefix) == 0)
+		truncated_str = str.substr(prefix.length());
+	return truncated_str;
+}
+
+std::string build_full_path(const std::string& root_path, const std::string& relative_path) {
+
+	std::string path = relative_path;
+	std::string root = root_path;
+	
 	// ensure terminating /
-	std::string root = start;
-	if (!root.empty() && root[root.length() - 1] != '/')
+	if (!root_path.empty() && root_path[root_path.length() - 1] != '/')
 		root += "/";
 
 	// remove leading /
 	if (!relative_path.empty() && relative_path[0] == '/')
-		relative_path = relative_path.substr(1);
+		path = relative_path.substr(1);
 
-	return root + relative_path;
+	return root + path;
 }
 
 // traversal = use of ../ sequences (or other patterns) to escape document root

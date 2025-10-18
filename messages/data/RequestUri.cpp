@@ -94,7 +94,7 @@ RequestUri	RequestUri::parseAbsoluteUri(const std::string& raw) {
 
 	if (raw.find(":") != std::string::npos) {
 		uri._scheme = extractComponent(&pos, raw, ":");
-		if (uri._scheme != "http" && uri._scheme != "https") {
+		if (uri._scheme != "http" && uri._scheme != "HTTP" && uri._scheme != "https" && uri._scheme != "HTTPS") {
 			console::log("[ERROR] Unsupported URI scheme: " + uri._scheme, MSG);
 			uri.clearUri();
 			return uri;

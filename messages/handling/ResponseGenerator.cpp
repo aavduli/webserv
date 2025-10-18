@@ -21,32 +21,61 @@ Status	ResponseGenerator::getLastStatus() const {return _last_status;}
 
 void ResponseGenerator::generateResponse() {
 
-	setDefaultHeaders();
+	//print_request(_request);
 
-	if (_request->getMethod() == "GET") {
-		addValidIndex();
-		if (_last_status == E_REDIRECT_PERMANENT || _last_status == E_REDIRECT_TEMPORARY)
-			generateRedirResponse();
-		else if (is_directory(_request->getUri().getEffectivePath()))
-			generateDirectoryResponse();	// need HTML generation
-		else if (isValidCGI())
-			generateCGIResponse();
-		else
-			generateStaticFileResponse();
+	if (_last_status == E_REDIRECT_PERMANENT || _last_status == E_REDIRECT_TEMPORARY)
+		generateRedirResponse();
+	else if (_last_status == E_OK) {
+		if (isValidCGI())
+			generateCGIResponse();		// can be GET or POST
+		else if (_request->getMethod() == "GET") {
+			addValidIndex();
+			if (is_directory(_request->getUri().getEffectivePath()))
+				generateDirectoryResponse();
+			else
+				generateStaticFileResponse();
+		}
+		else if (_request->getMethod() == "POST")
+			generatePostResponse();
+		// else if (_request->getMethod() == "DELETE")
+		// 	generateDeleteResponse();
 	}
-	// else if (_request->getMethod() == "POST")
-	// 	generatePostResponse();
-	// else if (_request->getMethod() == "DELETE")
-	// 	generateDeleteResponse();
 	else
 		generateErrorResponse();
-	setContentHeaders();
+	setHeaders();
+
+	//_response->printHeaders();
+}
+
+void ResponseGenerator::generatePostResponse() {
+
+	// Parse body before!
+	// Content-Type header indicates how the data is passed
+
+	// application/x-www-form-urlencoded = key/values are encoded in tuples separated by &, with + between key and value
+		// first-name=Frida&last-name=Kahlo
+		// non-alphabetic chars are percent-encoded
+		// data sent in body
+
+	// multipart/form-data = each value sent as a block of data with a defined delimiter separating each part
+		// boundary="delimiter1234"
+		// used when a form includes files or a lot of data
+
+	// text/plain
+
+	// Content-Disposition header indicates how the form data should be processed
+
+	// Decode body if needed:
+
+	// application/x-www-form-urlencoded: Parse key=value pairs
+	// multipart/form-data: Parse multipart boundaries and extract files
+	// application/json: Keep as-is (CGI handles it)
 }
 
 void ResponseGenerator::generateStaticFileResponse() {
 
 	const std::string& path = _request->getUri().getEffectivePath();
-	console::log("[INFO] Serving static file: " + path, MSG);
+	console::log("[INFO] Generating static file response", MSG);
 
 	std::ifstream file(path.c_str());
 	if (!file.is_open()){
@@ -54,7 +83,7 @@ void ResponseGenerator::generateStaticFileResponse() {
 		_last_status = findErrorStatus(path);
 		return generateErrorResponse();
 	}
-	_response->setBody(readFileContent(file));
+	_response->setBody(getReadFileContent(file));
 	_response->setBodyType(B_FILE);
 	_response->setStatus(E_OK);
 }
@@ -62,6 +91,8 @@ void ResponseGenerator::generateStaticFileResponse() {
 void ResponseGenerator::generateDirectoryResponse() {
 
 	console::log("[INFO] Generating directory listing response", MSG);
+
+	console::log("[INFO] Generating directory response", MSG);
 
 	if (!_request->ctx._autoindex_enabled) {
 		console::log("[ERROR][GENERATE RESPONSE] Directory access forbidden", MSG);
@@ -84,6 +115,8 @@ void ResponseGenerator::generateDirectoryResponse() {
 
 
 void ResponseGenerator::generateRedirResponse() {
+
+	console::log("[INFO] Generating redirection response", MSG);
 
 	const std::string& destination = _request->getUri().getRedirDestination();
 
@@ -151,13 +184,15 @@ void ResponseGenerator::parseCGIOutput(const std::string& cgi_output){
 
 void ResponseGenerator::generateErrorResponse() {
 
+	console::log("[INFO] Generating error response", MSG);
+
 	_response->setStatus(_last_status);
 	std::string error_page_path = _config.getErrorPage(_last_status);
 
 	if (!error_page_path.empty()) {		// custom error page
 		std::ifstream file(error_page_path.c_str());
 		if (file.is_open()) {
-			_response->setBody(readFileContent(file));
+			_response->setBody(getReadFileContent(file));
 			_response->setBodyType(B_FILE);
 			return ;
 		}
@@ -167,29 +202,29 @@ void ResponseGenerator::generateErrorResponse() {
 	_response->setBodyType(B_HTML);
 }
 
-void ResponseGenerator::setDefaultHeaders() {
+void ResponseGenerator::generateCGIResponse() {
 
-	/*
-	Connection
-	Accurate Content-Length for all responses
-	Last-Modified headers for static files
-	Server identification header
-	Proper Date headers
-	*/
+	console::log("[INFO] Generating CGI response", MSG);
 
-	console::log("[INFO] Setting default HTTP/1.0 headers", MSG);
+	// Execute CGI script
+	// Parse CGI output headers
+	// Handle CGI errors
+	// Set appropriate response
 
-	// setDateHeader();
-	// std::string date = getCurrentHTTPDate();
+	// TODO: Execute CGI script
+	// TODO: Parse CGI output
+	// TODO: Set headers from CGI response
 
-	_response->addHeader("Connection", str_to_vect("close", ""));
+	_response->setBodyType(B_CGI);	// CGI sets its own Content-Type
 }
 
-void ResponseGenerator::setContentHeaders() {
+void ResponseGenerator::setHeaders() {
+
+	_response->addHeader("Date", str_to_vect(getCurrentGMTDate(), ""));
+	_response->addHeader("Connection", str_to_vect("close", ""));
 
 	if (_response->getBodyType() == B_FILE) {
-		std::string path = _request->getUri().getEffectivePath();
-		std::string extension = get_file_extension(path);
+		std::string extension = get_file_extension(_request->getUri().getEffectivePath());
 		std::string content_type = getMimeType(extension);
 		_response->addHeader("Content-Type", str_to_vect(content_type, ""));
 	}
@@ -231,53 +266,36 @@ std::string	ResponseGenerator::readFileContent(std::ifstream& file) const {
 
 std::string	ResponseGenerator::generateDirectoryHTML() {
 
-	const std::string& path = _request->getUri().getEffectivePath();
-	DIR* dir = opendir(path.c_str());
+	const std::string& url_path = _request->getUri().getPath();
+	const std::string& dir_path = _request->getUri().getEffectivePath();
+	DIR* dir = opendir(dir_path.c_str());
 	if (!dir)
 		return "<html><body><h1>Error: Cannot open directory</h1></body></html>";
 
 	struct dirent *en;
+
 	std::stringstream html;
 	html << "<!DOCTYPE html>\n";
 	html << "<html>\n<head>\n";
 	html << "<title>Index of " << _request->ctx._location_name << "</title></head>\n";
 	html << "<body><h1>Index of " << _request->ctx._location_name << "</h1>\n";
 
-	// Parent directory link (if not root)
-	std::string current_path = _request->getUri().getPath();	// Use URL path, not filesystem path
-	if (current_path != "/" && current_path.length() > 1) {
-
-		// Remove trailing slash if present
-		if (current_path[current_path.length() - 1] == '/')
-			current_path = current_path.substr(0, current_path.size() - 1);
-
-		// Find parent directory
-		std::string parent_path;
-		size_t last_slash = current_path.find_last_of('/');
+	if (url_path != "/" && url_path.length() > 1) {					// if not root, link parent dir
+		std::string parent_path = remove_suffix(url_path, "/");		// remove trailing /
+		size_t last_slash = parent_path.find_last_of('/');
 		if (last_slash == 0)
 			parent_path = "/";
 		else
-			parent_path = current_path.substr(0, last_slash);
+			parent_path = parent_path.substr(0, last_slash);
 		html << "<p><a href=\"" << parent_path << "\">../</a>\n</p>";
 	}
 
+	struct dirent *en;
 	while ((en = readdir(dir)) != NULL) {
 		std::string name = en->d_name;
 		if (name == "." || name == "..")
 			continue;
-
-		// Build URL-relative path, not filesystem path
-		std::string current_loc = _request->getUri().getPath();
-		std::string file_path;
-		if (current_loc == "/")
-			file_path = "/" + name;
-		else {
-			// check trailing slash
-			if (current_loc[current_loc.length() - 1] == '/')
-				file_path = current_loc + name;
-			else
-				file_path = current_loc + "/" + name;
-		}
+		std::string file_path = build_full_path(url_path, name);
 		html << "<p><a href=\"" << file_path << "\">" << name << "</a>\n</p>";
 	}
 	closedir(dir);
@@ -324,6 +342,19 @@ void	ResponseGenerator::addValidIndex() {
 				_request->setUri(uri);
 				return ;
 			}
+	if (!is_directory(path) || _request->ctx._index_list.empty())
+		return ;
+
+	const std::vector<std::string>& indexes = _request->ctx._index_list;
+	std::vector<std::string>::const_iterator it;
+	for (it = indexes.begin(); it != indexes.end(); it++) {
+
+		std::string full_index_path = build_full_path(path, *it);
+		if (is_valid_file_path(full_index_path)) {
+			RequestUri uri(_request->getUri());
+			uri.setEffectivePath(full_index_path);
+			_request->setUri(uri);
+			return ;
 		}
 	}
 }
@@ -471,4 +502,31 @@ std::string getMimeType(const std::string& extension) {
 
 	// Default for unknown extensions
 	return "application/octet-stream";
+}
+
+std::string	getReadFileContent(std::ifstream& file) {
+
+	std::string	str;
+	std::string	file_contents;
+	while (std::getline(file, str)) {
+		file_contents += str;
+		file_contents.push_back('\n');
+	}
+	return file_contents;
+}
+
+std::string getCurrentGMTDate() {
+
+	time_t now;
+	struct tm* gmt;
+	char buf[100];
+
+	time(&now);				// get current time
+	gmt = gmtime(&now);		// convert to GMT/UTC
+
+	// format: Sun, 06 Nov 1994 08:49:37 GMT
+	strftime(buf, sizeof(buf), "%a, %d %b %Y %H:%M:%S GMT", gmt);
+
+	std::string date(buf);
+	return date;
 }

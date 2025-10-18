@@ -125,8 +125,6 @@ bool RequestParser::parseVersion(std::string request_line) {
  
 bool RequestParser::parseHeaders() {
 
-	std::map<std::string, std::vector<std::string> > headers;
-	
 	if (_current_pos < _raw_request.length())
 		_request->setHeadersSize(_raw_request.substr(_current_pos).size());
 
@@ -141,26 +139,11 @@ bool RequestParser::parseHeaders() {
 		_current_pos = line_end + 2;
 		if (header_line.empty())
 			break;
-		size_t colon_pos = header_line.find(':');
-		if (colon_pos == std::string::npos) {
-			console::log("[ERROR][REQUEST PARSER] Missing colon in header line", MSG);
-			_last_status = E_BAD_REQUEST;
-			return false;
-		}
-		std::string name = trim_lws(header_line.substr(0, colon_pos));
-		if (name.empty()) {
-			console::log("[ERROR][REQUEST PARSER] Empty header name", MSG);
-			_last_status = E_BAD_REQUEST;
-			return false;
-		}
-		std::string value = trim_lws(header_line.substr(colon_pos + 1));
+		
+		std::string name;
 		std::vector<std::string> values;
-		if (value.find(',') != std::string::npos)
-			values = str_to_vect_exept_between(value, ",", "(", ")");
-		else
-			values.push_back(trim_lws(value));
-		if (values.empty()) {
-			console::log("[ERROR][REQUEST PARSER] Empty header value", MSG);
+		if (!parseHeaderLine(header_line, name, values)) {
+			console::log("[ERROR][REQUEST PARSER] Invalid header line: " + header_line, MSG);
 			_last_status = E_BAD_REQUEST;
 			return false;
 		}
@@ -169,28 +152,38 @@ bool RequestParser::parseHeaders() {
 	return true;
 }
 
+// non-member function used in MultipartData parsing
+bool parseHeaderLine(const std::string& header_line, std::string& name, std::vector<std::string>& values) {
+	
+	if (header_line.empty())
+		return false;
+	
+	size_t colon_pos = header_line.find(':');
+	if (colon_pos == std::string::npos)
+		return false;
+	
+	name = trim_lws(header_line.substr(0, colon_pos));
+	if (name.empty())
+		return false;
+	
+	std::string value = trim_lws(header_line.substr(colon_pos + 1));
+	values.clear();
+	
+	if (value.find(',') != std::string::npos)
+		values = str_to_vect_exept_between(value, ",", "(", ")");
+	else
+		values.push_back(trim_lws(value));
+	
+	if (values.empty())
+		return false;
+	return true;
+}
+
 bool RequestParser::parseBody() {
 
 	if (_current_pos < _raw_request.length()) {
 		std::string body = _raw_request.substr(_current_pos);
 		_request->setBody(body);
-		
-		if (!_request->hasHeader("Content-Length")) {
-			console::log("[ERROR][REQUEST PARSER] Missing \"Content-Length\" header", MSG);
-			_last_status = E_LENGTH_REQUIRED;
-			return false;
-		}
-		std::vector<std::string> body_size_value = _request->getHeaderValues("Content-Length");
-		if (body_size_value.at(0) == "") {
-			console::log("[ERROR][REQUEST PARSER] Missing \"Content-Length\" header value", MSG);
-			_last_status = E_LENGTH_REQUIRED;
-			return false;
-		}
-		if (to_size_t(body_size_value.at(0)) != _request->getBody().size()) {
-			console::log("[ERROR][REQUEST PARSER] \"Content-Length\" header value doesn't match body size", MSG);
-			_last_status = E_BAD_REQUEST;
-			return false;
-		}
 	}
 	else
 		_request->setBody("");
@@ -200,12 +193,13 @@ bool RequestParser::parseBody() {
 void	RequestParser::setRequestContext() {
 
 	RequestContext ctx;
-	
-	ctx._location_name = findConfigLocationName();
+	std::string path = _request->getUri().getPath();
+
+	ctx._location_name = findLocationName(path);
 	if (ctx._location_name.empty())
 		ctx._location_config = _config.getServer();
 	else
-		ctx._location_config = findLocationMatch();
+		ctx._location_config = _config.getLocationConfig(ctx._location_name);
 
 	std::map<std::string, std::string> config = ctx._location_config;
 	std::string root = config["root"];
@@ -224,17 +218,27 @@ void	RequestParser::setRequestContext() {
 	else
 		ctx._autoindex_enabled = false;
 
+	std::string upload_enabled = config["upload_enabled"];
+	if (!upload_enabled.empty())
+		ctx._upload_enabled = true;
+	else
+		ctx._upload_enabled = false;
+
+	std::string upload_dir = config["upload_dir"];
+	if (!upload_dir.empty())
+		ctx._upload_dir = upload_dir;
+
 	_request->ctx = ctx;
 }
 
-std::string	RequestParser::findConfigLocationName() {
+std::string	RequestParser::findLocationName(const std::string& path) {
 	
-	std::string path = _request->getUri().getPath();
 	if (_config.hasLocation(path))
 		return path;
 	
 	std::string match = "";
 	std::string test_path = path;
+
 	while (!test_path.empty()) {
 		if (_config.hasLocation(test_path)) {
 			if (test_path.length() > match.length()) {
@@ -256,39 +260,4 @@ std::string	RequestParser::findConfigLocationName() {
 			test_path = test_path.substr(0, last_slash);
 	}
 	return match;
-}
-
-std::map<std::string, std::string>	RequestParser::findLocationMatch() {
-	
-	std::string path = _request->getUri().getPath();
-	if (_config.hasLocation(path))
-		return _config.getLocationConfig(path);
-	
-	std::string match = "";
-	std::string test_path = path;
-	std::map<std::string, std::string> best_config;
-	while (!test_path.empty()) {
-		if (_config.hasLocation(test_path)) {
-			std::map<std::string, std::string> config = _config.getLocationConfig(test_path);
-			if (test_path.length() > match.length()) {
-				match = test_path;
-				best_config = config;
-			}
-		}
-		size_t last_slash = test_path.find_last_of('/');
-		if (last_slash == 0) {
-			test_path = "/";
-			if (_config.hasLocation(test_path)) {
-				std::map<std::string, std::string> config = _config.getLocationConfig(test_path);
-				if (match.empty())
-					best_config = config;
-			}
-			break;
-		}
-		else if (last_slash == std::string::npos)
-			break;
-		else
-			test_path = test_path.substr(0, last_slash);
-	}
-	return best_config;
 }

@@ -20,7 +20,7 @@ enum BodyType {
 	B_HTML,		// Generated HTML (text/html)
 	B_CGI,		// CGI script output (Content-Type from CGI headers)
 	B_JSON,		// JSON responses (application/json)
-	B_EMPTY		// No body (HEAD, 204, 304 responses)
+	B_EMPTY		// No body (204, 304)
 };
 
 class HttpMessage {

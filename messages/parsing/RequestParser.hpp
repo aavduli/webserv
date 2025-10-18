@@ -20,18 +20,20 @@ class RequestParser {
 		std::string		parseHeaderName(std::string line);
 		bool			parseBody();
 
-		std::string							findConfigLocationName();
-		std::map<std::string, std::string>	findLocationMatch();
+		std::string		findLocationName(const std::string& path);
 		
 	public:
 		RequestParser(const WebservConfig& config, HttpRequest* request, const std::string& raw_request);
 		RequestParser(const RequestParser& rhs);
 		RequestParser& operator=(const RequestParser& rhs);
 		~RequestParser();
-		
+
 		bool	parseRequest();
 		void	setRequestContext();
 		Status	getLastStatus() const;
+
 };
+
+bool parseHeaderLine(const std::string& header_line, std::string& name, std::vector<std::string>& values);
 
 #endif //REQUESTPARSER_HPP

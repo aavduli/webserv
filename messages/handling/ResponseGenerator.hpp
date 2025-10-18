@@ -20,7 +20,7 @@ class ResponseGenerator {
 		void	generateDirectoryResponse();
 		void	generateErrorResponse();
 
-		void	parseCGIOutput(const std::string& cgi_output);
+		void	generatePostResponse();
 
 	public:
 		ResponseGenerator(const WebservConfig& config, HttpRequest* request, HttpResponse* response);
@@ -28,27 +28,20 @@ class ResponseGenerator {
 		ResponseGenerator& operator=(const ResponseGenerator& rhs);
 		~ResponseGenerator();
 
-		Status	getLastStatus() const;
-		void	setLastStatus(Status last_status);
+		Status			getLastStatus() const;
+		bool			isValidCGI() const;
+		void			addValidIndex();
 
-		void	generateResponse();
-		void	setDefaultHeaders();
-		void	setContentHeaders();
-// 		void			setConnectionHeader();
-// 		void			setDateHeader();
-//
-// 		bool			shouldCloseConnection() const;
-// 		std::string		getCurrentHTTPDate() const;
-		std::string		readFileContent(std::ifstream& file) const;
+		void			generateResponse();
 		std::string		generateDirectoryHTML();
 		std::string		generateDefaultErrorHTML();
 		std::string		generateRedirHTML();
-		bool			isValidCGI() const;
-		void			addValidIndex();
-		//
+		void			setHeaders();
 };
 
 std::string		getMimeType(const std::string& extension);
 Status			findErrorStatus(const std::string& path);
+std::string		getReadFileContent(std::ifstream& file);
+std::string 	getCurrentGMTDate();
 
 #endif // RESPONSEGENERATOR_HPP

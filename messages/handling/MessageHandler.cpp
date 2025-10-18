@@ -26,8 +26,10 @@ std::string	handle_messages(const WebservConfig& config, const std::string &raw_
 		console::log("[ERROR][HANDLE MESSAGES] Empty request", MSG);
 		handler.setLastStatus(E_BAD_REQUEST);
 	}
-	else if (handler.parseRequest(raw_request))
-		handler.validateRequest();
+	else if (handler.parseRequest(raw_request)) {
+		if (handler.validateRequest())
+			handler.processRequest();
+	}
 	handler.generateResponse();
 
 	std::string complete_response = handler.serializeResponse();
@@ -40,29 +42,49 @@ bool	MessageHandler::parseRequest(const std::string& raw_request) {
 
 	RequestParser	parser(_config, _request, raw_request);
 
-	if (!parser.parseRequest()) {
+	if (parser.parseRequest()) {
+		parser.setRequestContext();
 		_last_status = parser.getLastStatus();
-		return false;
+		return true;
 	}
-	parser.setRequestContext();
-	_last_status = E_OK;
-	return true;
+	_last_status = parser.getLastStatus();
+	return false;
 }
 
 void MessageHandler::validateRequest() {
 
+bool	MessageHandler::validateRequest() {
+
 	RequestValidator	validator(_config, _request);
 
 	if (!validator.validateRequest())
+
+	if (validator.validateRequest()) {
 		_last_status = validator.getLastStatus();
-	_last_status = E_OK;
+		return true;
+	}
+	_last_status = validator.getLastStatus();
+	return false;
 }
 
-bool MessageHandler::generateResponse() {
+void MessageHandler::processRequest() {
 
-	ResponseGenerator	generator(_config, _request, &_response);
+	if (_request->getMethod() == "GET")
+		return ;
 
-	generator.setLastStatus(_last_status);
+	RequestProcessor	processor(_config, _request);
+
+	if (_request->getMethod() == "POST")
+		processor.processPostRequest();
+	else
+		processor.processDeleteRequest();
+	_last_status = processor.getLastStatus();
+}
+
+void MessageHandler::generateResponse() {
+
+	ResponseGenerator	generator(_config, _request, &_response, _last_status);
+
 	generator.generateResponse();
 	_last_status = generator.getLastStatus();
 	return true;
