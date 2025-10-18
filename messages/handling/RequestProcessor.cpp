@@ -73,6 +73,7 @@ void	RequestProcessor::processURLEncodedBody() {
 		}
 	}
 	_request->setPostData(data);
+	_last_status = E_OK;
 }
 
 std::string	RequestProcessor::urlDecode(const std::string& encoded) {
@@ -102,7 +103,6 @@ std::string	RequestProcessor::urlDecode(const std::string& encoded) {
 	return decoded;
 }
 
-// TODO atomize
 void	RequestProcessor::processMultipartBody() {
 	
 	std::map<std::string, PostData> data;
@@ -110,47 +110,51 @@ void	RequestProcessor::processMultipartBody() {
 	std::string boundary = extractBoundary(_request->getHeaderValues("Content-Type"));
 	
 	if (boundary.empty()) {
-		console::log("[ERROR] Missing or invalid multipart boundary", MSG);
 		_last_status = E_BAD_REQUEST;
 		return;
 	}
 
 	std::vector<std::string> parts = splitByBoundary(raw_body, boundary);
 	if (parts.empty()) {
-		console::log("[ERROR] No multipart parts found", MSG);
 		_last_status = E_BAD_REQUEST;
 		return;
 	}
-	
+
 	for (size_t i = 0; i < parts.size(); i++) {
-		
-		size_t header_end = parts[i].find("\r\n\r\n");
-		if (header_end == std::string::npos) {
-			console::log("[INFO] Malformed multipart part - missing header separator", MSG);
-			continue;
+		if (!processMultipartPart(parts[i], data)) {
+			_last_status = E_BAD_REQUEST;
+			return;
 		}
-		
-		std::map<std::string, std::vector<std::string> > headers = parseMultipartHeaders(parts[i].substr(0, header_end));
-		
-		std::string field_name = extractDispositionData(headers, "name=\"");
-		if (field_name.empty()) {
-			console::log("[INFO] Multipart: missing name attribute", MSG);
-			continue;
-		}
-		
-		PostData value;
-		value.content = parts[i].substr(header_end + 4);
-		
-		std::string filename = extractDispositionData(headers, "filename=\"");
-		if (!filename.empty()) {
-			value.filename = filename;
-			value.is_file = true;
-			if (headers.find("Content-Type") != headers.end() && !headers["Content-Type"].empty())
-				value.content_type = headers["Content-Type"][0];
-		}
-		data[field_name] = value;
 	}
 	_request->setPostData(data);
+	_last_status = E_OK;
+}
+
+bool	RequestProcessor::processMultipartPart(const std::string& part, std::map<std::string, PostData>& data) {
+	
+	size_t header_end = part.find("\r\n\r\n");
+	if (header_end == std::string::npos) {
+		console::log("[ERROR][MULTIPART] Missing header separator", MSG);
+		return false;
+	}
+	
+	std::map<std::string, std::vector<std::string> > headers = parseMultipartHeaders(part.substr(0, header_end));
+	std::string field_name = extractDispositionData(headers, "name=\"");
+	if (field_name.empty())
+		return true; // skipping empty part
+	
+	PostData value;
+	value.content = part.substr(header_end + 4);
+	
+	std::string filename = extractDispositionData(headers, "filename=\"");
+	if (!filename.empty()) {
+		value.filename = filename;
+		value.is_file = true;
+		if (headers.find("Content-Type") != headers.end() && !headers["Content-Type"].empty())
+			value.content_type = headers["Content-Type"][0];
+	}
+	data[field_name] = value;
+	return true;
 }
 
 std::string	RequestProcessor::extractBoundary(const std::vector<std::string>& ct_values) {
@@ -207,25 +211,25 @@ std::vector<std::string>	RequestProcessor::splitByBoundary(const std::string& bo
 std::map<std::string, std::vector<std::string> > RequestProcessor::parseMultipartHeaders(const std::string& header_str) {
 
 	std::map<std::string, std::vector<std::string> >	headers;
-	
+
 	if (header_str.empty()) {
-		console::log("[DEBUG] Empty multipart header section", MSG);
+		console::log("[ERROR][MULTIPART] Empty header section", MSG);
 		return headers;
 	}
-	
+
 	std::vector<std::string> lines = str_to_vect(header_str, "\r\n");
 	for (size_t i = 0; i < lines.size(); i++) {
 		if (lines[i].empty())
 			continue ;
-		
+
 		std::string name;
 		std::vector<std::string> values;
-		if (parseHeaderLine(lines[i], name, values)) {
+		if (::parseHeaderLine(lines[i], name, values)) {
 			if (!values.empty())
 				headers[name] = values;
 		}
 		else
-			console::log("[DEBUG] Failed to parse multipart header: " + lines[i], MSG);
+			console::log("[ERROR][MULTIPART] Header section parsing failed", MSG);
 	}
 	return headers;
 }
@@ -234,7 +238,7 @@ std::string RequestProcessor::extractDispositionData(const std::map<std::string,
 
 	std::map<std::string, std::vector<std::string> >::const_iterator it = headers.find("Content-Disposition");
 	if (it == headers.end() || it->second.empty()) {
-		console::log("[DEBUG] Content-Disposition header missing in multipart part", MSG);
+		console::log("[ERROR][MULTIPART DISPOSITION] Content-Disposition header missingin section", MSG);
 		return "";
 	}
 	
@@ -248,7 +252,7 @@ std::string RequestProcessor::extractDispositionData(const std::map<std::string,
 		if (end_pos != std::string::npos && end_pos > name_pos)
 			value = disposition.substr(name_pos, end_pos - name_pos);
 		else
-			console::log("[DEBUG] Empty or malformed disposition attribute: " + key, MSG);
+			console::log("[ERROR][MULTIPART DISPOSITION] Empty or malformed disposition attribute: " + key, MSG);
 	}
 	return value;
 }
@@ -280,7 +284,7 @@ std::string RequestProcessor::extractDispositionData(const std::map<std::string,
 	Generate unique filenames to prevent overwrites
 	Validate file extensions against allowed list
 
-	
+
 	File writing:
 
 	Create upload directory if it doesn't exist

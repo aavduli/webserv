@@ -22,6 +22,7 @@ class RequestProcessor {
 		std::string		urlDecode(const std::string& encoded);
 
 		void										processMultipartBody();
+		bool										processMultipartPart(const std::string& part, std::map<std::string, PostData>& data);
 		std::string									extractBoundary(const std::vector<std::string>& ct_values);
 		std::vector<std::string>					splitByBoundary(const std::string& body, const std::string& boundary);
 		std::map<std::string, std::vector<std::string> >	parseMultipartHeaders(const std::string& header_str);
