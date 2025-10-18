@@ -81,6 +81,8 @@ bool contains_traversal(const std::string& path) {
 	return path.find("../") != std::string::npos ||
 		path.find("..\\") != std::string::npos ||
 		path.find("%2e%2e") != std::string::npos ||
+		path.find("%2e%2e%2f") != std::string::npos ||
+		path.find("%2e%2e%5c") != std::string::npos ||
 		path.find("..%2f") != std::string::npos;
 }
 
