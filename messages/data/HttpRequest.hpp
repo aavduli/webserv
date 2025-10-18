@@ -34,8 +34,7 @@ class HttpRequest : public HttpMessage {
 	private:
 		std::string							_method;
 		RequestUri							_uri;
-		std::map<std::string, PostData>	_post_data;
-		bool								_is_CGI;
+		std::map<std::string, PostData>		_post_data;
 
 	public:
 		RequestContext	ctx;
@@ -49,8 +48,6 @@ class HttpRequest : public HttpMessage {
 		void									setMethod(const std::string& method);
 		RequestUri								getUri() const;
 		void									setUri(const RequestUri& uri);
-		bool									getIsCGI() const;
-		void									setIsCGI(bool value);
 		std::map<std::string, PostData>			getPostData() const;
 		void									setPostData(const std::map<std::string, PostData>& post_data);
 };
