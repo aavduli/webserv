@@ -9,6 +9,9 @@
 #include "../../console/console.hpp"
 #include "../../parsing/Parsing.hpp"
 #include "../../status/status.hpp"
+#include <unistd.h>
+#include <errno.h>
+#include <fcntl.h>
 
 class RequestProcessor {
 
@@ -17,22 +20,21 @@ class RequestProcessor {
 		HttpRequest*				_request;
 		Status						_last_status;
 		
-		bool			decodePostBody();
 		void			processURLEncodedBody();
 		std::string		urlDecode(const std::string& encoded);
 
-		void										processMultipartBody();
-		bool										processMultipartPart(const std::string& part, std::map<std::string, PostData>& data);
-		std::string									extractBoundary(const std::vector<std::string>& ct_values);
-		std::vector<std::string>					splitByBoundary(const std::string& body, const std::string& boundary);
+		void						processMultipartBody();
+		bool						processMultipartPart(const std::string& part, std::map<std::string, PostData>& data);
+		std::string					extractBoundary(const std::vector<std::string>& ct_values);
+		std::vector<std::string>	splitByBoundary(const std::string& body, const std::string& boundary);
 		std::map<std::string, std::vector<std::string> >	parseMultipartHeaders(const std::string& header_str);
-		std::string									extractDispositionData(const std::map<std::string, std::vector<std::string> >& headers, const std::string& key);
+		std::string					extractDispositionData(const std::map<std::string, std::vector<std::string> >& headers, const std::string& key);
 
-		bool	isFileUpload();
-		bool	processFileUpload();
-		bool	checkUploadPermissions();
-
-		bool	isCGI();
+		void			processFileUpload();
+		bool			configUploadDir();
+		std::string		generateFilename(const std::string& og_name);
+		bool			writeFileToDisk(const std::string& filename);
+		bool			writeFileToDisk(const std::string& filename, const PostData& file_data);
 
 	public:
 		RequestProcessor(const WebservConfig& config, HttpRequest* request);
@@ -40,9 +42,9 @@ class RequestProcessor {
 		RequestProcessor& operator=(const RequestProcessor& rhs);
 		~RequestProcessor();
 
-		bool	processPostRequest();
-		bool	processDeleteRequest();
-		Status	getLastStatus() const;
+		bool		processPostRequest();
+		bool		processDeleteRequest();
+		Status		getLastStatus() const;
 };
 
 #endif // REQUESTPROCESSOR_HPP
