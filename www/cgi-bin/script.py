@@ -23,6 +23,22 @@ print(f"<p><strong>GATEWAY_INTERFACE:</strong> {os.environ.get('GATEWAY_INTERFAC
 print(f"<p><strong>SERVER_NAME:</strong> {os.environ.get('SERVER_NAME', 'Not set')}</p>")
 print(f"<p><strong>SERVER_PORT:</strong> {os.environ.get('SERVER_PORT', 'Not set')}</p>")
 print(f"<p><strong>SCRIPT_NAME:</strong> {os.environ.get('SCRIPT_NAME', 'Not set')}</p>")
+print(f"<p><strong>PATH_INFO:</strong> {os.environ.get('PATH_INFO', 'Not set')}</p>")
+print(f"<p><strong>PATH_TRANSLATED:</strong> {os.environ.get('PATH_TRANSLATED', 'Not set')}</p>")
+print(f"<p><strong>REMOTE_ADDR:</strong> {os.environ.get('REMOTE_ADDR', 'Not set')}</p>")
+
+print("<h2>POST Data (from STDIN):</h2>")
+if os.environ.get('REQUEST_METHOD') == 'POST':
+	content_length = os.environ.get('CONTENT_LENGTH')
+	if content_length:
+		post_data = sys.stdin.read(int(content_length))
+		print(f"<p><strong>POST Body:</strong> {post_data}</p>")
+	else:
+		print("<p>No CONTENT_LENGTH set</p>")
+else:
+	print("<p>Not a POST request</p>")
+
+
 
 print("<h2>HTTP Headers:</h2>")
 for key, value in os.environ.items():

@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/07 15:20:30 by jim               #+#    #+#             */
-/*   Updated: 2025/10/13 17:30:00 by jim              ###   ########.fr       */
+/*   Updated: 2025/10/18 15:19:32 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,6 +32,15 @@ std::string CgiExec::execute(const HttpRequest* request){
 		return "";
 	}
 
+	//need to send stdin for post
+	int stdin_pipefd[2];
+	if (pipe(stdin_pipefd) == -1){
+		console::log("[CGI] failed to create second (stdin) pipe", ERROR);
+		close(pipefd[0]);
+		close(pipefd[1]);
+		return "";
+	}
+
 	//fork
 	pid_t pid = fork();
 	if (pid == -1){
@@ -46,18 +55,28 @@ std::string CgiExec::execute(const HttpRequest* request){
 		dup2(pipefd[1], STDOUT_FILENO);
 		close(pipefd[1]);
 
+		close(stdin_pipefd[1]);
+		dup2(stdin_pipefd[0], STDIN_FILENO);
+		close(stdin_pipefd[0]);
+
 		//change dir
-		chdir("./www/cgi-bin");
+		//chdir("./www/cgi-bin");
 
 		//Setup CGI variable env
+		console::log("[CGI] Executing: setenv", MSG);
 		setenv("REQUEST_METHOD", request->getMethod().c_str(), 1);
-		setenv("SERVER_PROTOCOL", "HTTP/1.0", 1);
-		setenv("GATEWAY_INTERFACE", "CGI/1.0", 1);
+		setenv("SERVER_PROTOCOL", "HTTP/1.1", 1);
+		setenv("GATEWAY_INTERFACE", "CGI/1.1", 1);
 		setenv("SERVER_NAME", _config->getServerName().c_str(), 1);
 		std::ostringstream port;
 		port << _config->getPort();
 		setenv("SERVER_PORT", port.str().c_str(), 1);
 		setenv("SCRIPT_NAME", request->getUri().getPath().c_str(), 1);
+		setenv("PATH_INFO", "", 1);
+		setenv("PATH_TRANSLATED", "", 1);
+
+		setenv("REMOTE_ADDR", "127.0.0.1", 1); //Todo func to define true real addr ?? needed
+
 
 		if (!request->getUri().getQuery().empty()){
 			setenv("QUERY_STRING", request->getUri().getQuery().c_str(), 1);
@@ -68,8 +87,23 @@ std::string CgiExec::execute(const HttpRequest* request){
 			std::ostringstream oss;
 			oss<< request->getBody().size();
 			setenv("CONTENT_LENGTH", oss.str().c_str(), 1);
-			setenv("CONTENT_TYPE", "application/x-www-form-urlencoded", 1);
+			std::map<std::string, std::vector<std::string> > headers = request->getHeaders();
+			std::map<std::string, std::vector<std::string> >::const_iterator ct_it = headers.find("Content-Type");
+			if (ct_it != headers.end() && !ct_it->second.empty())
+				setenv("CONTENT_TYPE", ct_it->second[0].c_str(), 1);
+			else
+				setenv("CONTENT_TYPE", "application/x-www-form-urlencoded", 1);
 		}
+		close(stdin_pipefd[1]);
+
+
+
+		//POST
+		//TODO multipart - plaintext
+		//todo content type
+		//error reposnose
+		//header
+
 
 		//HTTP heeaders (HTTP_*)
 		std::map<std::string, std::vector<std::string> > headers = request->getHeaders();
@@ -93,7 +127,8 @@ std::string CgiExec::execute(const HttpRequest* request){
 			console::log("[CGI] python not found: " + _python_path, ERROR);
 			exit(1);
 		}
-		execl(_python_path.c_str(), "python3", "script.py", (char*)NULL);
+		console::log(_script_path.c_str(), ERROR);
+		execl(_python_path.c_str(), "python3", _script_path.c_str(), (char*)NULL);
 
 		//if exce fail
 		console::log("[CGI] execl failed", ERROR);
@@ -102,6 +137,11 @@ std::string CgiExec::execute(const HttpRequest* request){
 
 	//parent proc
 	close(pipefd[1]);
+	close(stdin_pipefd[0]);
+
+	if (request->getMethod() == "POST" && !request->getBody().empty()){
+		write(stdin_pipefd[1], request->getBody().c_str(), request->getBody().size());}
+	close(stdin_pipefd[1]);
 
 	std::string output;
 	char buffer[4096];
