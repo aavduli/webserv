@@ -32,7 +32,6 @@ class RequestProcessor {
 		bool	checkUploadPermissions();
 
 		bool	isCGI();
-		bool	processCGI();
 
 	public:
 		RequestProcessor(const WebservConfig& config, HttpRequest* request);

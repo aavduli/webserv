@@ -1,13 +1,14 @@
 #include "HttpRequest.hpp"
 #include "../../config/WebservConfig.hpp"
 
-HttpRequest::HttpRequest() : _method(""), ctx() {}
-HttpRequest::HttpRequest(const HttpRequest& rhs) : HttpMessage(rhs), _method(rhs._method), _uri(rhs._uri), ctx(rhs.ctx) {}
+HttpRequest::HttpRequest() : _method(""), _is_CGI(false), ctx() {}
+HttpRequest::HttpRequest(const HttpRequest& rhs) : HttpMessage(rhs), _method(rhs._method), _uri(rhs._uri), _is_CGI(rhs._is_CGI), ctx(rhs.ctx) {}
 HttpRequest& HttpRequest::operator=(const HttpRequest& rhs) {
 	if (this != &rhs) {
 		HttpMessage::operator=(rhs);
 		_method = rhs._method;
 		_uri = rhs._uri;
+		_is_CGI = rhs._is_CGI;
 		ctx = rhs.ctx;
 	}
 	return *this;
@@ -18,8 +19,10 @@ const std::string&	HttpRequest::getMethod() const {return _method;}
 void				HttpRequest::setMethod(const std::string& method) {_method = method;}
 RequestUri			HttpRequest::getUri() const {return _uri;}
 void				HttpRequest::setUri(const RequestUri& uri) {_uri = uri;}
-std::map<std::string, PostValue>	HttpRequest::getPostData() const {return _post_data;}
-void				HttpRequest::setPostData(const std::map<std::string, PostValue>& post_data) {_post_data = post_data;}
+bool				HttpRequest::getIsCGI() const {return _is_CGI;}
+void				HttpRequest::setIsCGI(bool value) {_is_CGI = value;}
+std::map<std::string, PostData>	HttpRequest::getPostData() const {return _post_data;}
+void				HttpRequest::setPostData(const std::map<std::string, PostData>& post_data) {_post_data = post_data;}
 
 void	print_request(HttpRequest* request) {
 	std::cout << "\n\n=== HTTP REQUEST ===" << std::endl;

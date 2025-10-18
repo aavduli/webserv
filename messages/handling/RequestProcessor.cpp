@@ -21,7 +21,7 @@ bool RequestProcessor::processPostRequest() {
 	if (isFileUpload())
 		return processFileUpload();
 	else if (isCGI())
-		return processCGI();	// TODO what needs to be processed here in addition than in response generation?
+		_request->setIsCGI(true);
 	_last_status = E_OK;
 	return true;
 }
@@ -55,7 +55,7 @@ bool	RequestProcessor::decodePostBody() {
 void	RequestProcessor::processURLEncodedBody() {
 
 	std::string raw_body = _request->getBody();
-	std::map<std::string, PostValue> post_data;
+	std::map<std::string, PostData> data;
 
 	std::vector<std::string> pairs = str_to_vect(_request->getBody(), "&");
 	for (size_t i = 0; i < pairs.size(); i++) {
@@ -64,15 +64,15 @@ void	RequestProcessor::processURLEncodedBody() {
 
 		size_t equal = pairs[i].find("=");
 		if (equal == std::string::npos) {
-			post_data[urlDecode(pairs[i])] = PostValue("");
+			data[urlDecode(pairs[i])] = PostData("");
 		}
 		else {
 			std::string key = urlDecode(pairs[i].substr(0, equal));
 			std::string value = urlDecode(pairs[i].substr(equal + 1));
-			post_data[key] = PostValue(value);
+			data[key] = PostData(value);
 		}
 	}
-	_request->setPostData(post_data);
+	_request->setPostData(data);
 }
 
 std::string	RequestProcessor::urlDecode(const std::string& encoded) {
@@ -105,7 +105,7 @@ std::string	RequestProcessor::urlDecode(const std::string& encoded) {
 // TODO atomize
 void	RequestProcessor::processMultipartBody() {
 	
-	std::map<std::string, PostValue> post_data;
+	std::map<std::string, PostData> data;
 	const std::string& raw_body = _request->getBody();
 	std::string boundary = extractBoundary(_request->getHeaderValues("Content-Type"));
 	
@@ -138,7 +138,7 @@ void	RequestProcessor::processMultipartBody() {
 			continue;
 		}
 		
-		PostValue value;
+		PostData value;
 		value.content = parts[i].substr(header_end + 4);
 		
 		std::string filename = extractDispositionData(headers, "filename=\"");
@@ -148,9 +148,9 @@ void	RequestProcessor::processMultipartBody() {
 			if (headers.find("Content-Type") != headers.end() && !headers["Content-Type"].empty())
 				value.content_type = headers["Content-Type"][0];
 		}
-		post_data[field_name] = value;
+		data[field_name] = value;
 	}
-	_request->setPostData(post_data);
+	_request->setPostData(data);
 }
 
 std::string	RequestProcessor::extractBoundary(const std::vector<std::string>& ct_values) {
@@ -256,7 +256,9 @@ std::string RequestProcessor::extractDispositionData(const std::map<std::string,
 /*
 	Destination path resolution (upload dir or CGI handler)
 	Directory creation if upload_dir doesn't exist (optional safety)
-	Unique filename generation for uploads
+	Unique filename generation for uploads	// timestamp
+	'Upload some file to the server and get it back.'
+
 
 	For uploads:
 		Check write permissions on destination directory
@@ -266,10 +268,11 @@ std::string RequestProcessor::extractDispositionData(const std::map<std::string,
 
 	For CGI execution:
 		Set up environment variables (REQUEST_METHOD, CONTENT_LENGTH, CONTENT_TYPE, etc.)
-		Pass full body as stdin to CGI process
+		Pass full body as stdin to CGI process		where to get it? data["cgi"].content?
 		fork() child process, execute CGI via execve(), waitpid()
 		Read CGI output and response headers
 		Handle CGI timeout/crash scenarios
+
 
 	Destination path resolution:
 
@@ -277,6 +280,7 @@ std::string RequestProcessor::extractDispositionData(const std::map<std::string,
 	Generate unique filenames to prevent overwrites
 	Validate file extensions against allowed list
 
+	
 	File writing:
 
 	Create upload directory if it doesn't exist
@@ -286,23 +290,20 @@ std::string RequestProcessor::extractDispositionData(const std::map<std::string,
 */
 
 bool	RequestProcessor::isCGI() {
-	// TODO: Implement proper CGI detection logic
-	// For now, return false to skip CGI processing
-	return false;
-}
 
-bool	RequestProcessor::processCGI() {
-	
-	console::log("[INFO][POST REQUEST] Jim does a beautiful CGI process <3", MSG);
-	_last_status = E_OK;
-	return true;
+	// what is CGI? post data content? content-type?
+
+	std::map<std::string, PostData> data = _request->getPostData();
+	// check on data for CGI 
+
+	return false;
 }
 
 bool	RequestProcessor::isFileUpload() {
 	// TODO: Implement proper file upload detection logic
-	// Check if any PostValue has is_file = true
-	const std::map<std::string, PostValue>& post_data = _request->getPostData();
-	for (std::map<std::string, PostValue>::const_iterator it = post_data.begin(); it != post_data.end(); ++it) {
+	// Check if any PostData has is_file = true
+	const std::map<std::string, PostData>& post_data = _request->getPostData();
+	for (std::map<std::string, PostData>::const_iterator it = post_data.begin(); it != post_data.end(); ++it) {
 		if (it->second.is_file)
 			return true;
 	}
