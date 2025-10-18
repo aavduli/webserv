@@ -1,8 +1,4 @@
 #include "ResponseGenerator.hpp"
-#include "../../console/console.hpp"
-#include "../../cgi/CgiExec.hpp"
-#include <ctime>
-#include <sstream>
 
 ResponseGenerator::ResponseGenerator(const WebservConfig& config, HttpRequest* request, HttpResponse* response, Status status) : _config(config), _request(request), _response(response), _last_status(status), _done(false) {}
 ResponseGenerator::ResponseGenerator(const ResponseGenerator& rhs) : _config(rhs._config), _request(rhs._request), _response(rhs._response), _last_status(rhs._last_status), _done(rhs._done) {}

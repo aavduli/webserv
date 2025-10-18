@@ -4,6 +4,9 @@
 #include <dirent.h>
 #include "MessageHandler.hpp"
 #include "../../config/WebservConfig.hpp"
+#include "../../console/console.hpp"
+#include <ctime>
+#include <sstream>
 
 class ResponseGenerator {
 
