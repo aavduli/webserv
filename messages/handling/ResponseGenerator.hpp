@@ -23,7 +23,7 @@ class ResponseGenerator {
 		void	generatePostResponse();
 
 	public:
-		ResponseGenerator(const WebservConfig& config, HttpRequest* request, HttpResponse* response);
+		ResponseGenerator(const WebservConfig& config, HttpRequest* request, HttpResponse* response, Status status);
 		ResponseGenerator(const ResponseGenerator& rhs);
 		ResponseGenerator& operator=(const ResponseGenerator& rhs);
 		~ResponseGenerator();
@@ -37,6 +37,8 @@ class ResponseGenerator {
 		std::string		generateDefaultErrorHTML();
 		std::string		generateRedirHTML();
 		void			setHeaders();
+		void			parseCGIOutput(const std::string& cgi_output);
+		std::string		readFileContent(std::ifstream& file) const;
 };
 
 std::string		getMimeType(const std::string& extension);

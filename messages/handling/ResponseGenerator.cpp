@@ -4,7 +4,7 @@
 #include <ctime>
 #include <sstream>
 
-ResponseGenerator::ResponseGenerator(const WebservConfig& config, HttpRequest* request, HttpResponse* response) : _config(config), _request(request), _response(response), _done(false) {}
+ResponseGenerator::ResponseGenerator(const WebservConfig& config, HttpRequest* request, HttpResponse* response, Status status) : _config(config), _request(request), _response(response), _last_status(status), _done(false) {}
 ResponseGenerator::ResponseGenerator(const ResponseGenerator& rhs) : _config(rhs._config), _request(rhs._request), _response(rhs._response), _last_status(rhs._last_status), _done(rhs._done) {}
 ResponseGenerator& ResponseGenerator::operator=(const ResponseGenerator& rhs) {
 	if (this != &rhs) {
@@ -16,7 +16,6 @@ ResponseGenerator& ResponseGenerator::operator=(const ResponseGenerator& rhs) {
 	return *this;
 }
 ResponseGenerator::~ResponseGenerator() {}
-void	ResponseGenerator::setLastStatus(Status last_status) {_last_status = last_status;}
 Status	ResponseGenerator::getLastStatus() const {return _last_status;}
 
 void ResponseGenerator::generateResponse() {
@@ -202,22 +201,6 @@ void ResponseGenerator::generateErrorResponse() {
 	_response->setBodyType(B_HTML);
 }
 
-void ResponseGenerator::generateCGIResponse() {
-
-	console::log("[INFO] Generating CGI response", MSG);
-
-	// Execute CGI script
-	// Parse CGI output headers
-	// Handle CGI errors
-	// Set appropriate response
-
-	// TODO: Execute CGI script
-	// TODO: Parse CGI output
-	// TODO: Set headers from CGI response
-
-	_response->setBodyType(B_CGI);	// CGI sets its own Content-Type
-}
-
 void ResponseGenerator::setHeaders() {
 
 	_response->addHeader("Date", str_to_vect(getCurrentGMTDate(), ""));
@@ -290,7 +273,6 @@ std::string	ResponseGenerator::generateDirectoryHTML() {
 		html << "<p><a href=\"" << parent_path << "\">../</a>\n</p>";
 	}
 
-	struct dirent *en;
 	while ((en = readdir(dir)) != NULL) {
 		std::string name = en->d_name;
 		if (name == "." || name == "..")
@@ -335,13 +317,15 @@ void	ResponseGenerator::addValidIndex() {
 		const std::vector<std::string>& indexes = _request->ctx._index_list;
 		std::vector<std::string>::const_iterator it;
 		for (it = indexes.begin(); it != indexes.end(); it++) {
-			std::string full_index_path = build_full_path(path, *it, _request->ctx._location_name);
+			std::string full_index_path = build_full_path(path, *it);
 			if (is_valid_file_path(full_index_path)) {
 				RequestUri uri(_request->getUri());
 				uri.setEffectivePath(full_index_path);
 				_request->setUri(uri);
 				return ;
 			}
+		}
+	}
 	if (!is_directory(path) || _request->ctx._index_list.empty())
 		return ;
 
