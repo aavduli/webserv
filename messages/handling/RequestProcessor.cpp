@@ -16,39 +16,23 @@ Status RequestProcessor::getLastStatus() const {return _last_status;}
 // post can be data sharing, a CGI or a file upload
 bool RequestProcessor::processPostRequest() {
 
-	if (!decodePostBody())
-		return false;
-	if (isFileUpload())
-		return processFileUpload();
-	else if (isCGI())
-		_request->setIsCGI(true);
-	_last_status = E_OK;
-	return true;
-}
-
-bool	RequestProcessor::decodePostBody() {
-
 	const std::vector<std::string>& ct_values = _request->getHeaderValues("Content-Type");
 	if (ct_values.empty()) {
 		console::log("[ERROR][POST BODY DECODING] Content-Type empty", MSG);
 		_last_status = E_BAD_REQUEST;
-		return false;
 	}
 
 	std::string content_type = ct_values[0];
-	if (content_type.find("application/x-www-form-urlencoded") != std::string::npos) {
+	if (content_type.find("application/x-www-form-urlencoded") != std::string::npos)
 		processURLEncodedBody();
-	}
-	else if (content_type.find("multipart/form-data") != std::string::npos) {
+	else if (content_type.find("multipart/form-data") != std::string::npos)
 		processMultipartBody();
-	}
-	else if (content_type.find("text/") != std::string::npos) {
-		_last_status = E_OK;
-	}
-	else {
+	else if (content_type.find("text/") == std::string::npos) {
 		console::log("[ERROR][POST BODY DECODING] Invalid Content-Type", MSG);
 		_last_status = E_BAD_REQUEST;
 	}
+	if (_request->ctx._upload_enabled)
+		processFileUpload();
 	return (_last_status == E_OK);
 }
 
@@ -257,79 +241,96 @@ std::string RequestProcessor::extractDispositionData(const std::map<std::string,
 	return value;
 }
 
-/*
-	Destination path resolution (upload dir or CGI handler)
-	Directory creation if upload_dir doesn't exist (optional safety)
-	Unique filename generation for uploads	// timestamp
-	'Upload some file to the server and get it back.'
-
-
-	For uploads:
-		Check write permissions on destination directory
-		Create file with unique name if needed (avoid overwrites)
-		Write received body to disk using write() (non-blocking aware)
-		Handle disk space errors
-
-	For CGI execution:
-		Set up environment variables (REQUEST_METHOD, CONTENT_LENGTH, CONTENT_TYPE, etc.)
-		Pass full body as stdin to CGI process		where to get it? data["cgi"].content?
-		fork() child process, execute CGI via execve(), waitpid()
-		Read CGI output and response headers
-		Handle CGI timeout/crash scenarios
-
-
-	Destination path resolution:
-
-	Determine upload directory from config
-	Generate unique filenames to prevent overwrites
-	Validate file extensions against allowed list
-
-
-	File writing:
-
-	Create upload directory if it doesn't exist
-	Write multipart file content to disk
-	Handle partial writes and disk space errors
-	Set proper file permissions
-*/
-
-bool	RequestProcessor::isCGI() {
-
-	// what is CGI? post data content? content-type?
-
-	std::map<std::string, PostData> data = _request->getPostData();
-	// check on data for CGI 
-
-	return false;
-}
-
-bool	RequestProcessor::isFileUpload() {
-	// TODO: Implement proper file upload detection logic
-	// Check if any PostData has is_file = true
+void	RequestProcessor::processFileUpload() {
+	
+	bool upload_config_done = false;
 	const std::map<std::string, PostData>& post_data = _request->getPostData();
-	for (std::map<std::string, PostData>::const_iterator it = post_data.begin(); it != post_data.end(); ++it) {
-		if (it->second.is_file)
-			return true;
+	std::map<std::string, PostData>::const_iterator	it;
+	
+	for (it = post_data.begin(); it != post_data.end(); ++it) {
+		if (it->second.is_file) {
+			if (!upload_config_done) {
+				if (!configUploadDir())
+					return;
+				upload_config_done = true;
+			}
+
+			// Check file size against client_max_body_size limits
+
+			const std::string& filename = generateFilename(it->second.filename);
+			if (!writeFileToDisk(filename, it->second)) {
+				console::log("[ERROR][POST] File upload failed: " + it->second.filename, MSG);
+				return;
+			}
+		}
 	}
-	return false;
+	_last_status = E_OK;
 }
 
-bool	RequestProcessor::processFileUpload() {
-	console::log("[INFO][POST REQUEST] Processing file upload", MSG);
-	// TODO: Implement actual file upload processing
+bool	RequestProcessor::configUploadDir() {
+
+	std::string dir_path = _request->ctx._upload_dir;
+
+	if (!is_directory(dir_path)) {
+		if (mkdir(dir_path.c_str(), 0755) == -1) {
+			if (errno != EEXIST) {
+				console::log("[ERROR][UPLOAD DIR] Upload directory creation failed: " + dir_path, MSG);
+				_last_status = E_UNPROCESSABLE_CONTENT;
+				return false;
+			}
+		}
+	}
+	if (access(dir_path.c_str(), W_OK) != 0) {
+		console::log("[ERROR][UPLOAD DIR] Write not allowed on upload directory: " + dir_path, MSG);
+		_last_status = E_UNPROCESSABLE_CONTENT;
+		return false;
+	}
+	return true;
+}
+
+std::string	RequestProcessor::generateFilename(const std::string& og_name) {
+
+	time_t now = time(0);
+	std::stringstream o;
+	std::string name;
+
+	o << now << "_" << og_name;
+	name = o.str();
+	name = canonicalize_path(name);
+	return name;
+}
+
+bool	RequestProcessor::writeFileToDisk(const std::string& filename, const PostData& file_data) {
+
+	std::string full_path = build_full_path(_request->ctx._upload_dir, filename);
+
+	// blocking write
+	std::ofstream file(full_path.c_str(), std::ios::binary);
+	if (!file.is_open()) {
+		_last_status = E_UNPROCESSABLE_CONTENT;
+		return false;
+	}
+
+	file.write(file_data.content.c_str(), file_data.content.size());
+	file.close();
 	_last_status = E_OK;
 	return true;
-}
 
-bool	RequestProcessor::checkUploadPermissions() {
-	// TODO: Implement upload permission checking
-	// Check if upload directory exists and is writable
-	return true;
+	// Write file content using non-blocking write() calls
+	// Handle partial writes (store state, resume on next write opportunity)
+	// Handle disk space errors (ENOSPC)
+	// Set appropriate file permissions after writing
+
+	// _last_status = E_INSUFFICIENT_STORAGE; // Disk full
+	// _last_status = E_UNPROCESSABLE_CONTENT; // Write error
+	// _last_status = E_FORBIDDEN; // Permission error
+	// _last_status = E_INTERNAL_SERVER_ERROR;
 }
 
 bool	RequestProcessor::processDeleteRequest() {
 	console::log("[INFO][DELETE REQUEST] Processing DELETE request", MSG);
-	// TODO: Implement DELETE request processing
+
+	// do something
 	_last_status = E_OK;
 	return true;
 }

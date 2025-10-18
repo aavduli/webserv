@@ -27,13 +27,14 @@ enum Status {
 	E_UNSUPPORTED_MEDIA_TYPE = 415,
 	E_EXPECTATION_FAILED = 417,
 	E_TEAPOT = 418,
+	E_UNPROCESSABLE_CONTENT = 422,
+	E_FAILED_DEPENDENCY = 424,
 	E_TOO_MANY_REQUESTS = 429,
 	E_HEADER_TOO_LARGE = 431,
 	E_INTERNAL_SERVER_ERROR = 500,
 	E_NOT_IMPLEMENTED = 501,	// server does not recognize the request method and is not capable of supporting it for any resource
 	E_BAD_GATEWAY = 502,
 	E_UNSUPPORTED_VERSION = 505,
-
 };
 
 std::string	status_msg(Status e);
