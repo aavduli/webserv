@@ -49,7 +49,7 @@ std::string			get_file_extension(const std::string& path);
 
 std::string			remove_suffix(const std::string& str, const std::string& suffix);
 std::string			remove_prefix(const std::string& path, const std::string& prefix);
-std::string			build_full_path(const std::string& document_root, const std::string& path);
+std::string			build_full_path(const std::string& root_path, const std::string& relative_path);
 bool				contains_traversal(const std::string& path);
 std::string			canonicalize_path(const std::string& path);
 bool				is_within_root(const std::string& path, const std::string& document_root);
