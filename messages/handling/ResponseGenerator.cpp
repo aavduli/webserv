@@ -23,15 +23,15 @@ void ResponseGenerator::generateResponse() {
 	else if (_last_status == E_OK) {
 		if (isValidCGI())
 			generateCGIResponse();		// can be GET or POST
-		else if (_request->getMethod() == "GET") {
-			addValidIndex();
-			if (is_directory(_request->getUri().getEffectivePath()))
-				generateDirectoryResponse();
-			else
-				generateStaticFileResponse();
-		}
-		else if (_request->getMethod() == "POST")
-			generatePostResponse();
+		// else if (_request->getMethod() == "GET") {
+		addValidIndex();
+		if (is_directory(_request->getUri().getEffectivePath()))
+			generateDirectoryResponse();
+		else
+			generateStaticFileResponse();
+		// }
+		// else if (_request->getMethod() == "POST")
+		// 	generatePostResponse();
 		// else if (_request->getMethod() == "DELETE")
 		// 	generateDeleteResponse();
 	}
