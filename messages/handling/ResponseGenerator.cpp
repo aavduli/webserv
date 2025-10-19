@@ -16,14 +16,11 @@ Status	ResponseGenerator::getLastStatus() const {return _last_status;}
 
 void ResponseGenerator::generateResponse() {
 
-	//print_request(_request);
-
 	if (_last_status == E_REDIRECT_PERMANENT || _last_status == E_REDIRECT_TEMPORARY)
 		generateRedirResponse();
 	else if (_last_status == E_OK) {
 		if (isValidCGI())
-			generateCGIResponse();		// can be GET or POST
-		// else if (_request->getMethod() == "GET") {
+			generateCGIResponse();
 		addValidIndex();
 		if (is_directory(_request->getUri().getEffectivePath()))
 			generateDirectoryResponse();
@@ -179,7 +176,7 @@ void ResponseGenerator::parseCGIOutput(const std::string& cgi_output){
 
 void ResponseGenerator::generateErrorResponse() {
 
-	console::log("[INFO] Generating error response", MSG);
+	console::log("[INFO] Generating error response with status " + status_msg(_last_status), MSG);
 
 	_response->setStatus(_last_status);
 	std::string error_page_path = _config.getErrorPage(_last_status);

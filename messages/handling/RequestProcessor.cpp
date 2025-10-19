@@ -27,7 +27,7 @@ bool RequestProcessor::processPostRequest() {
 		processURLEncodedBody();
 	else if (content_type.find("multipart/form-data") != std::string::npos)
 		processMultipartBody();
-	else if (content_type.find("text/") == std::string::npos) {
+	else if (content_type.find("text/plain") == std::string::npos) {
 		console::log("[ERROR][POST BODY DECODING] Invalid Content-Type", MSG);
 		_last_status = E_BAD_REQUEST;
 	}
@@ -255,7 +255,12 @@ void	RequestProcessor::processFileUpload() {
 				upload_config_done = true;
 			}
 
-			// Check file size against client_max_body_size limits
+			std::string upload_max = _request->ctx._location_config["client_max_body_size"];
+			if (it->second.content.size() > to_size_t(upload_max)) {
+				console::log("[ERROR][POST] File upload exceeds client_max_body_size: " + it->second.content.size(), MSG);
+				_last_status = E_BAD_REQUEST;
+				return;
+			}
 
 			const std::string& filename = generateFilename(it->second.filename);
 			if (!writeFileToDisk(filename, it->second)) {
@@ -271,6 +276,11 @@ bool	RequestProcessor::configUploadDir() {
 
 	std::string dir_path = _request->ctx._upload_dir;
 
+	if (_request->ctx._upload_enabled == false) {
+		console::log("[ERROR][UPLOAD DIR] File upload not allowed", MSG);
+		_last_status = E_METHOD_NOT_ALLOWED;
+		return false;
+	}
 	if (!is_directory(dir_path)) {
 		if (mkdir(dir_path.c_str(), 0755) == -1) {
 			if (errno != EEXIST) {
@@ -297,16 +307,22 @@ std::string	RequestProcessor::generateFilename(const std::string& og_name) {
 	o << now << "_" << og_name;
 	name = o.str();
 	name = canonicalize_path(name);
+	for (size_t i = 0; i < name.length(); i++) {
+		if (name[i] == '/')
+			name[i] = '_';
+	}
 	return name;
 }
 
+// TODO non-blocking
 bool	RequestProcessor::writeFileToDisk(const std::string& filename, const PostData& file_data) {
 
 	std::string full_path = build_full_path(_request->ctx._upload_dir, filename);
 
-	// blocking write
+	// blocking operations
 	std::ofstream file(full_path.c_str(), std::ios::binary);
 	if (!file.is_open()) {
+		console::log("[ERROR][WRITE UPLOAD FILE] UNable to open file", MSG);
 		_last_status = E_UNPROCESSABLE_CONTENT;
 		return false;
 	}
