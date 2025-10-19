@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/07 15:20:30 by jim               #+#    #+#             */
-/*   Updated: 2025/10/19 12:53:18 by jim              ###   ########.fr       */
+/*   Updated: 2025/10/19 15:00:02 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <cstdlib>
+#include <cstring>
 #include "../console/console.hpp"
 
 extern char** environ;
@@ -87,14 +88,12 @@ std::string CgiExec::execute(const HttpRequest* request){
 		//for POST method
 		if (request->getMethod() == "POST"){
 			std::ostringstream oss;
-			oss<< request->getBody().size();
+			oss<<request->getBody().size();
 			setenv("CONTENT_LENGTH", oss.str().c_str(), 1);
 			std::map<std::string, std::vector<std::string> > headers = request->getHeaders();
 			std::map<std::string, std::vector<std::string> >::const_iterator ct_it = headers.find("Content-Type");
 			if (ct_it != headers.end() && !ct_it->second.empty())
 				setenv("CONTENT_TYPE", ct_it->second[0].c_str(), 1);
-			else
-				setenv("CONTENT_TYPE", "application/x-www-form-urlencoded", 1);
 		}
 		close(stdin_pipefd[1]);
 
@@ -139,7 +138,7 @@ std::string CgiExec::execute(const HttpRequest* request){
 
 
 		//if exce fail
-		console::log("[CGI] execl failed", ERROR);
+		console::log("[CGI] exceve failed: "+std::string(strerror(errno)), ERROR);
 		exit(1);
 	}
 
@@ -162,8 +161,18 @@ std::string CgiExec::execute(const HttpRequest* request){
 	int status;
 	waitpid(pid, &status, 0);
 
-	if (WEXITSTATUS(status) != 0){
-		console::log("[CGI] script execution failed", ERROR);
+	if (WIFEXITED(status)){
+		if (WEXITSTATUS(status) != 0){
+			console::log("[CGI] script exited with error code: "+nb_to_string(WEXITSTATUS(status)), ERROR);
+			return "";
+		}
+	}
+	else if (WIFSIGNALED(status)){
+		console::log("[CGI] script killed by signal: "+nb_to_string(WTERMSIG(status)), ERROR);
+		return "";
+	}
+	else{
+		console::log("[CGI] script terminated abnormally", ERROR);
 		return "";
 	}
 
