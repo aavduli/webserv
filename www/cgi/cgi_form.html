@@ -2,18 +2,10 @@
 <html>
 <head>
     <title>CGI POST Test</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 40px; }
-        .form-section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
-        input, textarea { margin: 5px 0; padding: 8px; width: 300px; }
-        button { padding: 10px 20px; margin: 5px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 3px; }
-        button:hover { background: #0056b3; }
-    </style>
 </head>
 <body>
     <h1>CGI POST Request Tests</h1>
-    
-    <div class="form-section">
+    <div>
         <h2>URL-Encoded CGI Form</h2>
         <form action="/cgi_bin/post_test.py" method="POST" enctype="application/x-www-form-urlencoded">
             <label>Username:</label><br>
@@ -24,7 +16,7 @@
         </form>
     </div>
 
-    <div class="form-section">
+    <div>
         <h2>Multipart CGI Form</h2>
         <form action="/cgi_bin/post_test.py" method="POST" enctype="multipart/form-data">
             <label>Name:</label><br>
@@ -37,6 +29,6 @@
         </form>
     </div>
 
-    <p><a href="/form">← Back to Main Form Tests</a></p>
+    <p><a href="/form">Back to Main Form Tests</a></p>
 </body>
 </html>

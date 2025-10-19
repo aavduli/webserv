@@ -2,40 +2,14 @@
 <html>
 <head>
     <title>POST Success</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 40px; background-color: #f0f8ff; }
-        .success-container { 
-            max-width: 600px; 
-            margin: 0 auto; 
-            padding: 20px; 
-            background: white; 
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        h1 { color: #28a745; text-align: center; }
-        .message { padding: 15px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 5px; }
-        .back-link { display: block; text-align: center; margin-top: 20px; text-decoration: none; color: #007bff; }
-        .back-link:hover { text-decoration: underline; }
-        .timestamp { font-size: 0.9em; color: #666; text-align: right; margin-top: 10px; }
-    </style>
 </head>
 <body>
-    <div class="success-container">
-        <h1>✅ POST Request Successful!</h1>
-        <div class="message">
-            <p><strong>Your form has been successfully submitted and processed by the webserver.</strong></p>
-            <p>This confirms that:</p>
-            <ul>
-                <li>POST request was properly received</li>
-                <li>Content-Type was correctly parsed</li>
-                <li>Form data was successfully decoded</li>
-                <li>Request processing completed without errors</li>
-            </ul>
-        </div>
-        <a href="/form" class="back-link">← Back to Test Forms</a>
-        <div class="timestamp" id="timestamp"></div>
+    <div>
+        <h1>POST Request Successful</h1>
+        <div><p>Your form has been successfully submitted and processed by the webserver.</p></div>
+        <a href="/form">Back to Test Forms</a>
+        <div id="timestamp"></div>
     </div>
-
     <script>
         document.getElementById('timestamp').textContent = 
             'Processed at: ' + new Date().toLocaleString();
