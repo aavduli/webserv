@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/07 15:20:30 by jim               #+#    #+#             */
-/*   Updated: 2025/10/18 15:19:32 by jim              ###   ########.fr       */
+/*   Updated: 2025/10/19 12:41:09 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,8 @@
 #include <sys/wait.h>
 #include <cstdlib>
 #include "../console/console.hpp"
+
+extern char** environ;
 
 //coinstr
 //todo Check for python path, what to do
@@ -128,7 +130,10 @@ std::string CgiExec::execute(const HttpRequest* request){
 			exit(1);
 		}
 		console::log(_script_path.c_str(), ERROR);
-		execl(_python_path.c_str(), "python3", _script_path.c_str(), (char*)NULL);
+	//	execl(_python_path.c_str(), "python3", _script_path.c_str(), (char*)NULL);
+
+		char* argv[] = {(char*)"python3", (char*)_script_path.c_str(), (char*) NULL};
+		execve(_python_path.c_str(), argv, environ);
 
 		//if exce fail
 		console::log("[CGI] execl failed", ERROR);
