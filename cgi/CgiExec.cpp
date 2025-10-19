@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/07 15:20:30 by jim               #+#    #+#             */
-/*   Updated: 2025/10/19 12:41:09 by jim              ###   ########.fr       */
+/*   Updated: 2025/10/19 12:53:18 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -130,10 +130,13 @@ std::string CgiExec::execute(const HttpRequest* request){
 			exit(1);
 		}
 		console::log(_script_path.c_str(), ERROR);
-	//	execl(_python_path.c_str(), "python3", _script_path.c_str(), (char*)NULL);
-
 		char* argv[] = {(char*)"python3", (char*)_script_path.c_str(), (char*) NULL};
+		//print all variable environment  DEBUG
+		for (char **env = environ; *env != 0; env++){
+			console::log("[CGI ENV] " + std::string(*env), MSG);
+		}
 		execve(_python_path.c_str(), argv, environ);
+
 
 		//if exce fail
 		console::log("[CGI] execl failed", ERROR);
