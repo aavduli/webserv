@@ -314,33 +314,54 @@ std::string	RequestProcessor::generateFilename(const std::string& og_name) {
 	return name;
 }
 
-// TODO non-blocking
+// non-blocking write with buffer
 bool	RequestProcessor::writeFileToDisk(const std::string& filename, const PostData& file_data) {
 
 	std::string full_path = build_full_path(_request->ctx._upload_dir, filename);
 
-	// blocking operations
-	std::ofstream file(full_path.c_str(), std::ios::binary);
-	if (!file.is_open()) {
-		console::log("[ERROR][WRITE UPLOAD FILE] UNable to open file", MSG);
+	int fd = open(full_path.c_str(), O_CREAT | O_WRONLY | O_TRUNC | O_NONBLOCK, 0644);
+	if (fd == -1) {
+		console::log("[ERROR][WRITE UPLOAD FILE] Unable to open file: " + full_path, MSG);
 		_last_status = E_UNPROCESSABLE_CONTENT;
 		return false;
 	}
 
-	file.write(file_data.content.c_str(), file_data.content.size());
-	file.close();
+	const char* data = file_data.content.c_str();
+	size_t total_size = file_data.content.size();
+	size_t bytes_written = 0;
+	const size_t buffer_size = 8192;
+
+	while (bytes_written < total_size) {
+		size_t chunk_size = std::min(buffer_size, total_size - bytes_written);
+		ssize_t result = write(fd, data + bytes_written, chunk_size);
+
+		if (result == -1) {
+			if (errno == EAGAIN || errno == EWOULDBLOCK)
+				continue;
+			else if (errno == ENOSPC) {
+				console::log("[ERROR][WRITE UPLOAD FILE] Disk full", MSG);
+				close(fd);
+				_last_status = E_UNPROCESSABLE_CONTENT;
+				return false;
+			}
+			else {
+				console::log("[ERROR][WRITE UPLOAD FILE] Write error", MSG);
+				close(fd);
+				_last_status = E_UNPROCESSABLE_CONTENT;
+				return false;
+			}
+		}
+		else
+			bytes_written += result;
+	}
+
+	if (close(fd) == -1) {
+		console::log("[ERROR][WRITE UPLOAD FILE] Error closing file", MSG);
+		_last_status = E_INTERNAL_SERVER_ERROR;
+		return false;
+	}
 	_last_status = E_OK;
 	return true;
-
-	// Write file content using non-blocking write() calls
-	// Handle partial writes (store state, resume on next write opportunity)
-	// Handle disk space errors (ENOSPC)
-	// Set appropriate file permissions after writing
-
-	// _last_status = E_INSUFFICIENT_STORAGE; // Disk full
-	// _last_status = E_UNPROCESSABLE_CONTENT; // Write error
-	// _last_status = E_FORBIDDEN; // Permission error
-	// _last_status = E_INTERNAL_SERVER_ERROR;
 }
 
 bool	RequestProcessor::processDeleteRequest() {

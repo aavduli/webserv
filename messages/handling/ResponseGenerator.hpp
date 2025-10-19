@@ -46,7 +46,6 @@ class ResponseGenerator {
 
 std::string		getMimeType(const std::string& extension);
 Status			findErrorStatus(const std::string& path);
-std::string		getReadFileContent(std::ifstream& file);
 std::string 	getCurrentGMTDate();
 
 #endif // RESPONSEGENERATOR_HPP
