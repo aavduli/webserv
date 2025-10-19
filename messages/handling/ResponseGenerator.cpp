@@ -64,18 +64,47 @@ void ResponseGenerator::generatePostResponse() {
 	// application/json: Keep as-is (CGI handles it)
 }
 
+// non-blocking read with buffer
 void ResponseGenerator::generateStaticFileResponse() {
 	
 	const std::string& path = _request->getUri().getEffectivePath();
 	console::log("[INFO] Generating static file response", MSG);
 	
-	std::ifstream file(path.c_str());
-	if (!file.is_open()){
-		console::log("[ERROR][GENERATE RESPONSE] Failed to read: " + path, MSG);
+	int fd = open(path.c_str(), O_RDONLY | O_NONBLOCK);
+	if (fd == -1) {
+		console::log("[ERROR][STATIC FILE RESPONSE] Unable to open file: " + path, MSG);
 		_last_status = findErrorStatus(path);
 		return generateErrorResponse();
 	}
-	_response->setBody(getReadFileContent(file));
+
+	std::string file_content;
+	const size_t buffer_size = 8192;
+	char buffer[buffer_size];
+
+	while (true) {
+		ssize_t bytes_read = read(fd, buffer, buffer_size);
+		if (bytes_read == -1) {
+			if (errno == EAGAIN || errno == EWOULDBLOCK)
+				continue;
+			else {
+				console::log("[ERROR][STATIC FILE RESPONSE] Read error: " + path, MSG);
+				close(fd);
+				_last_status = E_INTERNAL_SERVER_ERROR;
+				return generateErrorResponse();
+			}
+		}
+		else if (bytes_read == 0)
+			break;
+		else
+			file_content.append(buffer, bytes_read);
+	}
+
+	if (close(fd) == -1) {
+		console::log("[ERROR][STATIC FILE RESPONSE] Error closing file: " + path, MSG);
+		_last_status = E_INTERNAL_SERVER_ERROR;
+		return generateErrorResponse();
+	}
+	_response->setBody(file_content);
 	_response->setBodyType(B_FILE);
 	_response->setStatus(E_OK);
 }
@@ -116,17 +145,38 @@ void ResponseGenerator::generateRedirResponse() {
 
 void ResponseGenerator::generateErrorResponse() {
 
-	console::log("[INFO] Generating error response with status " + status_msg(_last_status), MSG);
-
 	_response->setStatus(_last_status);
 	std::string error_page_path = _config.getErrorPage(_last_status);
+	if (!error_page_path.empty()) {
 
-	if (!error_page_path.empty()) {		// custom error page
-		std::ifstream file(error_page_path.c_str());
-		if (file.is_open()) {
-			_response->setBody(getReadFileContent(file));
-			_response->setBodyType(B_FILE);
-			return ;
+		// custom error page
+		int fd = open(error_page_path.c_str(), O_RDONLY | O_NONBLOCK);
+		if (fd != -1) {
+			std::string file_content;
+			const size_t buffer_size = 8192;
+			char buffer[buffer_size];
+
+			while (true) {
+				ssize_t bytes_read = read(fd, buffer, buffer_size);
+				if (bytes_read == -1) {
+					if (errno == EAGAIN || errno == EWOULDBLOCK)
+						continue;
+					else {
+						console::log("[ERROR][GENERATE ERROR RESPONSE] Read error: " + error_page_path, MSG);
+						break;
+					}
+				}
+				else if (bytes_read == 0)
+					break;
+				else
+					file_content.append(buffer, bytes_read);
+			}
+			close(fd);
+			if (!file_content.empty()) {
+				_response->setBody(file_content);
+				_response->setBodyType(B_FILE);
+				return;
+			}
 		}
 		console::log("[ERROR][GENERATE RESPONSE] Failed to read custom error path: " + error_page_path, MSG);
 	}
@@ -382,17 +432,6 @@ std::string getMimeType(const std::string& extension) {
 
 	// Default for unknown extensions
 	return "application/octet-stream";
-}
-
-std::string	getReadFileContent(std::ifstream& file) {
-	
-	std::string	str;
-	std::string	file_contents;
-	while (std::getline(file, str)) {
-		file_contents += str;
-		file_contents.push_back('\n');
-	}
-	return file_contents;
 }
 
 std::string getCurrentGMTDate() {
