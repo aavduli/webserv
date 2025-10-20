@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/07 15:20:30 by jim               #+#    #+#             */
-/*   Updated: 2025/10/19 15:00:02 by jim              ###   ########.fr       */
+/*   Updated: 2025/10/20 10:43:51 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -101,6 +101,7 @@ std::string CgiExec::execute(const HttpRequest* request){
 
 		//POST
 		//TODO multipart - plaintext
+		//TIMEOUT cgi
 		//todo content type
 		//error reposnose
 		//header
@@ -121,8 +122,7 @@ std::string CgiExec::execute(const HttpRequest* request){
 					setenv(header_name.c_str(), it->second[0].c_str(), 1);
 				}
 			}
-
-
+			
 		//execute python script
 		if (access(_python_path.c_str(), X_OK) != 0){
 			console::log("[CGI] python not found: " + _python_path, ERROR);
