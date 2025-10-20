@@ -50,27 +50,6 @@ std::map<std::string, std::string> WebservConfig::getLocationConfig(const std::s
 	return empty;
 }
 
-void WebservConfig::printConfig() const {
-	std::cout << "=== SERVER CONFIG ===" << std::endl;
-
-	for (std::map<std::string, std::string>::const_iterator it = _server.begin();
-		it != _server.end(); ++it) {
-		std::cout << it->first << ": " << it->second << std::endl;
-	}
-
-	std::cout << "\n=== LOCATIONS ===" << std::endl;
-	for (std::map<std::string, std::map<std::string, std::string> >::const_iterator it = _locations.begin();
-		it != _locations.end(); ++it) {
-		std::cout << "Location " << it->first << ":" << std::endl;
-
-		for (std::map<std::string, std::string>::const_iterator param = it->second.begin();
-			param != it->second.end(); ++param) {
-			std::cout << "  " << param->first << " = " << param->second << std::endl;
-		}
-	}
-}
-
-
 std::string WebservConfig::getConfigFile() const{
 	return _configFile;
 }

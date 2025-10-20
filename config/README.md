@@ -1,3 +1,8 @@
+# todo a faire pour jimmy
+	file config par defaut
+	console::log afficher configuration
+	multiple port usage
+
 # Config Parser - Guide pour Angela
 
 API simple pour récupérer la configuration du serveur webserv.
