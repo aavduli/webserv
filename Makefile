@@ -28,7 +28,8 @@ SRCS =	main.cpp \
 		parsing/Normalization.cpp \
 		parsing/Conversion.cpp \
 		parsing/Validation.cpp \
-		parsing/Paths.cpp
+		parsing/Paths.cpp \
+		cgi/CgiExec.cpp
 
 OBJDIR = obj
 

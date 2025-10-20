@@ -25,7 +25,7 @@ class MessageHandler {
 		MessageHandler(const MessageHandler& rhs);
 		MessageHandler& operator=(const MessageHandler& rhs);
 		virtual ~MessageHandler();
-		
+
 		bool			parseRequest(const std::string& raw_request);
 		bool			validateRequest();
 		void			processRequest();

@@ -7,6 +7,7 @@ Conn::Conn()
 	, content_len(-1)
 	, body_have(0)
 	, headers_end(std::string::npos)
+	, lastActivity(time(NULL))
 {}
 
 onConn::onConn() {}
@@ -21,9 +22,24 @@ bool onConn::onDiscon(Conn& c,bool alive, size_t endpos) {
 		c.content_len = -1;
 		c.body_have = 0;
 		c.headers_end = std::string::npos;
+		c.lastActivity = time(NULL);
 		return true;
 	}
 	return false;
+}
+// 
+// static std::string to_lower(std::string s) {
+// 	for (size_t i = 0; i < s.size(); ++i)
+// 		s[i] = static_cast<char>(std::tolower(s[i]));
+// 	return s;
+// }
+
+bool onConn::isTimedOut(Conn& c, time_t currentTime, int timeOutSeconds) {
+	return (currentTime - c.lastActivity) >= timeOutSeconds;
+}
+
+void onConn::updateActivity(Conn& currentConn) {
+	currentConn.lastActivity = time(NULL);
 }
 
 size_t onConn::headers_end_pos(const std::string &buff) {
@@ -34,7 +50,6 @@ size_t onConn::headers_end_pos(const std::string &buff) {
 void onConn::try_mark_headers(Conn &c) {
 	if (c.header_done) return;
 	if (c.in.size() > MAX_HEADER_BYTES && c.in.find("\r\n\r\n") == std::string::npos) {
-		//todo
 		return ;
 	}
 	size_t he = headers_end_pos(c.in);
@@ -86,6 +101,7 @@ bool onConn::chunked_complete(const std::string& body, size_t &cut_after) {
 	}
 	return false;
 }
+// TODO check for post request by searching "--\r\n\r\n" if content-type = multipart/form data == chunked request
 
 bool onConn::update_and_ready(Conn& c, size_t &req_end) {
 	req_end = 0;
@@ -108,6 +124,7 @@ bool onConn::update_and_ready(Conn& c, size_t &req_end) {
 	if (c.content_len >= 0) {
 		const size_t need = static_cast<size_t>(c.content_len);
 		req_end = c.headers_end + need;
+		onConn::updateActivity(c);
 		if (c.in.size() >= req_end)
 			return true;
 		return false;

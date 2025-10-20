@@ -49,9 +49,11 @@ bool	MessageHandler::parseRequest(const std::string& raw_request) {
 }
 
 bool	MessageHandler::validateRequest() {
-	
+
 	RequestValidator	validator(_config, _request);
-	
+
+	if (!validator.validateRequest())
+
 	if (validator.validateRequest()) {
 		_last_status = validator.getLastStatus();
 		return true;
@@ -75,7 +77,7 @@ void MessageHandler::processRequest() {
 }
 
 void MessageHandler::generateResponse() {
-	
+
 	ResponseGenerator	generator(_config, _request, &_response, _last_status);
 
 	generator.generateResponse();

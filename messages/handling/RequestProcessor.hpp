@@ -44,6 +44,9 @@ class RequestProcessor {
 		bool		processPostRequest();
 		bool		processDeleteRequest();
 		Status		getLastStatus() const;
+		bool		processPostRequest();
+		bool		processDeleteRequest();
+		Status		getLastStatus() const;
 };
 
 ssize_t			write_on_fd(const int fd, const std::string& content, size_t &pos, size_t buf_size);

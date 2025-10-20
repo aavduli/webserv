@@ -3,9 +3,9 @@
 
 #include <string>
 
-/* 
+/*
 ERROR HANDLING
-1. Syscall and other possible errors (invalid input, unexpected EOF) 
+1. Syscall and other possible errors (invalid input, unexpected EOF)
 	-> return error codes and stop exec if needed + error enum list and related msg
 2. Logical/program specific errors -> prevention with conditions, argument validation, flags
 3. Improbable/exceptional errors (no more space) = exceptions + try blocks

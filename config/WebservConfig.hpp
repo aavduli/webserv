@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   WebservConfig.hpp                                  :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ahanzi <ahanzi@student.42.fr>              +#+  +:+       +#+        */
+/*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/08 16:24:01 by jim               #+#    #+#             */
-/*   Updated: 2025/10/03 18:01:45 by ahanzi           ###   ########.fr       */
+/*   Updated: 2025/10/13 16:19:21 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -70,6 +70,10 @@ class WebservConfig{
 		//locations access
 		const std::map<std::string, std::map<std::string, std::string> > &getAllLocations() const;
 		std::map<std::string, std::string> getLocationConfig(const std::string &path) const;
+
+		//CGI support
+		std::string getCgiPath(const std::string& location_path) const;
+		std::vector<std::string> getCgiExtension(const std::string& location_path) const;
 
 		//utils method
 		void printConfig() const;

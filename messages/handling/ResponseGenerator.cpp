@@ -56,7 +56,7 @@ void ResponseGenerator::generatePostResponse() {
 
 // non-blocking read with buffer
 void ResponseGenerator::generateStaticFileResponse() {
-	
+
 	const std::string& path = _request->getUri().getEffectivePath();
 	console::log("[INFO] Generating static file response", MSG);
 
@@ -73,6 +73,8 @@ void ResponseGenerator::generateStaticFileResponse() {
 }
 
 void ResponseGenerator::generateDirectoryResponse() {
+
+	console::log("[INFO] Generating directory listing response", MSG);
 
 	console::log("[INFO] Generating directory response", MSG);
 
@@ -95,15 +97,72 @@ void ResponseGenerator::generateDirectoryResponse() {
 	closedir(dir);
 }
 
+
 void ResponseGenerator::generateRedirResponse() {
 
 	console::log("[INFO] Generating redirection response", MSG);
 
 	const std::string& destination = _request->getUri().getRedirDestination();
+
 	_response->setStatus(_last_status);
 	_response->addHeader("Location", str_to_vect(destination, ""));		// required
 	_response->setBody(generateRedirHTML());
 	_response->setBodyType(B_HTML);
+}
+
+void ResponseGenerator::generateCGIResponse() {
+
+	console::log("[INFO] Generating CGI response", MSG);
+
+	const std::string& script_path = _request->getUri().getEffectivePath();
+	std::string python_path = _config.getCgiPath(_request->ctx._location_name);
+
+	CgiExec executor(script_path, python_path, &_config);
+	std::string cgi_output = executor.execute(_request);
+
+	if (cgi_output.empty()){
+		console::log("[ERROR] CGI execution failed", ERROR);
+		_last_status = E_INTERNAL_SERVER_ERROR;
+		return generateErrorResponse();
+	}
+
+
+	//parsing cgi output
+	parseCGIOutput(cgi_output);
+	_response->setStatus(E_OK);
+}
+
+void ResponseGenerator::parseCGIOutput(const std::string& cgi_output){
+	//separator header body
+	size_t header_end= cgi_output.find("\n\n");
+	if (header_end == std::string::npos){
+		//no head ? :(
+		_response->setBody(cgi_output);
+		_response->setBodyType(B_CGI);
+		return;
+	}
+
+	//separator header body
+	std::string header_part = cgi_output.substr(0,header_end);
+	std::string body_part = cgi_output.substr(header_end + 2); // count +2 for \n\n
+
+	//parse header line by line
+	std::istringstream header_stream(header_part);
+	std::string line;
+	while(std::getline(header_stream, line)){
+		size_t colon_position = line.find(':');
+		if (colon_position != std::string::npos){
+			std::string header_name = line.substr(0, colon_position);
+			std::string header_value = line.substr(colon_position + 1);
+
+			//delet space
+			while (!header_value.empty() && header_value[0] == ' '){
+				header_value = header_value.substr(1);}
+
+			_response->addHeader(header_name, str_to_vect(header_value, ""));
+		}
+	}
+	_response->setBody(body_part);
 }
 
 void ResponseGenerator::generateErrorResponse() {
@@ -134,7 +193,7 @@ void ResponseGenerator::generateCGIResponse() {
 }
 
 void ResponseGenerator::setHeaders() {
-	
+
 	_response->addHeader("Date", str_to_vect(getCurrentGMTDate(), ""));
 	_response->addHeader("Connection", str_to_vect("close", ""));
 
@@ -158,13 +217,36 @@ void ResponseGenerator::setHeaders() {
 	}
 }
 
+// std::string ResponseGenerator::getCurrentHTTPDate() const {
+// 	time_t now = time(0);
+// 	struct tm* gmt = gmtime(&now);
+//
+// 	char buffer[100];
+// 	strftime(buffer, sizeof(buffer), "%a, %d %b %Y %H:%M:%S GMT", gmt);
+//
+// 	return std::string(buffer);
+// }
+
+std::string	ResponseGenerator::readFileContent(std::ifstream& file) const {
+
+	std::string	str;
+	std::string	file_contents;
+	while (std::getline(file, str)) {
+		file_contents += str;
+		file_contents.push_back('\n');
+	}
+	return file_contents;
+}
+
 std::string	ResponseGenerator::generateDirectoryHTML() {
-	
+
 	const std::string& url_path = _request->getUri().getPath();
 	const std::string& dir_path = _request->getUri().getEffectivePath();
 	DIR* dir = opendir(dir_path.c_str());
 	if (!dir)
 		return "<html><body><h1>Error: Cannot open directory</h1></body></html>";
+
+	struct dirent *en;
 
 	std::stringstream html;
 	html << "<!DOCTYPE html>\n";
@@ -182,14 +264,13 @@ std::string	ResponseGenerator::generateDirectoryHTML() {
 		html << "<p><a href=\"" << parent_path << "\">../</a>\n</p>";
 	}
 
-	struct dirent *en;
 	while ((en = readdir(dir)) != NULL) {
 		std::string name = en->d_name;
 		if (name == "." || name == "..")
 			continue;
 		std::string file_path = build_full_path(url_path, name);
 		html << "<p><a href=\"" << file_path << "\">" << name << "</a>\n</p>";
-	}	
+	}
 	closedir(dir);
 	html << "</body></html>";
 	return html.str();
@@ -250,8 +331,22 @@ std::string	ResponseGenerator::generatePostSuccessHTML() {
 }
 
 void	ResponseGenerator::addValidIndex() {
-	
+
 	std::string path = _request->getUri().getEffectivePath();
+
+	if (is_directory(path) && !_request->ctx._index_list.empty()) {
+		const std::vector<std::string>& indexes = _request->ctx._index_list;
+		std::vector<std::string>::const_iterator it;
+		for (it = indexes.begin(); it != indexes.end(); it++) {
+			std::string full_index_path = build_full_path(path, *it);
+			if (is_valid_file_path(full_index_path)) {
+				RequestUri uri(_request->getUri());
+				uri.setEffectivePath(full_index_path);
+				_request->setUri(uri);
+				return ;
+			}
+		}
+	}
 	if (!is_directory(path) || _request->ctx._index_list.empty())
 		return ;
 
@@ -270,27 +365,44 @@ void	ResponseGenerator::addValidIndex() {
 }
 
 bool	ResponseGenerator::isValidCGI() const {
-
 	std::string path = _request->getUri().getEffectivePath();
-	if (path.empty() || !is_valid_file_path(path))
+	console::log("[DEBUG] isvalidCGI -check path: "+path, CONF);
+
+	if (path.empty() || !is_valid_file_path(path)){
+		console::log("[DEBUG] isvalidCGI - path empty or invalida", CONF);
 		return false;
+	}
 
 	std::map<std::string, std::string> config = _request->ctx._location_config;
-	std::string cgi_extensions = config["cgi_ext"];
-	if (cgi_extensions.empty())
+	std::string cgi_extension = config["cgi_ext"];
+	console::log("[DEBUG] isvalidCGI - cgi_ext from config:" + cgi_extension , CONF);
+
+	if (cgi_extension.empty()){
+		console::log("[DEBUG] isvalidCGI no CGI extension", CONF);
 		return false;
+	}
 
 	std::string extension = get_file_extension(path);
-	std::vector<std::string> valid_cgi_extensions = str_to_vect(cgi_extensions, " ");
+	if (!extension.empty() && extension[0] != '.')
+		extension = "." + extension;
+	console::log("[DEBUG] isValidCGI - file extension: '" + extension + "'", CONF);
+
+	std::vector<std::string> valid_cgi_extensions = str_to_vect(cgi_extension, " ");
+	console::log("[DEBUG] isValidCGI - found " + nb_to_string(valid_cgi_extensions.size()) + " validextensions", CONF);
+
 	for (size_t i = 0; i < valid_cgi_extensions.size(); i++) {
-		if (extension == valid_cgi_extensions[i])
+		console::log("[DEBUG] isValidCGI - comparing '" + extension + "' with '" + valid_cgi_extensions[i] + "'", CONF);
+		if (extension == valid_cgi_extensions[i]) {
+			console::log("[DEBUG] isValidCGI - MATCH! Returning true", MSG);
 			return true;
+		}
 	}
+	console::log("[DEBUG] isValidCGI - no match found, returning false", ERROR);
 	return false;
 }
 
 Status	findErrorStatus(const std::string& path) {
-	
+
 	struct stat file_stat;
 
 	// stat failed = invalid path
@@ -336,7 +448,7 @@ std::string getMimeType(const std::string& extension) {
 	if (extension == "xml") {
 		return "application/xml";
 	}
-	
+
 	// Image types
 	if (extension == "png") {
 		return "image/png";
@@ -356,7 +468,7 @@ std::string getMimeType(const std::string& extension) {
 	if (extension == "webp") {
 		return "image/webp";
 	}
-	
+
 	// Font types
 	if (extension == "woff") {
 		return "font/woff";
@@ -370,7 +482,7 @@ std::string getMimeType(const std::string& extension) {
 	if (extension == "eot") {
 		return "application/vnd.ms-fontobject";
 	}
-	
+
 	// Document types
 	if (extension == "pdf") {
 		return "application/pdf";
@@ -381,7 +493,7 @@ std::string getMimeType(const std::string& extension) {
 	if (extension == "docx") {
 		return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 	}
-	
+
 	// Archive types
 	if (extension == "zip") {
 		return "application/zip";
@@ -402,7 +514,7 @@ std::string getCurrentGMTDate() {
 	time_t now;
 	struct tm* gmt;
 	char buf[100];
-	
+
 	time(&now);				// get current time
 	gmt = gmtime(&now);		// convert to GMT/UTC
 

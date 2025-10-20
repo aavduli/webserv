@@ -23,12 +23,14 @@ class eventProcessor {
 		void acceptNewConnections();
 		void handleReceiveError(int clientFd, ssize_t recvResult);
 		void sendResponse(int clientFd, const std::string& response);
+		void sendTimeOutResponse(int clientFd);
 
 	public:
 		eventProcessor(eventManager& em, connectionManager& cm, int serverFd);
 		~eventProcessor();
 
 		void runEventLoop(const WebservConfig& config);
+		void checkAndCleanTimeout();
 		void stopEventLoop();
 
 		void handleServerEvents();

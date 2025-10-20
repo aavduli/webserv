@@ -5,6 +5,7 @@
 #include "MessageHandler.hpp"
 #include "../../config/WebservConfig.hpp"
 #include "../../console/console.hpp"
+#include "../../cgi/CgiExec.hpp"
 #include <ctime>
 #include <sstream>
 
@@ -16,7 +17,7 @@ class ResponseGenerator {
 		HttpResponse*			_response;
 		Status					_last_status;
 		bool					_done;
-		
+
 		void	generateStaticFileResponse();
 		void	generateRedirResponse();
 		void	generateCGIResponse();
@@ -34,13 +35,15 @@ class ResponseGenerator {
 		Status			getLastStatus() const;
 		bool			isValidCGI() const;
 		void			addValidIndex();
-		
+
 		void			generateResponse();
 		std::string		generateDirectoryHTML();
 		std::string		generateDefaultErrorHTML();
 		std::string		generateRedirHTML();
 		std::string		generatePostSuccessHTML();
 		void			setHeaders();
+		void			parseCGIOutput(const std::string& cgi_output);
+		std::string		readFileContent(std::ifstream& file) const;
 };
 
 std::string		getMimeType(const std::string& extension);
