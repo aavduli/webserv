@@ -2,6 +2,7 @@
 	file config par defaut
 	console::log afficher configuration
 	multiple port usage
+	si location no root ? obligatoir ? comment jave fait deja ? 
 
 # Config Parser - Guide pour Angela
 
