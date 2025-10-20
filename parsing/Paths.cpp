@@ -80,6 +80,7 @@ bool contains_traversal(const std::string& path) {
 
 	return path.find("../") != std::string::npos ||
 		path.find("..\\") != std::string::npos ||
+		path.find("~") != std::string::npos ||
 		path.find("%2e%2e") != std::string::npos ||
 		path.find("%2e%2e%2f") != std::string::npos ||
 		path.find("%2e%2e%5c") != std::string::npos ||
@@ -130,4 +131,15 @@ bool is_within_root(const std::string& path, const std::string& document_root) {
 	else if (canonical_path == canonical_root.substr(0, canonical_root.length() - 1))
 		return true;
 	return false;
+}
+
+std::string	get_read_file_content(std::ifstream& file) {
+	
+	std::string	str;
+	std::string	file_contents;
+	while (std::getline(file, str)) {
+		file_contents += str;
+		file_contents.push_back('\n');
+	}
+	return file_contents;
 }

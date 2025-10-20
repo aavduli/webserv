@@ -45,7 +45,7 @@ std::vector<std::string>	str_to_vect_exept_between(const std::string& str, const
 	return v;
 }
 
-size_t to_size_t(std::string str) {
+size_t to_size_t(const std::string& str) {
 
 	size_t st;
 	std::istringstream iss(str);
@@ -64,4 +64,31 @@ int	hex_to_int(char c) {
 	if (c >= 'a' && c <= 'f')
 		return c - 'a' + 10;
 	return 0;
+}
+
+std::string	urlDecode(const std::string& encoded) {
+
+	std::string	decoded;
+
+	for (size_t i = 0; i < encoded.size(); i++) {
+
+		// %xx where xx is hexadecimal representation of a ASCII char
+		if (encoded[i] == '%' && i + 2 < encoded.size()) {
+			char hex1 = encoded[i + 1];
+			char hex2 = encoded[i + 2];
+			
+			if (is_hex_digit(hex1) && is_hex_digit(hex2)) {
+				int hex_val = (hex_to_int(hex1) << 4) | hex_to_int(hex2);
+				decoded += static_cast<char>(hex_val);
+				i += 2;
+			}
+			else
+				decoded += encoded[i];
+		}
+		else if (encoded[i] == '+')
+			decoded += ' ';
+		else
+			decoded += encoded[i];
+	}
+	return decoded;
 }

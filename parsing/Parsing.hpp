@@ -18,10 +18,11 @@ template<typename T> std::string nb_to_string(T value) {
 	ss << value;
 	return ss.str();
 }
-size_t 						to_size_t(std::string str);
+size_t 						to_size_t(const std::string& str);
 std::vector<std::string>	str_to_vect(const std::string& str, const std::string& del);
 std::vector<std::string>	str_to_vect_exept_between(const std::string& str, const std::string& del, const std::string& open, const std::string& close);
 int							hex_to_int(char c);
+std::string					urlDecode(const std::string& encoded);
 
 // STRING MANIPULATION
 bool		move_past_char(size_t* pos, const std::string& str, const std::string del);
@@ -53,5 +54,7 @@ std::string			build_full_path(const std::string& root_path, const std::string& r
 bool				contains_traversal(const std::string& path);
 std::string			canonicalize_path(const std::string& path);
 bool				is_within_root(const std::string& path, const std::string& document_root);
+
+std::string			get_read_file_content(std::ifstream& file);
 
 #endif //PARSING_HPP
