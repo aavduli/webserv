@@ -39,6 +39,7 @@ class ResponseGenerator {
 		std::string		generateDirectoryHTML();
 		std::string		generateDefaultErrorHTML();
 		std::string		generateRedirHTML();
+		std::string		generatePostSuccessHTML();
 		void			setHeaders();
 };
 

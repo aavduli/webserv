@@ -13,6 +13,8 @@
 #include <errno.h>
 #include <fcntl.h>
 
+#define DEFAULT_BUFFER_SIZE 8192
+
 class RequestProcessor {
 
 	private:
@@ -21,20 +23,17 @@ class RequestProcessor {
 		Status						_last_status;
 		
 		void			processURLEncodedBody();
-		std::string		urlDecode(const std::string& encoded);
 
 		void						processMultipartBody();
-		bool						processMultipartPart(const std::string& part, std::map<std::string, PostData>& data);
+		bool						processMultipartPart(std::string& part, std::map<std::string, PostData>& data, const std::string& boundary);
 		std::string					extractBoundary(const std::vector<std::string>& ct_values);
 		std::vector<std::string>	splitByBoundary(const std::string& body, const std::string& boundary);
-		std::map<std::string, std::vector<std::string> >	parseMultipartHeaders(const std::string& header_str);
+		std::map<std::string, std::vector<std::string> >	parseMultipartHeaders(std::string& header_str, const std::string& boundary);
 		std::string					extractDispositionData(const std::map<std::string, std::vector<std::string> >& headers, const std::string& key);
 
-		void			processFileUpload();
+		bool			processFileUpload(PostData& value);
 		bool			configUploadDir();
-		std::string		generateFilename(const std::string& og_name);
-		bool			writeFileToDisk(const std::string& filename);
-		bool			writeFileToDisk(const std::string& filename, const PostData& file_data);
+		bool			writeFileUploads(const std::string& filename, PostData& file_data);
 
 	public:
 		RequestProcessor(const WebservConfig& config, HttpRequest* request);
@@ -46,5 +45,8 @@ class RequestProcessor {
 		bool		processDeleteRequest();
 		Status		getLastStatus() const;
 };
+
+ssize_t			write_on_fd(const int fd, const std::string& content, size_t &pos, size_t buf_size);
+std::string		generateFilename(const std::string& og_name);
 
 #endif // REQUESTPROCESSOR_HPP

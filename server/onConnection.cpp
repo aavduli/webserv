@@ -25,12 +25,6 @@ bool onConn::onDiscon(Conn& c,bool alive, size_t endpos) {
 	}
 	return false;
 }
-// 
-// static std::string to_lower(std::string s) {
-// 	for (size_t i = 0; i < s.size(); ++i)
-// 		s[i] = static_cast<char>(std::tolower(s[i]));
-// 	return s;
-// }
 
 size_t onConn::headers_end_pos(const std::string &buff) {
 	size_t pos = buff.find("\r\n\r\n");
@@ -71,14 +65,12 @@ void onConn::inspect_headers_minimally (Conn &c) {
 			}
 		}
 	}
-	{
-		const std::string key = "transfer-encoding:";
-		size_t p = headers.find(key);
-		if (p != std::string::npos) {
-			size_t eol = headers.find("\r\n", p);
-			std::string line = (eol == std::string::npos) ? headers.substr(p) : headers.substr(p, eol - p);
-			if (line.find("chunked") != std::string::npos) c.chunked = true;
-		}
+	const std::string key = "transfer-encoding:";
+	size_t p = headers.find(key);
+	if (p != std::string::npos) {
+		size_t eol = headers.find("\r\n", p);
+		std::string line = (eol == std::string::npos) ? headers.substr(p) : headers.substr(p, eol - p);
+		if (line.find("chunked") != std::string::npos) c.chunked = true;
 	}
 }
 
@@ -116,7 +108,9 @@ bool onConn::update_and_ready(Conn& c, size_t &req_end) {
 	if (c.content_len >= 0) {
 		const size_t need = static_cast<size_t>(c.content_len);
 		req_end = c.headers_end + need;
-		return true;
+		if (c.in.size() >= req_end)
+			return true;
+		return false;
 	}
 	req_end = c.headers_end;
 	return true;

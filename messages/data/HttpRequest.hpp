@@ -7,13 +7,14 @@
 class WebservConfig;
 
 struct PostData {
-	std::string		content;
 	std::string		filename;
+	std::string		content;
+	size_t			bytes_written;	// to remove
 	std::string		content_type;
 	bool			is_file;
 
-	PostData() : is_file(false) {}
-	PostData(const std::string& simple_content) : content(simple_content), is_file(false) {}	// URL-encoded data
+	PostData() : bytes_written(0), is_file(false) {}
+	PostData(const std::string& simple_content) : content(simple_content), bytes_written(0), is_file(false) {}	// URL-encoded data
 };
 
 struct RequestContext {
@@ -27,6 +28,7 @@ struct RequestContext {
 		bool								_has_redirect;
 		bool								_upload_enabled;
 		std::string							_upload_dir;
+		bool								_is_multipart;	// useful?
 };
 
 class HttpRequest : public HttpMessage {

@@ -27,7 +27,6 @@ bool RequestValidator::validateRequest() {
 	if (!validateMethod()) return false;
 	if (!validatePath()) return false;
 	if (!validateContentLength()) return false;
-	if (!validateContentType()) return false;
 	if (!validateHeaderLimits()) return false;
 	if (!validateRedirection()) return false;
 	if (_last_status == E_INIT)
@@ -40,7 +39,7 @@ bool RequestValidator::validateVersion() {
 	std::ostringstream oss;
 	oss << _request->getHttpVersionMajor() << "." << _request->getHttpVersionMinor();
 	const std::string& version = oss.str();
-	if (version != "1.1" && version != "1.0" && version != "0.9") {
+	if (version != "1.1" && version != "1.0") {
 		console::log("[ERROR][REQUEST VALIDATOR] Unsupported HTTP version", MSG);
 		_last_status = E_UNSUPPORTED_VERSION;
 		return false;
@@ -138,11 +137,18 @@ bool RequestValidator::validatePath() {
 	std::string full_path = build_full_path(_request->ctx._document_root, relative_path);
 	std::string final_path  = canonicalize_path(full_path);
 
+	bool is_upload_post = (_request->getMethod() == "POST" && _request->ctx._upload_enabled);
+	
 	if (!is_valid_path(final_path)) {
-		console::log("[ERROR][REQUEST VALIDATOR] Invalid path: " + final_path, MSG);
-		_last_status = E_NOT_FOUND;
-		return false;
+		if (!is_upload_post) {
+			console::log("[ERROR][REQUEST VALIDATOR] Invalid path: " + final_path, MSG);
+			_last_status = E_NOT_FOUND;
+			return false;
+		}
+		console::log("[INFO][REQUEST VALIDATOR] Upload POST to non-existent path, will be created", MSG);
+		final_path = _request->ctx._upload_dir;
 	}
+	
 	if (!is_within_root(final_path, _request->ctx._document_root)) {
 		console::log("[ERROR][REQUEST VALIDATOR] URI path escapes document root", MSG);
 		_last_status = E_BAD_REQUEST;
@@ -174,33 +180,10 @@ bool RequestValidator::validateContentLength() {
 	}
 
 	size_t cl = to_size_t(content_length[0]);
-	if (cl == std::numeric_limits<size_t>::max() || cl != body_size) {
-		console::log("[ERROR][REQUEST PARSER] Invalid \"Content-Length\" header value", MSG);
+	if (cl != body_size) {
+		console::log("[ERROR][REQUEST PARSER] Invalid \"Content-Length\" header value " + content_length[0], MSG);
 		_last_status = E_BAD_REQUEST;
 		return false;
-	}
-	return true;
-}
-
-bool RequestValidator::validateContentType() {
-
-	if (_request->getMethod() == "POST") {
-		
-		const std::vector<std::string>& ct_headers = _request->getHeaderValues("Content-Type");
-		if (ct_headers.empty()) {
-			console::log("[ERROR][REQUEST VALIDATOR] POST method requires Content-Type header", MSG);
-			_last_status = E_BAD_REQUEST;
-			return false;
-		}
-	
-		std::string content_type = ct_headers[0];
-		if (content_type.find("application/x-www-form-urlencoded") == std::string::npos &&
-			content_type.find("multipart/form-data") == std::string::npos &&
-			content_type.find("text/") == std::string::npos) {
-			console::log("[ERROR][REQUEST VALIDATOR] Unsupported content type: " + content_type, MSG);
-			_last_status = E_UNSUPPORTED_MEDIA_TYPE;
-			return false;
-		}
 	}
 	return true;
 }

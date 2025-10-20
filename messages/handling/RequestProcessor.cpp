@@ -1,4 +1,6 @@
 #include "RequestProcessor.hpp"
+#include <cerrno>
+#include <cstring>
 
 RequestProcessor::RequestProcessor(const WebservConfig& config, HttpRequest* request) : _config(config), _request(request), _last_status(E_INIT) {}
 RequestProcessor::RequestProcessor(const RequestProcessor& rhs) : _config(rhs._config), _request(rhs._request), _last_status(rhs._last_status) {}
@@ -18,7 +20,7 @@ bool RequestProcessor::processPostRequest() {
 
 	const std::vector<std::string>& ct_values = _request->getHeaderValues("Content-Type");
 	if (ct_values.empty()) {
-		console::log("[ERROR][POST BODY DECODING] Content-Type empty", MSG);
+		console::log("[ERROR][POST] Content-Type empty", MSG);
 		_last_status = E_BAD_REQUEST;
 	}
 
@@ -28,15 +30,15 @@ bool RequestProcessor::processPostRequest() {
 	else if (content_type.find("multipart/form-data") != std::string::npos)
 		processMultipartBody();
 	else if (content_type.find("text/plain") == std::string::npos) {
-		console::log("[ERROR][POST BODY DECODING] Invalid Content-Type", MSG);
-		_last_status = E_BAD_REQUEST;
+		console::log("[ERROR][POST] Invalid Content-Type", MSG);
+		_last_status = E_UNSUPPORTED_MEDIA_TYPE;
 	}
-	if (_request->ctx._upload_enabled)
-		processFileUpload();
 	return (_last_status == E_OK);
 }
 
 void	RequestProcessor::processURLEncodedBody() {
+
+	console::log("[DEBUG][POST] processURLEncodedBody", MSG);
 
 	std::string raw_body = _request->getBody();
 	std::map<std::string, PostData> data;
@@ -60,52 +62,25 @@ void	RequestProcessor::processURLEncodedBody() {
 	_last_status = E_OK;
 }
 
-std::string	RequestProcessor::urlDecode(const std::string& encoded) {
-
-	std::string	decoded;
-
-	for (size_t i = 0; i < encoded.size(); i++) {
-
-		// %xx where xx is hexadecimal representation of a ASCII char
-		if (encoded[i] == '%' && i + 2 < encoded.size()) {
-			char hex1 = encoded[i + 1];
-			char hex2 = encoded[i + 2];
-			
-			if (is_hex_digit(hex1) && is_hex_digit(hex2)) {
-				int hex_val = (hex_to_int(hex1) << 4) | hex_to_int(hex2);
-				decoded += static_cast<char>(hex_val);
-				i += 2;
-			}
-			else
-				decoded += encoded[i];
-		}
-		else if (encoded[i] == '+')
-			decoded += ' ';
-		else
-			decoded += encoded[i];
-	}
-	return decoded;
-}
-
 void	RequestProcessor::processMultipartBody() {
 	
+	console::log("[DEBUG][POST] processMultipartBody", MSG);
+
 	std::map<std::string, PostData> data;
 	const std::string& raw_body = _request->getBody();
-	std::string boundary = extractBoundary(_request->getHeaderValues("Content-Type"));
-	
-	if (boundary.empty()) {
-		_last_status = E_BAD_REQUEST;
-		return;
-	}
 
+	std::string boundary = extractBoundary(_request->getHeaderValues("Content-Type"));
 	std::vector<std::string> parts = splitByBoundary(raw_body, boundary);
+
 	if (parts.empty()) {
 		_last_status = E_BAD_REQUEST;
 		return;
 	}
 
 	for (size_t i = 0; i < parts.size(); i++) {
-		if (!processMultipartPart(parts[i], data)) {
+		if (parts[i].find(boundary + "--") != std::string::npos)
+			break;
+		if (!processMultipartPart(parts[i], data, boundary)) {
 			_last_status = E_BAD_REQUEST;
 			return;
 		}
@@ -114,15 +89,19 @@ void	RequestProcessor::processMultipartBody() {
 	_last_status = E_OK;
 }
 
-bool	RequestProcessor::processMultipartPart(const std::string& part, std::map<std::string, PostData>& data) {
+bool	RequestProcessor::processMultipartPart(std::string& part, std::map<std::string, PostData>& data, const std::string& boundary) {
+	
+	console::log("[DEBUG][MULTIPART] Processing part (first 100 chars): " + part.substr(0, 100), MSG);
 	
 	size_t header_end = part.find("\r\n\r\n");
 	if (header_end == std::string::npos) {
 		console::log("[ERROR][MULTIPART] Missing header separator", MSG);
+		console::log("[DEBUG][MULTIPART] Part content: [" + part + "]", MSG);
 		return false;
 	}
-	
-	std::map<std::string, std::vector<std::string> > headers = parseMultipartHeaders(part.substr(0, header_end));
+
+	std::string header_str = part.substr(0, header_end);
+	std::map<std::string, std::vector<std::string> > headers = parseMultipartHeaders(header_str, boundary);
 	std::string field_name = extractDispositionData(headers, "name=\"");
 	if (field_name.empty())
 		return true; // skipping empty part
@@ -136,6 +115,8 @@ bool	RequestProcessor::processMultipartPart(const std::string& part, std::map<st
 		value.is_file = true;
 		if (headers.find("Content-Type") != headers.end() && !headers["Content-Type"].empty())
 			value.content_type = headers["Content-Type"][0];
+		if (!processFileUpload(value))
+			return false;
 	}
 	data[field_name] = value;
 	return true;
@@ -165,17 +146,22 @@ std::string	RequestProcessor::extractBoundary(const std::vector<std::string>& ct
 		if (semi_colon != std::string::npos)
 			boundary = boundary.substr(0, semi_colon);
 	}
+	console::log("[DEBUG][POST] boundary = " + boundary, MSG);
 	return boundary;
 }
 
 std::vector<std::string>	RequestProcessor::splitByBoundary(const std::string& body, const std::string& boundary_str) {
 
 	std::string	boundary = "--" + boundary_str;
+	console::log("[DEBUG][MULTIPART] Splitting by boundary: " + boundary, MSG);
 	std::vector<std::string> raw_parts = str_to_vect(body, boundary);
+	console::log("[DEBUG][MULTIPART] Found " + nb_to_string(raw_parts.size()) + " raw parts", MSG);
 	std::vector<std::string> parts;
 	
-	if (raw_parts.size() < 2)
+	if (raw_parts.size() < 2) {
+		console::log("[DEBUG][MULTIPART] Not enough parts found", MSG);
 		return parts;
+	}
 
 	std::vector<std::string> to_trim;
 	to_trim.push_back("\r");
@@ -192,15 +178,13 @@ std::vector<std::string>	RequestProcessor::splitByBoundary(const std::string& bo
 	return parts;
 }
 
-std::map<std::string, std::vector<std::string> > RequestProcessor::parseMultipartHeaders(const std::string& header_str) {
+std::map<std::string, std::vector<std::string> > RequestProcessor::parseMultipartHeaders(std::string& header_str, const std::string& boundary) {
 
+	size_t start = header_str.find(boundary);
+	header_str = header_str.substr(start + boundary.length());
+	console::log("[DEBUG][POST] headers: " + header_str, MSG);
+	
 	std::map<std::string, std::vector<std::string> >	headers;
-
-	if (header_str.empty()) {
-		console::log("[ERROR][MULTIPART] Empty header section", MSG);
-		return headers;
-	}
-
 	std::vector<std::string> lines = str_to_vect(header_str, "\r\n");
 	for (size_t i = 0; i < lines.size(); i++) {
 		if (lines[i].empty())
@@ -241,125 +225,53 @@ std::string RequestProcessor::extractDispositionData(const std::map<std::string,
 	return value;
 }
 
-void	RequestProcessor::processFileUpload() {
+bool	RequestProcessor::processFileUpload(PostData& data) {
 	
-	bool upload_config_done = false;
-	const std::map<std::string, PostData>& post_data = _request->getPostData();
-	std::map<std::string, PostData>::const_iterator	it;
+	console::log("[DEBUG][UPLOAD] Upload enabled: " + (_request->ctx._upload_enabled ? std::string("true") : std::string("false")), MSG);
+	console::log("[DEBUG][UPLOAD] Location name: " + _request->ctx._location_name, MSG);
 	
-	for (it = post_data.begin(); it != post_data.end(); ++it) {
-		if (it->second.is_file) {
-			if (!upload_config_done) {
-				if (!configUploadDir())
-					return;
-				upload_config_done = true;
-			}
-
-			std::string upload_max = _request->ctx._location_config["client_max_body_size"];
-			if (it->second.content.size() > to_size_t(upload_max)) {
-				console::log("[ERROR][POST] File upload exceeds client_max_body_size: " + it->second.content.size(), MSG);
-				_last_status = E_BAD_REQUEST;
-				return;
-			}
-
-			const std::string& filename = generateFilename(it->second.filename);
-			if (!writeFileToDisk(filename, it->second)) {
-				console::log("[ERROR][POST] File upload failed: " + it->second.filename, MSG);
-				return;
-			}
-		}
-	}
-	_last_status = E_OK;
-}
-
-bool	RequestProcessor::configUploadDir() {
-
-	std::string dir_path = _request->ctx._upload_dir;
-
 	if (_request->ctx._upload_enabled == false) {
 		console::log("[ERROR][UPLOAD DIR] File upload not allowed", MSG);
 		_last_status = E_METHOD_NOT_ALLOWED;
 		return false;
 	}
-	if (!is_directory(dir_path)) {
-		if (mkdir(dir_path.c_str(), 0755) == -1) {
-			if (errno != EEXIST) {
-				console::log("[ERROR][UPLOAD DIR] Upload directory creation failed: " + dir_path, MSG);
-				_last_status = E_UNPROCESSABLE_CONTENT;
-				return false;
-			}
+
+	std::string dir_path = _request->ctx._upload_dir;
+	console::log("[DEBUG][UPLOAD] Upload directory path: " + dir_path, MSG);
+	if (access(dir_path.c_str(), F_OK) == 0) {
+		if (access(dir_path.c_str(), W_OK) != 0) {
+			console::log("[ERROR][UPLOAD DIR] Permission denied", MSG);
+			_last_status = E_FORBIDDEN;
+			return false;
 		}
 	}
-	if (access(dir_path.c_str(), W_OK) != 0) {
-		console::log("[ERROR][UPLOAD DIR] Write not allowed on upload directory: " + dir_path, MSG);
+	else if (mkdir(dir_path.c_str(), 0755) == -1) {
+		console::log("[ERROR][UPLOAD DIR] Failed to create directory " + dir_path, MSG);
 		_last_status = E_UNPROCESSABLE_CONTENT;
 		return false;
 	}
+
+	const std::string& filename = generateFilename(data.filename);
+	if (!writeFileUploads(filename, data))
+		return false;
+	_last_status = E_OK;
 	return true;
 }
 
-std::string	RequestProcessor::generateFilename(const std::string& og_name) {
+bool	RequestProcessor::writeFileUploads(const std::string& filename, PostData& file_data) {
 
-	time_t now = time(0);
-	std::stringstream o;
-	std::string name;
-
-	o << now << "_" << og_name;
-	name = o.str();
-	name = canonicalize_path(name);
-	for (size_t i = 0; i < name.length(); i++) {
-		if (name[i] == '/')
-			name[i] = '_';
-	}
-	return name;
-}
-
-// non-blocking write with buffer
-bool	RequestProcessor::writeFileToDisk(const std::string& filename, const PostData& file_data) {
+	if (filename.empty())
+		return false;
 
 	std::string full_path = build_full_path(_request->ctx._upload_dir, filename);
-
-	int fd = open(full_path.c_str(), O_CREAT | O_WRONLY | O_TRUNC | O_NONBLOCK, 0644);
-	if (fd == -1) {
-		console::log("[ERROR][WRITE UPLOAD FILE] Unable to open file: " + full_path, MSG);
-		_last_status = E_UNPROCESSABLE_CONTENT;
+	std::ofstream file(full_path.c_str(), std::ios::binary);
+	if (!file.is_open()) {
+		console::log("[ERROR][WRITE UPLOAD FILE] Unable to open file " + filename, MSG);
+		_last_status = findErrorStatus(full_path);
 		return false;
 	}
-
-	const char* data = file_data.content.c_str();
-	size_t total_size = file_data.content.size();
-	size_t bytes_written = 0;
-	const size_t buffer_size = 8192;
-
-	while (bytes_written < total_size) {
-		size_t chunk_size = std::min(buffer_size, total_size - bytes_written);
-		ssize_t result = write(fd, data + bytes_written, chunk_size);
-
-		if (result == -1) {
-			if (errno == EAGAIN || errno == EWOULDBLOCK)
-				continue;
-			else if (errno == ENOSPC) {
-				console::log("[ERROR][WRITE UPLOAD FILE] Disk full", MSG);
-				close(fd);
-				_last_status = E_UNPROCESSABLE_CONTENT;
-				return false;
-			}
-			else {
-				console::log("[ERROR][WRITE UPLOAD FILE] Write error", MSG);
-				close(fd);
-				_last_status = E_UNPROCESSABLE_CONTENT;
-				return false;
-			}
-		}
-		else
-			bytes_written += result;
-	}
-
-	if (close(fd) == -1) {
-		console::log("[ERROR][WRITE UPLOAD FILE] Error closing file", MSG);
-		_last_status = E_INTERNAL_SERVER_ERROR;
-		return false;
-	}
+	file.write(file_data.content.c_str(), file_data.content.size());
+	file.close();
 	_last_status = E_OK;
 	return true;
 }
@@ -370,4 +282,45 @@ bool	RequestProcessor::processDeleteRequest() {
 	// do something
 	_last_status = E_OK;
 	return true;
+}
+
+ssize_t	write_on_fd(const int fd, const std::string& content, size_t& pos, size_t buf_size) {
+
+	ssize_t	bytes_written = 0;
+	while (pos < content.size()) {
+		bytes_written = write(fd, &content[pos], buf_size);
+		if (bytes_written == -1)
+			return bytes_written;
+		pos += bytes_written;
+	}
+	return bytes_written;
+}
+
+std::string	generateFilename(const std::string& wanted_name) {
+
+	std::string filename;
+	if (wanted_name.empty())
+		filename = "file";
+	else if (contains_traversal(wanted_name)) {
+		console::log("[ERROR][UPLOAD FILE] Unsafe file name " + wanted_name, MSG);
+		return "";
+	}
+	else
+		filename = wanted_name;
+
+	time_t t = time(0);
+	struct tm* gmt = localtime(&t);
+	std::stringstream now;
+	now << gmt->tm_year + 1900;
+	now << gmt->tm_mon + 1;
+	now << gmt->tm_mday;
+	now << gmt->tm_hour;
+	now << gmt->tm_min;
+	now << gmt->tm_sec;
+	std::string timestamp = "_" + now.str();
+
+	size_t dot = filename.find_last_of('.');
+	filename = filename.insert(dot, timestamp);
+	filename = canonicalize_path(filename);
+	return filename;
 }

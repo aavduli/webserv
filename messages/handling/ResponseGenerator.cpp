@@ -19,49 +19,39 @@ void ResponseGenerator::generateResponse() {
 	if (_last_status == E_REDIRECT_PERMANENT || _last_status == E_REDIRECT_TEMPORARY)
 		generateRedirResponse();
 	else if (_last_status == E_OK) {
-		if (isValidCGI())
+		if (_request->getMethod() == "POST")
+			generatePostResponse();
+		else if (isValidCGI())
 			generateCGIResponse();
-		addValidIndex();
-		if (is_directory(_request->getUri().getEffectivePath()))
-			generateDirectoryResponse();
-		else
-			generateStaticFileResponse();
-		// }
-		// else if (_request->getMethod() == "POST")
-		// 	generatePostResponse();
-		// else if (_request->getMethod() == "DELETE")
-		// 	generateDeleteResponse();
+		else {
+			addValidIndex();
+			if (is_directory(_request->getUri().getEffectivePath()))
+				generateDirectoryResponse();
+			else
+				generateStaticFileResponse();
+		}
 	}
 	else
 		generateErrorResponse();
 	setHeaders();
-
-	//_response->printHeaders();
 }
 
+// TODO check if correct logic
 void ResponseGenerator::generatePostResponse() {
 
-	// Parse body before!
-	// Content-Type header indicates how the data is passed
+	console::log("[INFO] Generating POST response", MSG);
 	
-	// application/x-www-form-urlencoded = key/values are encoded in tuples separated by &, with + between key and value
-		// first-name=Frida&last-name=Kahlo
-		// non-alphabetic chars are percent-encoded
-		// data sent in body
+	if (_request->getUri().getPath().find("/uploads") != std::string::npos) {
+		_response->setStatus(E_REDIRECT_TEMPORARY);
+		_response->addHeader("Location", str_to_vect("/success", ""));
+		_response->setBody(generateRedirHTML());
+		_response->setBodyType(B_HTML);
+		return;
+	}
 	
-	// multipart/form-data = each value sent as a block of data with a defined delimiter separating each part
-		// boundary="delimiter1234"
-		// used when a form includes files or a lot of data
-
-	// text/plain
-
-	// Content-Disposition header indicates how the form data should be processed
-
-	// Decode body if needed:
-
-	// application/x-www-form-urlencoded: Parse key=value pairs
-	// multipart/form-data: Parse multipart boundaries and extract files
-	// application/json: Keep as-is (CGI handles it)
+	_response->setStatus(E_OK);
+	_response->setBody(generatePostSuccessHTML());
+	_response->setBodyType(B_HTML);
 }
 
 // non-blocking read with buffer
@@ -69,42 +59,15 @@ void ResponseGenerator::generateStaticFileResponse() {
 	
 	const std::string& path = _request->getUri().getEffectivePath();
 	console::log("[INFO] Generating static file response", MSG);
-	
-	int fd = open(path.c_str(), O_RDONLY | O_NONBLOCK);
-	if (fd == -1) {
-		console::log("[ERROR][STATIC FILE RESPONSE] Unable to open file: " + path, MSG);
+
+	std::ifstream file(path.c_str());
+	if (!file.is_open()) {
+		console::log("[ERROR][GENERATE RESPONSE] Failed to open: " + path, MSG);
 		_last_status = findErrorStatus(path);
 		return generateErrorResponse();
 	}
-
-	std::string file_content;
-	const size_t buffer_size = 8192;
-	char buffer[buffer_size];
-
-	while (true) {
-		ssize_t bytes_read = read(fd, buffer, buffer_size);
-		if (bytes_read == -1) {
-			if (errno == EAGAIN || errno == EWOULDBLOCK)
-				continue;
-			else {
-				console::log("[ERROR][STATIC FILE RESPONSE] Read error: " + path, MSG);
-				close(fd);
-				_last_status = E_INTERNAL_SERVER_ERROR;
-				return generateErrorResponse();
-			}
-		}
-		else if (bytes_read == 0)
-			break;
-		else
-			file_content.append(buffer, bytes_read);
-	}
-
-	if (close(fd) == -1) {
-		console::log("[ERROR][STATIC FILE RESPONSE] Error closing file: " + path, MSG);
-		_last_status = E_INTERNAL_SERVER_ERROR;
-		return generateErrorResponse();
-	}
-	_response->setBody(file_content);
+	_response->setBody(get_read_file_content(file));
+	file.close();
 	_response->setBodyType(B_FILE);
 	_response->setStatus(E_OK);
 }
@@ -145,38 +108,18 @@ void ResponseGenerator::generateRedirResponse() {
 
 void ResponseGenerator::generateErrorResponse() {
 
+	console::log("[INFO] Generating error response with status " + status_msg(_last_status), MSG);
+
 	_response->setStatus(_last_status);
 	std::string error_page_path = _config.getErrorPage(_last_status);
-	if (!error_page_path.empty()) {
 
-		// custom error page
-		int fd = open(error_page_path.c_str(), O_RDONLY | O_NONBLOCK);
-		if (fd != -1) {
-			std::string file_content;
-			const size_t buffer_size = 8192;
-			char buffer[buffer_size];
-
-			while (true) {
-				ssize_t bytes_read = read(fd, buffer, buffer_size);
-				if (bytes_read == -1) {
-					if (errno == EAGAIN || errno == EWOULDBLOCK)
-						continue;
-					else {
-						console::log("[ERROR][GENERATE ERROR RESPONSE] Read error: " + error_page_path, MSG);
-						break;
-					}
-				}
-				else if (bytes_read == 0)
-					break;
-				else
-					file_content.append(buffer, bytes_read);
-			}
-			close(fd);
-			if (!file_content.empty()) {
-				_response->setBody(file_content);
-				_response->setBodyType(B_FILE);
-				return;
-			}
+	if (!error_page_path.empty()) {		// custom error page
+		std::ifstream file(error_page_path.c_str());
+		if (file.is_open()) {
+			_response->setBody(get_read_file_content(file));
+			file.close();
+			_response->setBodyType(B_FILE);
+			return ;
 		}
 		console::log("[ERROR][GENERATE RESPONSE] Failed to read custom error path: " + error_page_path, MSG);
 	}
@@ -187,17 +130,7 @@ void ResponseGenerator::generateErrorResponse() {
 void ResponseGenerator::generateCGIResponse() {
 
 	console::log("[INFO] Generating CGI response", MSG);
-
-	// Execute CGI script
-	// Parse CGI output headers
-	// Handle CGI errors
-	// Set appropriate response
-
-	// TODO: Execute CGI script
-	// TODO: Parse CGI output
-	// TODO: Set headers from CGI response
-
-	_response->setBodyType(B_CGI);	// CGI sets its own Content-Type
+	_response->setBodyType(B_CGI);
 }
 
 void ResponseGenerator::setHeaders() {
@@ -282,6 +215,36 @@ std::string	ResponseGenerator::generateRedirHTML() {
 	html << "<body>\n";
 	html << "<h1>" << (_last_status == E_REDIRECT_PERMANENT ? "Moved Permanently" : "Moved Temporarily") << "</h1>\n";
 	html << "<p>The document has moved <a href=\"" << _request->getUri().getRedirDestination() << "\">here</a>.</p>\n";
+	html << "</body></html>";
+	return html.str();
+}
+
+std::string	ResponseGenerator::generatePostSuccessHTML() {
+
+	std::stringstream html;
+	html << "<!DOCTYPE html>\n";
+	html << "<html><head><title>Success</title></head>\n";
+	html << "<body>\n";
+	html << "<h1>Success!</h1>\n";
+	html << "<p>Your POST request was processed successfully.</p>\n";
+	
+	// Show uploaded files if any
+	const std::map<std::string, PostData>& post_data = _request->getPostData();
+	if (!post_data.empty()) {
+		html << "<h3>Processed Data:</h3>\n<ul>\n";
+		for (std::map<std::string, PostData>::const_iterator it = post_data.begin(); it != post_data.end(); ++it) {
+			html << "<li><strong>" << it->first << ":</strong> ";
+			if (it->second.is_file) {
+				html << "File uploaded: " << it->second.filename;
+			} else {
+				html << it->second.content;
+			}
+			html << "</li>\n";
+		}
+		html << "</ul>\n";
+	}
+	
+	html << "<p><a href=\"/form\">Back to forms</a></p>\n";
 	html << "</body></html>";
 	return html.str();
 }
@@ -443,8 +406,10 @@ std::string getCurrentGMTDate() {
 	time(&now);				// get current time
 	gmt = gmtime(&now);		// convert to GMT/UTC
 
+	// %2d:%02d (gmt->tm_hour+2)%24, gmt->tm_min))
+
 	// format: Sun, 06 Nov 1994 08:49:37 GMT 
-	strftime(buf, sizeof(buf), "%a, %d %b %Y %H:%M:%S GMT", gmt);
+	strftime(buf, sizeof(buf), "%a, %d %b %Y %H:%M GMT", gmt);
 	
 	std::string date(buf);
 	return date;
