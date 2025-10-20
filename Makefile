@@ -55,6 +55,7 @@ clean:
 fclean: clean
 	rm -f $(NAME)
 	rm -rf ./logs/*
+	rm -rf ./www/uploads/*
 
 re: fclean all
 
