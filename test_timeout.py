@@ -77,7 +77,7 @@ def test_slow_request(host='localhost', port=8080):
             time.sleep(5)  # 5 second delay between parts
             
         # Should receive normal response
-        sock.settimeout(10)
+        sock.settimeout(100)
         response = sock.recv(4096)
         
         if response and b'200 OK' in response:

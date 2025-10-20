@@ -126,7 +126,10 @@ bool onConn::update_and_ready(Conn& c, size_t &req_end) {
 	if (c.content_len >= 0) {
 		const size_t need = static_cast<size_t>(c.content_len);
 		req_end = c.headers_end + need;
-		return true;
+		onConn::updateActivity(c);
+		if (c.in.size() >= req_end)
+			return true;
+		return false;
 	}
 	req_end = c.headers_end;
 	return true;

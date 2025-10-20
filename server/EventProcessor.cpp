@@ -49,6 +49,7 @@ void eventProcessor::handleReceiveError(int clientFd, ssize_t recvResult) {
 
 void eventProcessor::sendResponse(int clientFd, const std::string& response) {
 	Conn& connection = _connectionManager.getConnection(clientFd);
+	onConn::updateActivity(connection);
 	ssize_t bytesSent = NetworkHandler::sendData(clientFd, const_cast<char*>(response.data()), response.size());
 	if (bytesSent < 0) {
 		console::log("Failed to send responses on FD: ", clientFd, SRV);
@@ -82,6 +83,7 @@ void eventProcessor::sendResponse(int clientFd, const std::string& response) {
 
 void eventProcessor::handleClientWriteReady(int clientFd) {
 	Conn& connection = _connectionManager.getConnection(clientFd);
+	onConn::updateActivity(connection);
 	if (!connection.hasDataToSend) {
 		_eventManager.modFd(clientFd, EPOLLIN | EPOLLRDHUP);
 		return ;
