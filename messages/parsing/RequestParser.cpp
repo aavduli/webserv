@@ -29,6 +29,7 @@ bool RequestParser::parseRequest() {
 		console::log("[DEBUG] Failed to parse body", MSG);
 		return false;
 	}
+	print_request(_request);
 	return true;
 }
 
@@ -58,6 +59,9 @@ bool RequestParser::parseMethod(std::string request_line) {
 	size_t method_end = request_line.find(" ", _current_pos);
 	if (method_end == std::string::npos) {
 		console::log("[ERROR][REQUEST PARSER] No SP found after method", MSG);
+		console::log("[DEBUG] Request line: [" + request_line + "]", MSG);
+		console::log("[DEBUG] Current pos: " + nb_to_string(_current_pos), MSG);
+		console::log("[DEBUG] Line length: " + nb_to_string(request_line.length()), MSG);
 		_last_status = E_NOT_IMPLEMENTED;
 		return false;
 	}
@@ -227,6 +231,10 @@ void	RequestParser::setRequestContext() {
 	std::string upload_dir = config["upload_dir"];
 	if (!upload_dir.empty())
 		ctx._upload_dir = upload_dir;
+	else
+		ctx._upload_dir = build_full_path(ctx._document_root, "uploads");
+	
+	ctx._is_multipart = false;
 
 	_request->ctx = ctx;
 }

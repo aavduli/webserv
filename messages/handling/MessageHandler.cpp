@@ -31,10 +31,7 @@ std::string	handle_messages(const WebservConfig& config, const std::string &raw_
 			handler.processRequest();
 	}
 	handler.generateResponse();
-
 	std::string complete_response = handler.serializeResponse();
-	console::log("[DEBUG] Response length: " + nb_to_string(complete_response.length()), MSG);
-
 	return complete_response;
 }
 
