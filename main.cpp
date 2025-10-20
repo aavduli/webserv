@@ -3,7 +3,7 @@
 #include "config/WebservConfig.hpp"
 #include "cgi/CgiExec.hpp"
 
-const bool PRINTCONFIG = false;
+const bool PRINTCONFIG = true;
 
 int main(int ac, char **av) {
 
@@ -25,10 +25,8 @@ int main(int ac, char **av) {
 		console::log("Detail: " + config.getLastError(), ERROR);
 		return 1;
 	}
-	else {
+	else
 		console::log("config loaded succeffulsy", CONF);
-		if (PRINTCONFIG) config.printConfig();
-	}
 	std::string portStr = config.getDirective("listen");
 	int port = atoi(portStr.c_str());
 	server serv(port);

@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/08 16:24:01 by jim               #+#    #+#             */
-/*   Updated: 2025/10/13 16:19:21 by jim              ###   ########.fr       */
+/*   Updated: 2025/10/20 17:06:51 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -76,7 +76,6 @@ class WebservConfig{
 		std::vector<std::string> getCgiExtension(const std::string& location_path) const;
 
 		//utils method
-		void printConfig() const;
 		std::string getConfigFile()const;
 
 };
