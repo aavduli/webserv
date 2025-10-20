@@ -256,7 +256,9 @@ void ResponseGenerator::setHeaders() {
 	else if (_response->getBodyType() == B_HTML)
 		_response->addHeader("Content-Type", str_to_vect("text/html", ""));
 	else if (_response->getBodyType() == B_JSON)
-		_response->addHeader("Content-Type", str_to_vect("application/json", ""));console::log("[INFO] CGI response - Content-Type set by script", MSG);
+		_response->addHeader("Content-Type", str_to_vect("application/json", ""));
+	else if (_response->getBodyType() == B_CGI)		// CGI scripts set their own Content-Type header, don't override
+		console::log("[INFO] CGI response - Content-Type set by script", MSG);
 
 	if (_response->getBodyType() == B_EMPTY)
 		_response->addHeader("Content-Length", str_to_vect("0", ""));
