@@ -158,7 +158,7 @@ void ResponseGenerator::generateCGIResponse() {
 	std::string cgi_output = executor.execute(_request);
 
 	if (cgi_output.empty()){
-		console::log("[ERROR] CGI execution failed", MSG);
+		console::log("[ERROR] CGI execution failed", ERROR);
 		_last_status = E_INTERNAL_SERVER_ERROR;
 		return generateErrorResponse();
 	}
@@ -167,11 +167,10 @@ void ResponseGenerator::generateCGIResponse() {
 	//parsing cgi output
 	parseCGIOutput(cgi_output);
 	_response->setStatus(E_OK);
-	_response->setBodyType(B_CGI);  // CGI sets its own Content-Type
 }
 
 void ResponseGenerator::parseCGIOutput(const std::string& cgi_output){
-	//first find the empty lime, separator header body
+	//separator header body
 	size_t header_end= cgi_output.find("\n\n");
 	if (header_end == std::string::npos){
 		//no head ? :(
@@ -257,9 +256,7 @@ void ResponseGenerator::setHeaders() {
 	else if (_response->getBodyType() == B_HTML)
 		_response->addHeader("Content-Type", str_to_vect("text/html", ""));
 	else if (_response->getBodyType() == B_JSON)
-		_response->addHeader("Content-Type", str_to_vect("application/json", ""));
-	else if (_response->getBodyType() == B_CGI)		// CGI scripts set their own Content-Type header, don't override
-		console::log("[INFO] CGI response - Content-Type set by script", MSG);
+		_response->addHeader("Content-Type", str_to_vect("application/json", ""));console::log("[INFO] CGI response - Content-Type set by script", MSG);
 
 	if (_response->getBodyType() == B_EMPTY)
 		_response->addHeader("Content-Length", str_to_vect("0", ""));
@@ -415,11 +412,11 @@ bool	ResponseGenerator::isValidCGI() const {
 	for (size_t i = 0; i < valid_cgi_extensions.size(); i++) {
 		console::log("[DEBUG] isValidCGI - comparing '" + extension + "' with '" + valid_cgi_extensions[i] + "'", CONF);
 		if (extension == valid_cgi_extensions[i]) {
-			console::log("[DEBUG] isValidCGI - MATCH! Returning true", CONF);
+			console::log("[DEBUG] isValidCGI - MATCH! Returning true", MSG);
 			return true;
 		}
 	}
-	console::log("[DEBUG] isValidCGI - no match found, returning false", CONF);
+	console::log("[DEBUG] isValidCGI - no match found, returning false", ERROR);
 	return false;
 }
 

@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/07 15:20:30 by jim               #+#    #+#             */
-/*   Updated: 2025/10/20 13:31:39 by jim              ###   ########.fr       */
+/*   Updated: 2025/10/20 15:01:40 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -187,7 +187,7 @@ std::string CgiExec::execute(const HttpRequest* request){
 		FD_ZERO(&read_fds);
 		FD_SET(pipefd[0], &read_fds);
 
-		struct timeval tv = {0, 100000}; 
+		struct timeval tv = {0, 100000};
 		int select_result = select(pipefd[0] + 1, &read_fds, NULL, NULL, &tv);
 
 		if (select_result > 0){
@@ -215,6 +215,6 @@ std::string CgiExec::execute(const HttpRequest* request){
 		return "";
 	}
 
-	console::log("[CGI] script executed succesfullz", MSG);
+	console::log("[CGI] script executed succesfully", MSG);
 	return output;
 }
