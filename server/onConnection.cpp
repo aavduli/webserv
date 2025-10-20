@@ -7,6 +7,7 @@ Conn::Conn()
 	, content_len(-1)
 	, body_have(0)
 	, headers_end(std::string::npos)
+	, lastActivity(time(NULL))
 {}
 
 onConn::onConn() {}
@@ -31,6 +32,14 @@ bool onConn::onDiscon(Conn& c,bool alive, size_t endpos) {
 // 		s[i] = static_cast<char>(std::tolower(s[i]));
 // 	return s;
 // }
+
+bool onConn::isTimedOut(Conn& c, time_t currentTime, int timeOutSeconds) {
+	return currentTime - c.lastActivity >= timeOutSeconds;
+}
+
+void onConn::updateActivity(Conn& c) {
+	c.lastActivity = time(NULL);
+}
 
 size_t onConn::headers_end_pos(const std::string &buff) {
 	size_t pos = buff.find("\r\n\r\n");
