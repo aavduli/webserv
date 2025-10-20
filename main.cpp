@@ -13,7 +13,7 @@ int main(int ac, char **av) {
 		return 1;
 	}
 	std::string filename = av[1];
-	std::string fn = "./config/" + filename;
+	std::string fn = "./configfiles/" + filename;
 
 	if (fn.find(".conf") == std::string::npos){
 		fn += ".conf";
