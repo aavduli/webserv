@@ -5,6 +5,7 @@
 #include "MessageHandler.hpp"
 #include "../../config/WebservConfig.hpp"
 #include "../../console/console.hpp"
+#include "../../cgi/CgiExec.hpp"
 #include <ctime>
 #include <sstream>
 
