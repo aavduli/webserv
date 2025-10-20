@@ -26,17 +26,13 @@ bool RequestProcessor::processPostRequest() {
 
 	std::string content_type = ct_values[0];
 	if (content_type.find("application/x-www-form-urlencoded") != std::string::npos)
-	if (content_type.find("application/x-www-form-urlencoded") != std::string::npos)
 		processURLEncodedBody();
-	else if (content_type.find("multipart/form-data") != std::string::npos)
 	else if (content_type.find("multipart/form-data") != std::string::npos)
 		processMultipartBody();
 	else if (content_type.find("text/plain") == std::string::npos) {
 		console::log("[ERROR][POST] Invalid Content-Type", MSG);
 		_last_status = E_UNSUPPORTED_MEDIA_TYPE;
 	}
-	if (_request->ctx._upload_enabled)
-		processFileUpload();
 	return (_last_status == E_OK);
 }
 
@@ -80,7 +76,6 @@ void	RequestProcessor::processMultipartBody() {
 		_last_status = E_BAD_REQUEST;
 		return;
 	}
-
 
 	for (size_t i = 0; i < parts.size(); i++) {
 		if (parts[i].find(boundary + "--") != std::string::npos)
@@ -195,16 +190,13 @@ std::map<std::string, std::vector<std::string> > RequestProcessor::parseMultipar
 		if (lines[i].empty())
 			continue ;
 
-
 		std::string name;
 		std::vector<std::string> values;
-		if (::parseHeaderLine(lines[i], name, values)) {
 		if (::parseHeaderLine(lines[i], name, values)) {
 			if (!values.empty())
 				headers[name] = values;
 		}
 		else
-			console::log("[ERROR][MULTIPART] Header section parsing failed", MSG);
 			console::log("[ERROR][MULTIPART] Header section parsing failed", MSG);
 	}
 	return headers;
@@ -214,7 +206,6 @@ std::string RequestProcessor::extractDispositionData(const std::map<std::string,
 
 	std::map<std::string, std::vector<std::string> >::const_iterator it = headers.find("Content-Disposition");
 	if (it == headers.end() || it->second.empty()) {
-		console::log("[ERROR][MULTIPART DISPOSITION] Content-Disposition header missingin section", MSG);
 		console::log("[ERROR][MULTIPART DISPOSITION] Content-Disposition header missingin section", MSG);
 		return "";
 	}
@@ -229,7 +220,6 @@ std::string RequestProcessor::extractDispositionData(const std::map<std::string,
 		if (end_pos != std::string::npos && end_pos > name_pos)
 			value = disposition.substr(name_pos, end_pos - name_pos);
 		else
-			console::log("[ERROR][MULTIPART DISPOSITION] Empty or malformed disposition attribute: " + key, MSG);
 			console::log("[ERROR][MULTIPART DISPOSITION] Empty or malformed disposition attribute: " + key, MSG);
 	}
 	return value;
@@ -265,31 +255,6 @@ bool	RequestProcessor::processFileUpload(PostData& data) {
 	if (!writeFileUploads(filename, data))
 		return false;
 	_last_status = E_OK;
-}
-
-bool	RequestProcessor::configUploadDir() {
-
-	std::string dir_path = _request->ctx._upload_dir;
-
-	if (_request->ctx._upload_enabled == false) {
-		console::log("[ERROR][UPLOAD DIR] File upload not allowed", MSG);
-		_last_status = E_METHOD_NOT_ALLOWED;
-		return false;
-	}
-	if (!is_directory(dir_path)) {
-		if (mkdir(dir_path.c_str(), 0755) == -1) {
-			if (errno != EEXIST) {
-				console::log("[ERROR][UPLOAD DIR] Upload directory creation failed: " + dir_path, MSG);
-				_last_status = E_UNPROCESSABLE_CONTENT;
-				return false;
-			}
-		}
-	}
-	if (access(dir_path.c_str(), W_OK) != 0) {
-		console::log("[ERROR][UPLOAD DIR] Write not allowed on upload directory: " + dir_path, MSG);
-		_last_status = E_UNPROCESSABLE_CONTENT;
-		return false;
-	}
 	return true;
 }
 
@@ -299,6 +264,7 @@ bool	RequestProcessor::writeFileUploads(const std::string& filename, PostData& f
 		return false;
 
 	std::string full_path = build_full_path(_request->ctx._upload_dir, filename);
+	console::log("[INFO][WRITE UPLOAD FILE] file " + full_path, MSG);
 	std::ofstream file(full_path.c_str(), std::ios::binary);
 	if (!file.is_open()) {
 		console::log("[ERROR][WRITE UPLOAD FILE] Unable to open file " + filename, MSG);
@@ -313,8 +279,6 @@ bool	RequestProcessor::writeFileUploads(const std::string& filename, PostData& f
 
 bool	RequestProcessor::processDeleteRequest() {
 	console::log("[INFO][DELETE REQUEST] Processing DELETE request", MSG);
-
-	// do something
 
 	// do something
 	_last_status = E_OK;
