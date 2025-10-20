@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/07 15:20:30 by jim               #+#    #+#             */
-/*   Updated: 2025/10/20 10:43:51 by jim              ###   ########.fr       */
+/*   Updated: 2025/10/20 11:43:21 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,10 @@
 #include <sys/wait.h>
 #include <cstdlib>
 #include <cstring>
+#include <ctime>
+#include <signal.h>
 #include "../console/console.hpp"
+#define TIMEOUT_CGI 5
 
 extern char** environ;
 
@@ -101,7 +104,6 @@ std::string CgiExec::execute(const HttpRequest* request){
 
 		//POST
 		//TODO multipart - plaintext
-		//TIMEOUT cgi
 		//todo content type
 		//error reposnose
 		//header
@@ -122,7 +124,7 @@ std::string CgiExec::execute(const HttpRequest* request){
 					setenv(header_name.c_str(), it->second[0].c_str(), 1);
 				}
 			}
-			
+
 		//execute python script
 		if (access(_python_path.c_str(), X_OK) != 0){
 			console::log("[CGI] python not found: " + _python_path, ERROR);
@@ -131,9 +133,9 @@ std::string CgiExec::execute(const HttpRequest* request){
 		console::log(_script_path.c_str(), ERROR);
 		char* argv[] = {(char*)"python3", (char*)_script_path.c_str(), (char*) NULL};
 		//print all variable environment  DEBUG
-		for (char **env = environ; *env != 0; env++){
-			console::log("[CGI ENV] " + std::string(*env), MSG);
-		}
+		// for (char **env = environ; *env != 0; env++){
+		// 	console::log("[CGI ENV] " + std::string(*env), MSG);
+		// }
 		execve(_python_path.c_str(), argv, environ);
 
 
@@ -158,8 +160,34 @@ std::string CgiExec::execute(const HttpRequest* request){
 		output.append(buffer, bytes_read);
 	}
 
+	/*
+	handle	Timeout
+	*/
+
 	int status;
-	waitpid(pid, &status, 0);
+	time_t start_time = time(NULL);
+
+	while(true){
+		console::log("[CGI] timeout launching thing", ERROR);
+		int result = waitpid(pid, &status, WNOHANG);
+		if (result > 0){
+			break;
+		}
+		else if (result == 0){
+			if (time(NULL) - start_time >= TIMEOUT_CGI){//timeout = 5 sec
+				console::log("[CGI] timeout reached, killing process", ERROR);
+				kill(pid, SIGKILL);
+				waitpid(pid, &status, 0);
+				return "";
+			}
+			usleep(100000);
+		}
+		else{
+			console::log("[CGI] waiptid error: "+ std::string(strerror(errno)), ERROR);
+			return "";
+		}
+	}
+
 
 	if (WIFEXITED(status)){
 		if (WEXITSTATUS(status) != 0){
