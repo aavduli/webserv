@@ -74,6 +74,18 @@ void connectionManager::removeAllConnection() {
 	_connections.clear();
 }
 
+std::vector<int> connectionManager::getTimedOutConnection(time_t currentTime) {
+	std::vector<int> timeOutFds;
+	timeOutFds.reserve(_connections.size());
+	for (std::map<int, Conn>::const_iterator it = _connections.begin(); it != _connections.end(); ++it) {
+		const Conn& c = it->second;
+		if ((currentTime - c.lastActivity) >= ServerConstants::CONNECTION_TIMEOUT) {
+			timeOutFds.push_back(it->first);
+		}
+	}
+	return timeOutFds;
+}
+
 std::vector<int> connectionManager::getConnectionFds() const {
 	std::vector<int> fds;
 	fds.reserve(_connections.size());

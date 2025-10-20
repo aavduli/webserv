@@ -35,8 +35,8 @@ class onConn {
 		static bool update_and_ready(Conn &c, size_t &req_end);
 		static bool onDiscon(Conn& c, bool alive, size_t endpos);
 		// time Handling
-		bool isTimedOut(Conn& c, time_t currentTime, int timeOutSecond);
-		void updateActivity(Conn& c);
+		static bool isTimedOut(Conn& c, time_t currentTime, int timeOutSecond);
+		static void updateActivity(Conn& c);
 
 		static size_t headers_end_pos(const std::string &buf);
 

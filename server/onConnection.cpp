@@ -22,6 +22,7 @@ bool onConn::onDiscon(Conn& c,bool alive, size_t endpos) {
 		c.content_len = -1;
 		c.body_have = 0;
 		c.headers_end = std::string::npos;
+		c.lastActivity = time(NULL);
 		return true;
 	}
 	return false;
@@ -34,11 +35,11 @@ bool onConn::onDiscon(Conn& c,bool alive, size_t endpos) {
 // }
 
 bool onConn::isTimedOut(Conn& c, time_t currentTime, int timeOutSeconds) {
-	return currentTime - c.lastActivity >= timeOutSeconds;
+	return (currentTime - c.lastActivity) >= timeOutSeconds;
 }
 
-void onConn::updateActivity(Conn& c) {
-	c.lastActivity = time(NULL);
+void onConn::updateActivity(Conn& currentConn) {
+	currentConn.lastActivity = time(NULL);
 }
 
 size_t onConn::headers_end_pos(const std::string &buff) {
@@ -49,7 +50,6 @@ size_t onConn::headers_end_pos(const std::string &buff) {
 void onConn::try_mark_headers(Conn &c) {
 	if (c.header_done) return;
 	if (c.in.size() > MAX_HEADER_BYTES && c.in.find("\r\n\r\n") == std::string::npos) {
-		//todo
 		return ;
 	}
 	size_t he = headers_end_pos(c.in);
@@ -103,6 +103,7 @@ bool onConn::chunked_complete(const std::string& body, size_t &cut_after) {
 	}
 	return false;
 }
+// TODO check for post request by searching "--\r\n\r\n" if content-type = multipart/form data == chunked request
 
 bool onConn::update_and_ready(Conn& c, size_t &req_end) {
 	req_end = 0;

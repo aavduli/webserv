@@ -1,21 +1,4 @@
 #include "EventProcessor.hpp"
-// 
-// std::string build_http_response(
-//     int status_code,
-//     const std::string& status_text,
-//     const std::string& body,
-//     const std::string& content_type = "text/plain"
-// ) {
-//     std::ostringstream oss;
-//     oss << "HTTP/1.1 " << status_code << " " << status_text << "\r\n"
-//         << "Content-Type: " << content_type << "\r\n"
-//         << "Content-Length: " << body.size() << "\r\n"
-//         << "Connection: close\r\n"
-//         << "\r\n"
-//         << body;
-//     return oss.str();
-// }
-
 
 // 1. Generate 100KB response
 // 2. send() → 30KB sent, 70KB remaining
@@ -113,7 +96,6 @@ void eventProcessor::handleClientWriteReady(int clientFd) {
 			connection.outBuffer.clear();
 			connection.outSent = 0;
 			_eventManager.modFd(clientFd, EPOLLIN | EPOLLRDHUP);
-			// Don't immediately close - wait for client to close
 		}
 	}
 	else if (bytesSent == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
@@ -127,8 +109,11 @@ void eventProcessor::handleClientWriteReady(int clientFd) {
 
 //public events handler
 void eventProcessor::runEventLoop(const WebservConfig& config) {
+	time_t lastTimeOutCheck = time(NULL);
+	const int timeOutInterval = ServerConstants::TIMEOUT_CHECK;
+
 	while (!_shouldStop) {
-		int nfds = _eventManager.wait(-1);
+		int nfds = _eventManager.wait(5000);
 		if (nfds < 0) {
 			if (errno == EINTR) continue;
 			console::log("epoll_wait", std::strerror(errno), ERROR);
@@ -147,9 +132,25 @@ void eventProcessor::runEventLoop(const WebservConfig& config) {
 			else if (isDataReadyEvent(events)) {
 				handleClientData(fd, config);
 			}
-			else if (isDataSendEvent(events))
+			else if (isDataSendEvent(events)) {
 				handleClientWriteReady(fd);
+			}
 		}
+		time_t currentTime = time(NULL);
+		if ((currentTime - lastTimeOutCheck) >= timeOutInterval) {
+			checkAndCleanTimeout();
+			lastTimeOutCheck = currentTime;
+		}
+	}
+}
+
+void eventProcessor::checkAndCleanTimeout() {
+	time_t currentTime = time(NULL);
+	std::vector<int> timeOutFds = _connectionManager.getTimedOutConnection(currentTime);
+	for (size_t i = 0; i < timeOutFds.size(); ++i) {
+		int fd = timeOutFds[i];
+		sendTimeOutResponse(fd);
+		handleClientDisconnection(fd);
 	}
 }
 
@@ -169,6 +170,7 @@ void eventProcessor::handleClientDisconnection(int clientFd) {
 void eventProcessor::handleClientData(int clientFd, const WebservConfig& config) {
 	(void)config;
 	Conn& connection = _connectionManager.getConnection(clientFd); 
+	onConn::updateActivity(connection);
 	
 	// Define constants for safety
 	static const size_t MAX_REQUEST_SIZE = ServerConstants::MAX_REQUEST_SIZE;
@@ -225,4 +227,32 @@ bool eventProcessor::isDataSendEvent(uint32_t event) const {
 	if (event & EPOLLOUT)
 		return true;
 	return false;
+}
+
+static std::string build_timeout_response() {
+    std::string response = 
+        "HTTP/1.0 408 Request Timeout\r\n"
+        "Content-Type: text/html\r\n"
+        "Content-Length: 147\r\n"
+        "Connection: close\r\n"
+        "\r\n"
+        "<html>\r\n"
+        "<head><title>408 Request Timeout</title></head>\r\n"
+        "<body>\r\n"
+        "<h1>Request Timeout</h1>\r\n"
+        "<p>The server timed out waiting for the request.</p>\r\n"
+        "</body>\r\n"
+        "</html>\r\n";
+    return response;
+}
+
+void eventProcessor::sendTimeOutResponse(int clientFd) {
+	std::string timeOutResp = build_timeout_response();
+	console::log("[TIMEOUT] timeout on client:", clientFd, SRV);
+	ssize_t bytesSent = NetworkHandler::sendData(clientFd, const_cast<char*>(timeOutResp.data()), timeOutResp.size());
+	if (bytesSent < 0) {
+		console::log("Failed to send responses on FD: ", clientFd, SRV);
+		handleClientDisconnection(clientFd);
+		return ;
+	}
 }
