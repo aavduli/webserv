@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/07 15:20:30 by jim               #+#    #+#             */
-/*   Updated: 2025/10/20 11:43:21 by jim              ###   ########.fr       */
+/*   Updated: 2025/10/20 13:31:39 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,6 +64,8 @@ std::string CgiExec::execute(const HttpRequest* request){
 		close(stdin_pipefd[1]);
 		dup2(stdin_pipefd[0], STDIN_FILENO);
 		close(stdin_pipefd[0]);
+
+
 
 		//change dir
 		//chdir("./www/cgi-bin");
@@ -152,42 +154,51 @@ std::string CgiExec::execute(const HttpRequest* request){
 		write(stdin_pipefd[1], request->getBody().c_str(), request->getBody().size());}
 	close(stdin_pipefd[1]);
 
+	//timeout
+
 	std::string output;
 	char buffer[4096];
-	size_t bytes_read;
-
-	while((bytes_read =read(pipefd[0], buffer, sizeof(buffer))) > 0){
-		output.append(buffer, bytes_read);
-	}
-
-	/*
-	handle	Timeout
-	*/
-
-	int status;
 	time_t start_time = time(NULL);
+	int status;
 
 	while(true){
-		console::log("[CGI] timeout launching thing", ERROR);
+		//check global timeout
+		if (time(NULL) - start_time >= TIMEOUT_CGI){
+			console::log("[CGI] timeout reached, killing process", ERROR);
+			kill(pid, SIGKILL);
+			waitpid(pid, &status, 0);
+			close(pipefd[0]);
+			return "";
+		}
+
+		//process alive?
 		int result = waitpid(pid, &status, WNOHANG);
 		if (result > 0){
+			//process ended, read end data
+			ssize_t bytes_read;
+			while((bytes_read = read(pipefd[0], buffer, sizeof(buffer))) > 0){
+				output.append(buffer, bytes_read);
+			}
 			break;
 		}
-		else if (result == 0){
-			if (time(NULL) - start_time >= TIMEOUT_CGI){//timeout = 5 sec
-				console::log("[CGI] timeout reached, killing process", ERROR);
-				kill(pid, SIGKILL);
-				waitpid(pid, &status, 0);
-				return "";
+
+		//non blocking reading <- aavduli ? todo
+		fd_set read_fds;
+		FD_ZERO(&read_fds);
+		FD_SET(pipefd[0], &read_fds);
+
+		struct timeval tv = {0, 100000}; 
+		int select_result = select(pipefd[0] + 1, &read_fds, NULL, NULL, &tv);
+
+		if (select_result > 0){
+			ssize_t bytes_read = read(pipefd[0], buffer, sizeof(buffer));
+			if (bytes_read > 0){
+				output.append(buffer, bytes_read);
 			}
-			usleep(100000);
-		}
-		else{
-			console::log("[CGI] waiptid error: "+ std::string(strerror(errno)), ERROR);
-			return "";
 		}
 	}
 
+	close(pipefd[0]);
 
 	if (WIFEXITED(status)){
 		if (WEXITSTATUS(status) != 0){

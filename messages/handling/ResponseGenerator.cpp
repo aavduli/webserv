@@ -345,38 +345,38 @@ void	ResponseGenerator::addValidIndex() {
 
 bool	ResponseGenerator::isValidCGI() const {
 	std::string path = _request->getUri().getEffectivePath();
-	console::log("[DEBUG] isvalidCGI -check path: "+path, MSG);
+	console::log("[DEBUG] isvalidCGI -check path: "+path, CONF);
 
 	if (path.empty() || !is_valid_file_path(path)){
-		console::log("[DEBUG] isvalidCGI - path empty or invalida", MSG);
+		console::log("[DEBUG] isvalidCGI - path empty or invalida", CONF);
 		return false;
 	}
 
 	std::map<std::string, std::string> config = _request->ctx._location_config;
 	std::string cgi_extension = config["cgi_ext"];
-	console::log("[DEBUG] isvalidCGI - cgi_ext from config:" + cgi_extension , MSG);
+	console::log("[DEBUG] isvalidCGI - cgi_ext from config:" + cgi_extension , CONF);
 
 	if (cgi_extension.empty()){
-		console::log("[DEBUG] isvalidCGI no CGI extension", MSG);
+		console::log("[DEBUG] isvalidCGI no CGI extension", CONF);
 		return false;
 	}
 
 	std::string extension = get_file_extension(path);
 	if (!extension.empty() && extension[0] != '.')
 		extension = "." + extension;
-	console::log("[DEBUG] isValidCGI - file extension: '" + extension + "'", MSG);
+	console::log("[DEBUG] isValidCGI - file extension: '" + extension + "'", CONF);
 
 	std::vector<std::string> valid_cgi_extensions = str_to_vect(cgi_extension, " ");
-	console::log("[DEBUG] isValidCGI - found " + nb_to_string(valid_cgi_extensions.size()) + " validextensions", MSG);
+	console::log("[DEBUG] isValidCGI - found " + nb_to_string(valid_cgi_extensions.size()) + " validextensions", CONF);
 
 	for (size_t i = 0; i < valid_cgi_extensions.size(); i++) {
-		console::log("[DEBUG] isValidCGI - comparing '" + extension + "' with '" + valid_cgi_extensions[i] + "'", MSG);
+		console::log("[DEBUG] isValidCGI - comparing '" + extension + "' with '" + valid_cgi_extensions[i] + "'", CONF);
 		if (extension == valid_cgi_extensions[i]) {
-			console::log("[DEBUG] isValidCGI - MATCH! Returning true", MSG);
+			console::log("[DEBUG] isValidCGI - MATCH! Returning true", CONF);
 			return true;
 		}
 	}
-	console::log("[DEBUG] isValidCGI - no match found, returning false", MSG);
+	console::log("[DEBUG] isValidCGI - no match found, returning false", CONF);
 	return false;
 }
 
