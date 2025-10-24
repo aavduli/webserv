@@ -30,7 +30,7 @@ echo -e "\n---\n"
 echo "Test 3: File upload (multipart)"
 curl -X POST "$BASE_URL/upload" \
   -F "description=Test file upload" \
-  -F "upload_file=@/home/angela/42/webserv/www/uploads/sample_upload.txt" \
+  -F "upload_file=@/home/angela/42/webserv/www/uploads/files/sample_upload.txt" \
   -F "notes=Testing multipart upload" \
   -v
 echo -e "\n---\n"
