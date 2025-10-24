@@ -47,7 +47,6 @@ void ResponseGenerator::generatePostResponse() {
 	html << "<body>\n";
 	html << "<h1>Success!</h1>\n";
 	html << "<p>Your POST request was processed successfully.</p>";
-
 	// show post data if any
 	const std::map<std::string, PostData>& post_data = _request->getPostData();
 	if (!post_data.empty()) {
