@@ -29,6 +29,7 @@ bool RequestParser::parseRequest() {
 		console::log("[DEBUG] Failed to parse body", MSG);
 		return false;
 	}
+	console::log("[INFO][PARSING] Request content		OK", MSG);
 	return true;
 }
 
@@ -236,6 +237,7 @@ void	RequestParser::setRequestContext() {
 	ctx._is_multipart = false;
 
 	_request->ctx = ctx;
+	console::log("[INFO][PARSING] Request context		OK", MSG);
 }
 
 std::string	RequestParser::findLocationName(const std::string& path) {

@@ -38,8 +38,6 @@ bool RequestProcessor::processPostRequest() {
 
 void	RequestProcessor::processURLEncodedBody() {
 
-	console::log("[DEBUG][POST] processURLEncodedBody", MSG);
-
 	std::string raw_body = _request->getBody();
 	std::map<std::string, PostData> data;
 
@@ -60,12 +58,12 @@ void	RequestProcessor::processURLEncodedBody() {
 	}
 	_request->setPostData(data);
 	_last_status = E_OK;
+	console::log("[INFO][POST] URL-encoded body			OK", MSG);
+
 }
 
 void	RequestProcessor::processMultipartBody() {
 	
-	console::log("[DEBUG][POST] processMultipartBody", MSG);
-
 	std::map<std::string, PostData> data;
 	const std::string& raw_body = _request->getBody();
 
@@ -87,16 +85,14 @@ void	RequestProcessor::processMultipartBody() {
 	}
 	_request->setPostData(data);
 	_last_status = E_OK;
+	console::log("[INFO][POST] Multipart body			OK", MSG);
 }
 
 bool	RequestProcessor::processMultipartPart(std::string& part, std::map<std::string, PostData>& data, const std::string& boundary) {
 	
-	console::log("[DEBUG][MULTIPART] Processing part (first 100 chars): " + part.substr(0, 100), MSG);
-	
 	size_t header_end = part.find("\r\n\r\n");
 	if (header_end == std::string::npos) {
 		console::log("[ERROR][MULTIPART] Missing header separator", MSG);
-		console::log("[DEBUG][MULTIPART] Part content: [" + part + "]", MSG);
 		return false;
 	}
 
@@ -146,16 +142,13 @@ std::string	RequestProcessor::extractBoundary(const std::vector<std::string>& ct
 		if (semi_colon != std::string::npos)
 			boundary = boundary.substr(0, semi_colon);
 	}
-	console::log("[DEBUG][POST] boundary = " + boundary, MSG);
 	return boundary;
 }
 
 std::vector<std::string>	RequestProcessor::splitByBoundary(const std::string& body, const std::string& boundary_str) {
 
 	std::string	boundary = "--" + boundary_str;
-	console::log("[DEBUG][MULTIPART] Splitting by boundary: " + boundary, MSG);
 	std::vector<std::string> raw_parts = str_to_vect(body, boundary);
-	console::log("[DEBUG][MULTIPART] Found " + nb_to_string(raw_parts.size()) + " raw parts", MSG);
 	std::vector<std::string> parts;
 	
 	if (raw_parts.size() < 2) {
@@ -182,7 +175,6 @@ std::map<std::string, std::vector<std::string> > RequestProcessor::parseMultipar
 
 	size_t start = header_str.find(boundary);
 	header_str = header_str.substr(start + boundary.length());
-	console::log("[DEBUG][POST] headers: " + header_str, MSG);
 	
 	std::map<std::string, std::vector<std::string> >	headers;
 	std::vector<std::string> lines = str_to_vect(header_str, "\r\n");
@@ -206,7 +198,7 @@ std::string RequestProcessor::extractDispositionData(const std::map<std::string,
 
 	std::map<std::string, std::vector<std::string> >::const_iterator it = headers.find("Content-Disposition");
 	if (it == headers.end() || it->second.empty()) {
-		console::log("[ERROR][MULTIPART DISPOSITION] Content-Disposition header missingin section", MSG);
+		console::log("[ERROR][MULTIPART DISPOSITION] Content-Disposition header missing in section", MSG);
 		return "";
 	}
 	
@@ -264,7 +256,6 @@ bool	RequestProcessor::writeFileUploads(const std::string& filename, PostData& f
 		return false;
 
 	std::string full_path = build_full_path(_request->ctx._upload_dir, filename);
-	console::log("[INFO][WRITE UPLOAD FILE] file " + full_path, MSG);
 	std::ofstream file(full_path.c_str(), std::ios::binary);
 	if (!file.is_open()) {
 		console::log("[ERROR][WRITE UPLOAD FILE] Unable to open file " + filename, MSG);

@@ -31,6 +31,8 @@ bool RequestValidator::validateRequest() {
 	if (!validateRedirection()) return false;
 	if (_last_status == E_INIT)
 		_last_status = E_OK;
+	console::log("[INFO][VALIDATION] Request valid		OK", MSG);
+
 	return true;
 }
 
