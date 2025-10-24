@@ -17,7 +17,7 @@ void		MessageHandler::setLastStatus(Status status) {_last_status = status;}
 
 std::string	handle_messages(const WebservConfig& config, const std::string &raw_request) {
 
-	console::log("=============[NEW REQUEST]=============", MSG);
+	console::log("========================================", MSG);
 
 	HttpRequest			request;
 	MessageHandler		handler(config, &request);

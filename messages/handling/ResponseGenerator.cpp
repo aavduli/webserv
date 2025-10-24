@@ -39,8 +39,6 @@ void ResponseGenerator::generateResponse() {
 // TODO check if correct logic
 void ResponseGenerator::generatePostResponse() {
 
-	console::log("[INFO] Generating POST response", MSG);
-	
 	if (_request->getUri().getPath().find("/uploads") != std::string::npos) {
 		_response->setStatus(E_REDIRECT_TEMPORARY);
 		_response->addHeader("Location", str_to_vect("/success", ""));
@@ -58,7 +56,6 @@ void ResponseGenerator::generatePostResponse() {
 void ResponseGenerator::generateStaticFileResponse() {
 	
 	const std::string& path = _request->getUri().getEffectivePath();
-	console::log("[INFO] Generating static file response", MSG);
 
 	std::ifstream file(path.c_str());
 	if (!file.is_open()) {
@@ -70,11 +67,10 @@ void ResponseGenerator::generateStaticFileResponse() {
 	file.close();
 	_response->setBodyType(B_FILE);
 	_response->setStatus(E_OK);
+	console::log("[INFO][RESPONSE] File response		OK", MSG);
 }
 
 void ResponseGenerator::generateDirectoryResponse() {
-
-	console::log("[INFO] Generating directory response", MSG);
 
 	if (!_request->ctx._autoindex_enabled) {
 		console::log("[ERROR][GENERATE RESPONSE] Directory access forbidden", MSG);
@@ -93,22 +89,20 @@ void ResponseGenerator::generateDirectoryResponse() {
 	_response->setBodyType(B_HTML);
 	_response->setStatus(E_OK);
 	closedir(dir);
+	console::log("[INFO][RESPONSE] Dir response			OK", MSG);
 }
 
 void ResponseGenerator::generateRedirResponse() {
-
-	console::log("[INFO] Generating redirection response", MSG);
 
 	const std::string& destination = _request->getUri().getRedirDestination();
 	_response->setStatus(_last_status);
 	_response->addHeader("Location", str_to_vect(destination, ""));		// required
 	_response->setBody(generateRedirHTML());
 	_response->setBodyType(B_HTML);
+	console::log("[INFO][RESPONSE] Redir response		OK", MSG);
 }
 
 void ResponseGenerator::generateErrorResponse() {
-
-	console::log("[INFO] Generating error response with status " + status_msg(_last_status), MSG);
 
 	_response->setStatus(_last_status);
 	std::string error_page_path = _config.getErrorPage(_last_status);
@@ -125,6 +119,7 @@ void ResponseGenerator::generateErrorResponse() {
 	}
 	_response->setBody(generateDefaultErrorHTML());
 	_response->setBodyType(B_HTML);
+	console::log("[INFO][RESPONSE] Error response		OK", MSG);
 }
 
 void ResponseGenerator::generateCGIResponse() {
@@ -226,25 +221,22 @@ std::string	ResponseGenerator::generatePostSuccessHTML() {
 	html << "<html><head><title>Success</title></head>\n";
 	html << "<body>\n";
 	html << "<h1>Success!</h1>\n";
-	html << "<p>Your POST request was processed successfully.</p>\n";
+	html << "<p>Your POST request was processed successfully.</p>";
 	
-	// Show uploaded files if any
+	// show post data if any
 	const std::map<std::string, PostData>& post_data = _request->getPostData();
 	if (!post_data.empty()) {
-		html << "<h3>Processed Data:</h3>\n<ul>\n";
+		html << "<p>";
 		for (std::map<std::string, PostData>::const_iterator it = post_data.begin(); it != post_data.end(); ++it) {
-			html << "<li><strong>" << it->first << ":</strong> ";
-			if (it->second.is_file) {
+			html << "<strong>" << it->first << ":</strong> ";
+			if (it->second.is_file)
 				html << "File uploaded: " << it->second.filename;
-			} else {
+			else
 				html << it->second.content;
-			}
-			html << "</li>\n";
+			html << "<br>";
 		}
-		html << "</ul>\n";
 	}
-	
-	html << "<p><a href=\"/form\">Back to forms</a></p>\n";
+	html << "<br><a href=\"/form\">Back to forms</a></p>";
 	html << "</body></html>";
 	return html.str();
 }
@@ -281,6 +273,9 @@ bool	ResponseGenerator::isValidCGI() const {
 		return false;
 
 	std::string extension = get_file_extension(path);
+	if (!extension.empty() && extension[0] != '.')
+		extension = "." + extension;
+	
 	std::vector<std::string> valid_cgi_extensions = str_to_vect(cgi_extensions, " ");
 	for (size_t i = 0; i < valid_cgi_extensions.size(); i++) {
 		if (extension == valid_cgi_extensions[i])
