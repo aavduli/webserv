@@ -33,7 +33,7 @@ class RequestProcessor {
 
 		bool			processFileUpload(PostData& value);
 		bool			configUploadDir();
-		bool			writeFileUploads(const std::string& filename, PostData& file_data);
+		bool			writeFileUpload(const std::string& filename, PostData& file_data);
 
 	public:
 		RequestProcessor(const WebservConfig& config, HttpRequest* request);

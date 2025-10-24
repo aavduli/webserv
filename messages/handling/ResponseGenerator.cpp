@@ -21,6 +21,8 @@ void ResponseGenerator::generateResponse() {
 	else if (_last_status == E_OK) {
 		if (_request->getMethod() == "POST")
 			generatePostResponse();
+		else if (_request->getMethod() == "DELETE")
+			generateDeleteResponse();
 		else if (isValidCGI())
 			generateCGIResponse();
 		else {
@@ -39,16 +41,49 @@ void ResponseGenerator::generateResponse() {
 // TODO check if correct logic
 void ResponseGenerator::generatePostResponse() {
 
-	if (_request->getUri().getPath().find("/uploads") != std::string::npos) {
-		_response->setStatus(E_REDIRECT_TEMPORARY);
-		_response->addHeader("Location", str_to_vect("/success", ""));
-		_response->setBody(generateRedirHTML());
-		_response->setBodyType(B_HTML);
-		return;
-	}
+	std::stringstream html;
+	html << "<!DOCTYPE html>\n";
+	html << "<html><head><title>Success</title></head>\n";
+	html << "<body>\n";
+	html << "<h1>Success!</h1>\n";
+	html << "<p>Your POST request was processed successfully.</p>";
 	
+	// show post data if any
+	const std::map<std::string, PostData>& post_data = _request->getPostData();
+	if (!post_data.empty()) {
+		html << "<p>";
+		for (std::map<std::string, PostData>::const_iterator it = post_data.begin(); it != post_data.end(); ++it) {
+			html << "<strong>" << it->first << ":</strong> ";
+			if (it->second.is_file)
+				html << "File uploaded: " << it->second.filename;
+			else
+				html << it->second.content;
+			html << "<br>";
+		}
+	}
+	html << "<br><a href=\"/form\">Back to forms</a></p>";
+	html << "</body></html>";
+
 	_response->setStatus(E_OK);
-	_response->setBody(generatePostSuccessHTML());
+	_response->setBody(html.str());
+	_response->setBodyType(B_HTML);
+}
+
+// TODO check if correct logic
+void ResponseGenerator::generateDeleteResponse() {
+
+	const std::string& path = _request->getUri().getPath();
+	std::stringstream html;
+	html << "<!DOCTYPE html>\n";
+	html << "<html><head><title>Success</title></head>\n";
+	html << "<body>\n";
+	html << "<h1>Success!</h1>\n";
+	html << "<p>File <strong>" << path << "</strong> was successfully removed.</p>";
+	html << "<br><a href=\"/\">Back to home</a></p>";
+	html << "</body></html>";
+
+	_response->setStatus(E_OK);
+	_response->setBody(html.str());
 	_response->setBodyType(B_HTML);
 }
 
@@ -67,13 +102,13 @@ void ResponseGenerator::generateStaticFileResponse() {
 	file.close();
 	_response->setBodyType(B_FILE);
 	_response->setStatus(E_OK);
-	console::log("[INFO][RESPONSE] File response		OK", MSG);
+	console::log("[INFO][GET] Static file				OK", MSG);
 }
 
 void ResponseGenerator::generateDirectoryResponse() {
 
 	if (!_request->ctx._autoindex_enabled) {
-		console::log("[ERROR][GENERATE RESPONSE] Directory access forbidden", MSG);
+		console::log("[ERROR][GENERATE RESPONSE] Autoindex off", MSG);
 		_last_status = E_FORBIDDEN;
 		return generateErrorResponse();
 	}
@@ -89,7 +124,7 @@ void ResponseGenerator::generateDirectoryResponse() {
 	_response->setBodyType(B_HTML);
 	_response->setStatus(E_OK);
 	closedir(dir);
-	console::log("[INFO][RESPONSE] Dir response			OK", MSG);
+	console::log("[INFO][GET] Directory listing			OK", MSG);
 }
 
 void ResponseGenerator::generateRedirResponse() {
@@ -99,7 +134,7 @@ void ResponseGenerator::generateRedirResponse() {
 	_response->addHeader("Location", str_to_vect(destination, ""));		// required
 	_response->setBody(generateRedirHTML());
 	_response->setBodyType(B_HTML);
-	console::log("[INFO][RESPONSE] Redir response		OK", MSG);
+	console::log("[INFO][GET] Redirection				OK", MSG);
 }
 
 void ResponseGenerator::generateErrorResponse() {
@@ -210,33 +245,6 @@ std::string	ResponseGenerator::generateRedirHTML() {
 	html << "<body>\n";
 	html << "<h1>" << (_last_status == E_REDIRECT_PERMANENT ? "Moved Permanently" : "Moved Temporarily") << "</h1>\n";
 	html << "<p>The document has moved <a href=\"" << _request->getUri().getRedirDestination() << "\">here</a>.</p>\n";
-	html << "</body></html>";
-	return html.str();
-}
-
-std::string	ResponseGenerator::generatePostSuccessHTML() {
-
-	std::stringstream html;
-	html << "<!DOCTYPE html>\n";
-	html << "<html><head><title>Success</title></head>\n";
-	html << "<body>\n";
-	html << "<h1>Success!</h1>\n";
-	html << "<p>Your POST request was processed successfully.</p>";
-	
-	// show post data if any
-	const std::map<std::string, PostData>& post_data = _request->getPostData();
-	if (!post_data.empty()) {
-		html << "<p>";
-		for (std::map<std::string, PostData>::const_iterator it = post_data.begin(); it != post_data.end(); ++it) {
-			html << "<strong>" << it->first << ":</strong> ";
-			if (it->second.is_file)
-				html << "File uploaded: " << it->second.filename;
-			else
-				html << it->second.content;
-			html << "<br>";
-		}
-	}
-	html << "<br><a href=\"/form\">Back to forms</a></p>";
 	html << "</body></html>";
 	return html.str();
 }

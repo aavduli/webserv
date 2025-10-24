@@ -1,6 +1,8 @@
 #ifndef REQUESTPARSER_HPP
 #define REQUESTPARSER_HPP
 
+#define DEFAULT_DIR_NAME "files"
+
 #include "../handling/MessageHandler.hpp"
 
 class RequestParser {

@@ -229,13 +229,15 @@ void	RequestParser::setRequestContext() {
 		ctx._upload_enabled = false;
 
 	std::string upload_dir = config["upload_dir"];
-	if (!upload_dir.empty())
+	if (!upload_dir.empty()) {
 		ctx._upload_dir = upload_dir;
-	else
-		ctx._upload_dir = build_full_path(ctx._document_root, "uploads");
+		ctx._has_upload_dir = true;
+	}
+	else {
+		ctx._upload_dir = build_full_path(ctx._document_root, DEFAULT_DIR_NAME);
+		ctx._has_upload_dir = false;
+	}
 	
-	ctx._is_multipart = false;
-
 	_request->ctx = ctx;
 	console::log("[INFO][PARSING] Request context		OK", MSG);
 }
