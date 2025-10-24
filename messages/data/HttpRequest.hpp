@@ -28,7 +28,7 @@ struct RequestContext {
 		bool								_has_redirect;
 		bool								_upload_enabled;
 		std::string							_upload_dir;
-		bool								_is_multipart;	// useful?
+		bool								_has_upload_dir;
 };
 
 class HttpRequest : public HttpMessage {
