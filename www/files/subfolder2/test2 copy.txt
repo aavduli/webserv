@@ -1,2 +1,0 @@
-Another test file for directory listing.
-File 2 with different content.
