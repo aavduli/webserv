@@ -1,6 +1,8 @@
 #include "RequestProcessor.hpp"
 #include <cerrno>
 #include <cstring>
+#include <sys/stat.h>
+#include <unistd.h>
 
 RequestProcessor::RequestProcessor(const WebservConfig& config, HttpRequest* request) : _config(config), _request(request), _last_status(E_INIT) {}
 RequestProcessor::RequestProcessor(const RequestProcessor& rhs) : _config(rhs._config), _request(rhs._request), _last_status(rhs._last_status) {}
@@ -57,6 +59,14 @@ void	RequestProcessor::processURLEncodedBody() {
 		}
 	}
 	_request->setPostData(data);
+	
+	// look for method override
+	if (data.find("_method") != data.end() && data["_method"].content == "DELETE") {
+		_request->setMethod("DELETE");
+		console::log("[INFO][DELETE] Method override detected: DELETE", MSG);
+		processDeleteRequest();
+		return;
+	}
 	_last_status = E_OK;
 	console::log("[INFO][POST] URL-encoded body			OK", MSG);
 
@@ -218,10 +228,7 @@ std::string RequestProcessor::extractDispositionData(const std::map<std::string,
 }
 
 bool	RequestProcessor::processFileUpload(PostData& data) {
-	
-	console::log("[DEBUG][UPLOAD] Upload enabled: " + (_request->ctx._upload_enabled ? std::string("true") : std::string("false")), MSG);
-	console::log("[DEBUG][UPLOAD] Location name: " + _request->ctx._location_name, MSG);
-	
+
 	if (_request->ctx._upload_enabled == false) {
 		console::log("[ERROR][UPLOAD DIR] File upload not allowed", MSG);
 		_last_status = E_METHOD_NOT_ALLOWED;
@@ -229,28 +236,25 @@ bool	RequestProcessor::processFileUpload(PostData& data) {
 	}
 
 	std::string dir_path = _request->ctx._upload_dir;
-	console::log("[DEBUG][UPLOAD] Upload directory path: " + dir_path, MSG);
-	if (access(dir_path.c_str(), F_OK) == 0) {
-		if (access(dir_path.c_str(), W_OK) != 0) {
-			console::log("[ERROR][UPLOAD DIR] Permission denied", MSG);
-			_last_status = E_FORBIDDEN;
-			return false;
-		}
-	}
-	else if (mkdir(dir_path.c_str(), 0755) == -1) {
+	if (_request->ctx._has_upload_dir == false && mkdir(dir_path.c_str(), 0755) == -1) {
 		console::log("[ERROR][UPLOAD DIR] Failed to create directory " + dir_path, MSG);
 		_last_status = E_UNPROCESSABLE_CONTENT;
 		return false;
 	}
+	if (access(dir_path.c_str(), W_OK) != 0) {
+		console::log("[ERROR][UPLOAD DIR] Permission denied", MSG);
+		_last_status = E_FORBIDDEN;
+		return false;
+	}
 
 	const std::string& filename = generateFilename(data.filename);
-	if (!writeFileUploads(filename, data))
+	if (!writeFileUpload(filename, data))
 		return false;
 	_last_status = E_OK;
 	return true;
 }
 
-bool	RequestProcessor::writeFileUploads(const std::string& filename, PostData& file_data) {
+bool	RequestProcessor::writeFileUpload(const std::string& filename, PostData& file_data) {
 
 	if (filename.empty())
 		return false;
@@ -269,9 +273,40 @@ bool	RequestProcessor::writeFileUploads(const std::string& filename, PostData& f
 }
 
 bool	RequestProcessor::processDeleteRequest() {
-	console::log("[INFO][DELETE REQUEST] Processing DELETE request", MSG);
 
-	// do something
+	std::string target_path;
+
+	const std::map<std::string, PostData>& post_data = _request->getPostData();
+	if (!post_data.empty() && post_data.find("filename") != post_data.end()) {
+		std::string filename = post_data.at("filename").content;
+		if (filename.empty()) {
+			console::log("[ERROR][DELETE] No filename provided in form", MSG);
+			_last_status = E_BAD_REQUEST;
+			return false;
+		}
+		target_path = _request->ctx._upload_dir + "/" + filename;
+	}
+	else
+		target_path = _request->getUri().getEffectivePath();
+
+	if (target_path.find("files") == std::string::npos) {
+		console::log("[ERROR][DELETE] Forbidden: File must be in files directory", MSG);
+		_last_status = E_FORBIDDEN;
+		return false;
+	}
+
+	if (!is_valid_file_path(target_path)) {
+		console::log("[ERROR][DELETE] File not found: " + target_path, MSG);
+		_last_status = E_NOT_FOUND;
+		return false;
+	}
+
+	if (unlink(target_path.c_str()) != 0) {
+		console::log("[ERROR][DELETE] Failed to delete file: " + target_path, MSG);
+		_last_status = E_INTERNAL_SERVER_ERROR;
+		return false;
+	}
+	console::log("[INFO][DELETE] File deleted: " + target_path, MSG);
 	_last_status = E_OK;
 	return true;
 }
