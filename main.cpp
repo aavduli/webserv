@@ -2,6 +2,7 @@
 #include "server/server.hpp"
 #include "config/WebservConfig.hpp"
 #include "cgi/CgiExec.hpp"
+#include <fstream>
 
 int main(int ac, char **av) {
 
