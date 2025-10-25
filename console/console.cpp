@@ -72,6 +72,11 @@ void console::clearLogFile(Typelog type){
 		_conf.open("logs/conf.log", std::ios::out | std::ios::trunc);
 		if (!_conf) std::cerr << "[Console] failed to open logs/conf.log" << std::endl;
 	}
+	if (type == ERROR) {
+	_error.close();
+	_error.open("logs/error.log", std::ios::out | std::ios::trunc);
+	if (!_error) std::cerr << "[Console] failed to open logs/error.log" << std::endl;
+	}
 	//@aavudli you can add yours
 	//@ahanzi you can add yours
 }
