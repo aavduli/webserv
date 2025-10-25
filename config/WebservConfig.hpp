@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/08 16:24:01 by jim               #+#    #+#             */
-/*   Updated: 2025/10/20 17:06:51 by jim              ###   ########.fr       */
+/*   Updated: 2025/10/25 11:10:42 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -77,6 +77,7 @@ class WebservConfig{
 
 		//utils method
 		std::string getConfigFile()const;
+		void printConfig() const;
 
 };
 
