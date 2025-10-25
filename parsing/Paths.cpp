@@ -1,13 +1,19 @@
 #include "Parsing.hpp"
 #include "../console/console.hpp"
 
+bool is_accessible_path(const std::string& path) {
+	if (access(path.c_str(), F_OK) == 0)
+		return true;
+	return false;
+}
+
 bool is_valid_path(const std::string& path) {
 	
 	if (path.empty())
 		return false;
 
 	struct stat buf;
-	return stat(path.c_str(), &buf) == 0;
+	return (stat(path.c_str(), &buf) == 0);
 }
 
 bool is_valid_file_path(const std::string& path) {
@@ -16,7 +22,7 @@ bool is_valid_file_path(const std::string& path) {
 		return false;
 
 	struct stat buf;
-	return stat(path.c_str(), &buf) == 0 && S_ISREG(buf.st_mode);
+	return (stat(path.c_str(), &buf) == 0 && S_ISREG(buf.st_mode));
 }
 
 bool is_directory(const std::string& path) {
@@ -25,7 +31,7 @@ bool is_directory(const std::string& path) {
 		return false;
 
 	struct stat buf;
-	return stat(path.c_str(), &buf) == 0 && S_ISDIR(buf.st_mode);
+	return (stat(path.c_str(), &buf) == 0 && S_ISDIR(buf.st_mode));
 }
 
 std::string get_file_extension(const std::string& path) {
