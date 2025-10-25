@@ -226,7 +226,7 @@ void	RequestParser::setRequestContext() {
 		ctx._upload_enabled = false;
 
 	std::string upload_dir = config["upload_dir"];
-	if (!upload_dir.empty()) {
+	if (!upload_dir.empty())
 		ctx._upload_dir = upload_dir;
 	else
 		ctx._upload_dir = build_full_path(ctx._document_root, DEFAULT_DIR_NAME);

@@ -248,11 +248,6 @@ bool	RequestProcessor::processFileUpload(PostData& data) {
 		_last_status = E_UNPROCESSABLE_CONTENT;
 		return false;
 	}
-	if (access(dir_path.c_str(), W_OK) != 0) {
-		console::log("[ERROR][UPLOAD DIR] Permission denied", MSG);
-		_last_status = E_FORBIDDEN;
-		return false;
-	}
 
 	data.new_filename = generateFilename(data.filename, _request->ctx._upload_dir);
 	if (!writeFileUpload(data))
