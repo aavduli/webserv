@@ -86,7 +86,7 @@ bool WebservConfig::loadConfig(const std::string& configFile){
 	for (std::map<std::string, LocationConfig>::const_iterator it = locationsConfig.locations.begin();
 		it != locationsConfig.locations.end(); ++it){
 			if (!_validator.validateLocationConfig(it->second)){
-				console::log("Location config error: " + _validator.getLastError(), CONF);
+				console::log("Location " + it->first + "config error: " + _validator.getLastError(), CONF);
 				return false;
 			}
 		}
