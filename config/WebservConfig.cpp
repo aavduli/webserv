@@ -71,7 +71,7 @@ bool WebservConfig::loadConfig(const std::string& configFile){
 	if (lines.empty()) return false;
 
 	if (!_validator.validateSyntax(lines)){
-		std::cerr << "Syntax error : " << _validator.getLastError() << std::endl;
+		console::log("Syntax error: " + _validator.getLastError(), CONF);
 		return false;
 	}
 
@@ -79,14 +79,14 @@ bool WebservConfig::loadConfig(const std::string& configFile){
 	LocationsConfig locationsConfig = parser.parseLocations(lines);
 
 	if (!_validator.validateServerConfig(serverConfig)){
-		std::cerr << "Server config error: " <<_validator.getLastError() <<std::endl;
+		console::log("Server config error: " + _validator.getLastError(), CONF);
 		return false;
 	}
 
 	for (std::map<std::string, LocationConfig>::const_iterator it = locationsConfig.locations.begin();
 		it != locationsConfig.locations.end(); ++it){
 			if (!_validator.validateLocationConfig(it->second)){
-				std::cerr<< "Location config error: "<< _validator.getLastError() << std::endl;
+				console::log("Location config error: " + _validator.getLastError(), CONF);
 				return false;
 			}
 		}

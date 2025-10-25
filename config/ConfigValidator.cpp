@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/15 14:57:26 by jim               #+#    #+#             */
-/*   Updated: 2025/10/12 14:22:25 by jim              ###   ########.fr       */
+/*   Updated: 2025/10/25 15:26:40 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,7 @@ const int ConfigValidator::MIN_PORT;
 const int ConfigValidator::MAX_PORT;
 const size_t ConfigValidator::MAX_DIRECTIVE_LEN;
 
-const int BLOCKINGERROR = 0; //0 nnon strict 1 strict
+const int BLOCKINGERROR = 1; //0 nnon strict 1 strict
 
 ConfigValidator::ConfigValidator(): _lastError(""){}
 ConfigValidator::~ConfigValidator() {}
@@ -64,7 +64,7 @@ bool ConfigValidator::validateBraces(const std::vector<std::string>& lines){
 					std::ostringstream oss117;
 					oss117 << "Extra '}' here :" << lineCounter;
 					setError(oss117.str());
-					console::log(_lastError, CONF);
+					console::log(_lastError, ERROR);
 					return (BLOCKINGERROR ? false : true );
 				}
 			}
@@ -75,7 +75,7 @@ bool ConfigValidator::validateBraces(const std::vector<std::string>& lines){
 		std::ostringstream oss117;
 		oss117 << braceCount << " missing '}' int config file";
 		setError(oss117.str());
-		console::log(_lastError, CONF);
+		console::log(_lastError, ERROR);
 		return (BLOCKINGERROR ? false : true );
 	}
 	return true;
@@ -88,7 +88,7 @@ bool ConfigValidator::validateSyntax(const std::vector<std::string>& lines) {
 		it != lines.end(); ++it) {
 		if (it->length() > MAX_DIRECTIVE_LEN) {
 			setError("Line too long, max: " + toString(MAX_DIRECTIVE_LEN) + " chars");
-			console::log(_lastError, CONF);
+			console::log(_lastError, ERROR);
 			return (BLOCKINGERROR ? false : true );
 		}
 	}
@@ -133,7 +133,7 @@ bool ConfigValidator::validateServerConfig(const ServerConfig& config) {
 	// check mandatory dircrive
 	if (config.directives.find("listen") == config.directives.end()) {
 		setError("Missing required 'listen' directive");
-		console::log(_lastError, CONF);
+		console::log(_lastError, ERROR);
 		return (BLOCKINGERROR ? false : true);
 	}
 
@@ -149,14 +149,14 @@ bool ConfigValidator::validateServerConfig(const ServerConfig& config) {
 			std::string portStr = (parts.size() == 2) ? parts[1] : value;
 			if (!utils.isValidPort(portStr)) {
 				_lastError = "Invalid port: " + portStr;
-				console::log(_lastError, CONF);
+				console::log(_lastError, ERROR);
 				if (BLOCKINGERROR) return false;
 			}
 		}
 		else if (key == "host") {
 			if (!utils.isValidIP(value)) {
 				_lastError = "Invalid IP address: " + value;
-				console::log(_lastError, CONF);
+				console::log(_lastError, ERROR);
 				if (BLOCKINGERROR) return false;
 			}
 		}
@@ -165,7 +165,7 @@ bool ConfigValidator::validateServerConfig(const ServerConfig& config) {
 			for (size_t i = 0; i < methods.size(); i++) {
 				if (!utils.isValidMethod(methods[i])) {
 					_lastError = "Invalid HTTP method: " + methods[i];
-				console::log(_lastError, CONF);
+				console::log(_lastError, ERROR);
 				if (BLOCKINGERROR) return false;
 				}
 			}
@@ -190,13 +190,13 @@ bool ConfigValidator::validateServerConfig(const ServerConfig& config) {
 bool ConfigValidator::validateRoot(const std::string& root){
 	if (!isValidPath(root)){
 		setError("Invalid Root directox: " + root);
-		console::log(_lastError, CONF);
+		console::log(_lastError, ERROR);
 		return (BLOCKINGERROR ? false : true );
 	}
 
 	if (!hasRPerm(root)){
 		setError("Can read the directoy: " + root);
-		console::log(_lastError, CONF);
+		console::log(_lastError, ERROR);
 		return (BLOCKINGERROR ? false : true );
 	}
 	return true;
@@ -213,7 +213,7 @@ bool ConfigValidator::validateSrvName(const std::string& serverName){
 		char c = serverName[i];
 		if (!isalnum(c) && c != '.' && c != '-' && c != '_'){
 			setError("invalid char in srv name: " + std::string(1, c));
-			console::log(_lastError, CONF);
+			console::log(_lastError, ERROR);
 			return (BLOCKINGERROR ? false : true);
 		}
 	}
@@ -228,26 +228,26 @@ bool ConfigValidator::validateErrorParge(const std::string& errorPageLine){
 
 	if (!(iss>>code>>filepath)){
 		setError("Invalid error_page format: Expcetd : 'code filepath'");
-		console::log(_lastError, CONF);
+		console::log(_lastError, ERROR);
 		if (BLOCKINGERROR) return false;
 	}
 
 	if (!isValidNumber(code)){
 		setError("Invalide error code: " + code);
-		console::log(_lastError, CONF);
+		console::log(_lastError, ERROR);
 		if (BLOCKINGERROR) return false;
 	}
 
 	int codeNum = atoi(code.c_str());
 	if (codeNum < 400 || codeNum > 599){ // Todo check error code min max, and if we're gonne use them all
 		setError("Error code out of range (MIN -> MAX to define): " + code);
-		console::log(_lastError, CONF);
+		console::log(_lastError, ERROR);
 		if (BLOCKINGERROR) return false;
 	}
 
 	if (!isValidFile(filepath)){
 		setError("Error page not found: "+ filepath);
-		console::log(_lastError, CONF);
+		console::log(_lastError, ERROR);
 		if (BLOCKINGERROR) return false;
 	}
 
@@ -306,13 +306,13 @@ bool ConfigValidator::validateLocationConfig(const LocationConfig& config){
 bool ConfigValidator::validateLocationPath(const std::string& path){
 	if (path.empty()){
 		setError("Empty location path");
-		console::log(_lastError, CONF);
+		console::log(_lastError, ERROR);
 		if (BLOCKINGERROR) return false;
 	}
 
 	if (path[0] != '/'){
 		setError("Location path must start with /: "+ path);
-		console::log(_lastError, CONF);
+		console::log(_lastError, ERROR);
 		if (BLOCKINGERROR) return false;
 	}
 	return true;
@@ -321,7 +321,7 @@ bool ConfigValidator::validateLocationPath(const std::string& path){
 bool ConfigValidator::validateHTTPMethods(const std::string& methods){
 	if (methods.empty()){
 		setError("should we accept empty method"+ methods ); //todo maybe accept some empty methods
-		console::log(_lastError, CONF);
+		console::log(_lastError, ERROR);
 		if (BLOCKINGERROR) return false;
 	}
 	std::istringstream iss(methods);
@@ -330,7 +330,7 @@ bool ConfigValidator::validateHTTPMethods(const std::string& methods){
 	while(iss>>m){
 		if (m != "GET" && m != "POST" && m != "DELETE" ){ // todo can add more if bonuses
 			setError("Invalid method: "+ m);
-			console::log(_lastError, CONF);
+			console::log(_lastError, ERROR);
 			if (BLOCKINGERROR) return false;
 		}
 	}
@@ -340,14 +340,14 @@ bool ConfigValidator::validateHTTPMethods(const std::string& methods){
 bool ConfigValidator::validateMBS(const std::string& size){
 	if (!isValidNumber(size)){
 		setError("Invalid client max body size format: " +size);
-		console::log(_lastError, CONF);
+		console::log(_lastError, ERROR);
 		if (BLOCKINGERROR) return false;
 	}
 
 	long sizeNum = atol(size.c_str());
 	if (sizeNum <= 0 || sizeNum > 1000000000){ //todo decrease bc 1 gb is kinda overkill see commetn above
 		setError("Client MBS out of range: " + size);
-		console::log(_lastError, CONF);
+		console::log(_lastError, ERROR);
 		if (BLOCKINGERROR) return false;
 	}
 	return true;
@@ -372,7 +372,7 @@ bool ConfigValidator::validateCGIPath(const std::string& cgiPath){
 bool ConfigValidator::validateCGIExtension(const std::string& extensions){
 	if (extensions.empty()){
 		setError("Emtpy CGI Extensions");
-		console::log(_lastError, CONF);
+		console::log(_lastError, ERROR);
 		return false;
 	}
 
@@ -385,14 +385,14 @@ bool ConfigValidator::validateCGIExtension(const std::string& extensions){
 			has_pyhton = true;
 		} else {
 			setError("Unsupported CGI extension: " + ext + "(use '.pt')");
-			console::log(_lastError, CONF);
+			console::log(_lastError, ERROR);
 			if (BLOCKINGERROR) return false;
 		}
 	}
 
 	if (!has_pyhton){
 		setError("No valid python extension found in cgi_ext");
-		console::log(_lastError, CONF);
+		console::log(_lastError, ERROR);
 		if (BLOCKINGERROR) return false;
 	}
 	return true;
@@ -409,20 +409,20 @@ bool ConfigValidator::hasWPerm(const std::string& path) const{
 bool ConfigValidator::validateIndex(const std::string& index) {
 	if (index.empty()) {
 		setError("Empty index file");
-		console::log(_lastError, CONF);
+		console::log(_lastError, ERROR);
 		if (BLOCKINGERROR) return false;
 	}
 
 	if (index.find('.') == std::string::npos) {
 		setError("Index file must have extension: " + index);
-		console::log(_lastError, CONF);
+		console::log(_lastError, ERROR);
 		if (BLOCKINGERROR) return false;
 	}
 
 	if (index.find("..") != std::string::npos ||
 		index.find('/') == 0) {
 		setError("Invalid index file path: " + index);
-		console::log(_lastError, CONF);
+		console::log(_lastError, ERROR);
 		if (BLOCKINGERROR) return false;
 	}
 
@@ -436,28 +436,28 @@ bool ConfigValidator::validateRedirection(const std::string& redir) {
 	std::vector<std::string> parts = utils.split(redir, ' ');
 	if (parts.size() != 2) {
 		setError("Invalid redirection format: expected 'code url'");
-		console::log(_lastError, CONF);
+		console::log(_lastError, ERROR);
 		if (BLOCKINGERROR) return false;
 	}
 
 	// redirection arrives only when code
 	if (!isValidNumber(parts[0])) {
 		setError("Invalid redirection code: " + parts[0]);
-		console::log(_lastError, CONF);
+		console::log(_lastError, ERROR);
 		if (BLOCKINGERROR) return false;
 	}
 
 	int code = std::atoi(parts[0].c_str());
 	if (code != 301 && code != 302) {
 		setError("Unsupported redirection code (only 301, 302): " + parts[0]);
-		console::log(_lastError, CONF);
+		console::log(_lastError, ERROR);
 		if (BLOCKINGERROR) return false;
 	}
 
 	// url cant be mepty
 	if (parts[1].empty()) {
 		setError("Empty redirection URL");
-		console::log(_lastError, CONF);
+		console::log(_lastError, ERROR);
 		if (BLOCKINGERROR) return false;
 	}
 
