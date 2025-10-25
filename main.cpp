@@ -3,8 +3,6 @@
 #include "config/WebservConfig.hpp"
 #include "cgi/CgiExec.hpp"
 
-const bool PRINTCONFIG = true;
-
 int main(int ac, char **av) {
 
 	console::openFile();
