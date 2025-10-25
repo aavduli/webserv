@@ -42,7 +42,7 @@ bool RequestValidator::validateVersion() {
 	oss << _request->getHttpVersionMajor() << "." << _request->getHttpVersionMinor();
 	const std::string& version = oss.str();
 	if (version != "1.1" && version != "1.0") {
-		console::log("[ERROR][REQUEST VALIDATOR] Unsupported HTTP version", MSG);
+		console::log("[ERROR][VALIDATION] Unsupported HTTP version", MSG);
 		_last_status = E_UNSUPPORTED_VERSION;
 		return false;
 	}
@@ -63,7 +63,7 @@ bool RequestValidator::validateHost() {
 			uri.setHost(tmp_host);
 	}
 	if (!uri.getHost().empty() && uri.getHost().compare(config_host) && uri.getHost().compare(_config.getServerName())) {
-		console::log("[ERROR][REQUEST VALIDATOR] Invalid Host", MSG);
+		console::log("[ERROR][VALIDATION] Invalid Host", MSG);
 		_last_status = E_BAD_REQUEST;
 		return false;
 	}
@@ -87,12 +87,12 @@ bool RequestValidator::validatePort() {
 			char* endptr;
 			long port_value = std::strtol(header_port.c_str(), &endptr, 10);
 			if (*endptr != '\0' || port_value < 1 || port_value > 65535) {
-				console::log("[ERROR][REQUEST VALIDATOR] Invalid port value", MSG);
+				console::log("[ERROR][VALIDATION] Invalid port value", MSG);
 				_last_status = E_BAD_REQUEST;
 				return false;
 			}
 			if (static_cast<int>(port_value) != config_port) {
-				console::log("[ERROR][REQUEST VALIDATOR] Request port doesn't match server config", MSG);
+				console::log("[ERROR][VALIDATION] Request port doesn't match server config", MSG);
 				_last_status = E_BAD_REQUEST;
 				return false;
 			}
@@ -119,7 +119,7 @@ bool RequestValidator::validateMethod() {
 		if (method == *it)
 			return true;
 	}
-	console::log("[ERROR][REQUEST VALIDATOR] Invalid request method", MSG);
+	console::log("[ERROR][VALIDATION] Invalid request method", MSG);
 	_last_status = E_METHOD_NOT_ALLOWED;
 	return false;
 }
@@ -130,7 +130,7 @@ bool RequestValidator::validatePath() {
 	const std::string& path = uri.getPath();
 
 	if (contains_traversal(path)) {
-		console::log("[ERROR][REQUEST VALIDATOR] URI path attempts traversal", MSG);
+		console::log("[ERROR][VALIDATION] URI path attempts traversal", MSG);
 		_last_status = E_BAD_REQUEST;
 		return false;
 	}
@@ -143,16 +143,16 @@ bool RequestValidator::validatePath() {
 	
 	if (!is_valid_path(final_path)) {
 		if (!is_upload_post) {
-			console::log("[ERROR][REQUEST VALIDATOR] Invalid path: " + final_path, MSG);
+			console::log("[ERROR][VALIDATION] Invalid path: " + final_path, MSG);
 			_last_status = E_NOT_FOUND;
 			return false;
 		}
-		console::log("[INFO][REQUEST VALIDATOR] Upload POST to non-existent path, will be created", MSG);
+		console::log("[INFO][VALIDATION] Upload POST to non-existent path, will be created", MSG);
 		final_path = _request->ctx._upload_dir;
 	}
 	
 	if (!is_within_root(final_path, _request->ctx._document_root)) {
-		console::log("[ERROR][REQUEST VALIDATOR] URI path escapes document root", MSG);
+		console::log("[ERROR][VALIDATION] URI path escapes document root", MSG);
 		_last_status = E_BAD_REQUEST;
 		return false;
 	}
@@ -169,7 +169,7 @@ bool RequestValidator::validateContentLength() {
 
 	size_t client_max_body_size = _config.getMaxContentLength();
 	if (body_size > client_max_body_size) {
-		console::log("[ERROR][REQUEST VALIDATOR] Body size too large", MSG);
+		console::log("[ERROR][VALIDATION] Body size too large", MSG);
 		_last_status = E_PAYLOAD_TOO_LARGE;
 		return false;
 	}
@@ -194,7 +194,7 @@ bool RequestValidator::validateHeaderLimits() {
 
 	size_t headers_size = _request->getHeadersSize();
 	if (headers_size > MAX_HEADERS_SIZE) {
-		console::log("[ERROR][REQUEST VALIDATOR] Header size too large", MSG);
+		console::log("[ERROR][VALIDATION] Header size too large", MSG);
 		_last_status = E_HEADER_TOO_LARGE;
 		return false;
 	}

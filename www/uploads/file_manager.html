@@ -9,7 +9,7 @@
 	
 	<div class="form-section">
 		<h2>Upload file</h2>
-		<form action="/uploads" method="POST" enctype="multipart/form-data">
+		<form action="/files" method="POST" enctype="multipart/form-data">
 			<input type="file" name="file"><br>
 			<button type="submit">Upload</button>
 		</form>
@@ -24,7 +24,7 @@
 	<div class="form-section">
 		<h2>Delete file(s)</h2>
 		<p><strong>Enter the exact filename to delete from uploads folder:</strong></p>
-		<form action="/uploads/files" method="POST">
+		<form action="/files" method="POST">
 			<input type="hidden" name="_method" value="DELETE">
 			<label>Filename:</label><br>
 			<input type="text" name="filename" placeholder="example.txt" required><br><br>

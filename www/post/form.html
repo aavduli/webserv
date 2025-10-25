@@ -27,15 +27,7 @@
     </div>
 
     <div class="form-section">
-        <h2>2. Simple File Upload</h2>
-        <form action="/uploads" method="POST" enctype="multipart/form-data">
-            <input type="file" name="upload_file"><br>
-            <button type="submit">Submit</button>
-        </form>
-    </div>
-
-    <div class="form-section">
-        <h2>3. Multipart Form</h2>
+        <h2>Multipart Form</h2>
         <form action="/success" method="POST" enctype="multipart/form-data">
             <label>Description:</label><br>
             <input type="text" name="description" placeholder="File description"><br>
@@ -46,17 +38,7 @@
     </div>
 
     <div class="form-section">
-        <h2>4. Multiple Files Upload</h2>
-        <form action="/uploads" method="POST" enctype="multipart/form-data">
-            <input type="file" name="file1"><br>
-            <input type="file" name="file2"><br>
-            <input type="file" name="file3"><br>
-            <button type="submit">Submit</button>
-        </form>
-    </div>
-
-    <div class="form-section">
-        <h2>5. Empty Form Test</h2>
+        <h2>Empty Form Test</h2>
         <form action="/success" method="POST">
             <p>This form has no fields to test empty POST body handling.</p>
             <button type="submit">Submit Empty</button>

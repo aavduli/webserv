@@ -8,6 +8,7 @@ class WebservConfig;
 
 struct PostData {
 	std::string		filename;
+	std::string		new_filename;
 	std::string		content;
 	size_t			bytes_written;	// to remove
 	std::string		content_type;
@@ -28,7 +29,6 @@ struct RequestContext {
 		bool								_has_redirect;
 		bool								_upload_enabled;
 		std::string							_upload_dir;
-		bool								_has_upload_dir;
 };
 
 class HttpRequest : public HttpMessage {

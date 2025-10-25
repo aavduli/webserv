@@ -5,6 +5,7 @@
 #include <sstream>
 #include <limits>
 #include <sys/stat.h>
+#include <unistd.h>
 #include <string>
 #include <vector>
 #include <algorithm>
@@ -42,6 +43,7 @@ bool	is_text_str(const std::string& str);
 bool	is_hex_digit(char c);
 
 // Files and paths
+bool				is_accessible_path(const std::string& path);
 bool				is_valid_path(const std::string& path);
 bool				is_valid_file_path(const std::string& path);
 bool				is_directory(const std::string& path);

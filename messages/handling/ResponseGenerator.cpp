@@ -55,13 +55,13 @@ void ResponseGenerator::generatePostResponse() {
 		for (std::map<std::string, PostData>::const_iterator it = post_data.begin(); it != post_data.end(); ++it) {
 			html << "<strong>" << it->first << ":</strong> ";
 			if (it->second.is_file)
-				html << "File uploaded: " << it->second.filename;
+				html << it->second.new_filename;
 			else
 				html << it->second.content;
 			html << "<br>";
 		}
 	}
-	html << "<br><a href=\"/form\">Back to forms</a></p>";
+	html << "<br><a href=\"/browse\">Browse files</a></p>";
 	html << "</body></html>";
 
 	_response->setStatus(E_OK);

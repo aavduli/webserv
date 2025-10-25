@@ -236,33 +236,39 @@ bool	RequestProcessor::processFileUpload(PostData& data) {
 	}
 
 	std::string dir_path = _request->ctx._upload_dir;
-	if (_request->ctx._has_upload_dir == false && mkdir(dir_path.c_str(), 0755) == -1) {
+	if (is_accessible_path(dir_path)) {
+		if (access(dir_path.c_str(), W_OK) != 0) {
+			console::log("[ERROR][UPLOAD DIR] Permission denied", MSG);
+			_last_status = E_FORBIDDEN;
+			return false;
+		}
+	}
+	else if (mkdir(dir_path.c_str(), 0755) == -1) {
 		console::log("[ERROR][UPLOAD DIR] Failed to create directory " + dir_path, MSG);
 		_last_status = E_UNPROCESSABLE_CONTENT;
 		return false;
 	}
-	if (access(dir_path.c_str(), W_OK) != 0) {
-		console::log("[ERROR][UPLOAD DIR] Permission denied", MSG);
-		_last_status = E_FORBIDDEN;
-		return false;
-	}
 
-	const std::string& filename = generateFilename(data.filename);
-	if (!writeFileUpload(filename, data))
+	data.new_filename = generateFilename(data.filename, _request->ctx._upload_dir);
+	if (!writeFileUpload(data))
 		return false;
+	console::log("[INFO][POST] File upload			OK", MSG);
 	_last_status = E_OK;
 	return true;
 }
 
-bool	RequestProcessor::writeFileUpload(const std::string& filename, PostData& file_data) {
+bool	RequestProcessor::writeFileUpload(PostData& file_data) {
 
-	if (filename.empty())
+	std::string filename = file_data.new_filename;
+	if (filename.empty()) {
+		_last_status = E_BAD_REQUEST;
 		return false;
+	}
 
 	std::string full_path = build_full_path(_request->ctx._upload_dir, filename);
 	std::ofstream file(full_path.c_str(), std::ios::binary);
 	if (!file.is_open()) {
-		console::log("[ERROR][WRITE UPLOAD FILE] Unable to open file " + filename, MSG);
+		console::log("[ERROR][WRITE FILE] Unable to open file " + filename, MSG);
 		_last_status = findErrorStatus(full_path);
 		return false;
 	}
@@ -323,31 +329,39 @@ ssize_t	write_on_fd(const int fd, const std::string& content, size_t& pos, size_
 	return bytes_written;
 }
 
-std::string	generateFilename(const std::string& wanted_name) {
+std::string	generateFilename(const std::string& wanted_name, const std::string& upload_dir) {
 
 	std::string filename;
 	if (wanted_name.empty())
 		filename = "file";
 	else if (contains_traversal(wanted_name)) {
-		console::log("[ERROR][UPLOAD FILE] Unsafe file name " + wanted_name, MSG);
+		console::log("[ERROR][UPLOAD FILE] Unsafe file name: " + wanted_name, MSG);
 		return "";
 	}
 	else
 		filename = wanted_name;
-
-	time_t t = time(0);
-	struct tm* gmt = localtime(&t);
-	std::stringstream now;
-	now << gmt->tm_year + 1900;
-	now << gmt->tm_mon + 1;
-	now << gmt->tm_mday;
-	now << gmt->tm_hour;
-	now << gmt->tm_min;
-	now << gmt->tm_sec;
-	std::string timestamp = "_" + now.str();
-
-	size_t dot = filename.find_last_of('.');
-	filename = filename.insert(dot, timestamp);
 	filename = canonicalize_path(filename);
-	return filename;
+
+	std::string full_name = build_full_path(upload_dir, filename);
+	if (!is_accessible_path(full_name))
+		return filename;
+	
+	std::string extension = get_file_extension(filename);
+	std::string base_name = filename.substr(0, filename.size() - (extension.size() + 1));
+	std::string unique_name;
+
+	int counter = 1;
+	for (; counter < MAX_FILENAME_COUNTER; counter++) {
+		unique_name = base_name + nb_to_string(counter);
+		if (!extension.empty())
+			unique_name = unique_name + "." + extension;
+		full_name = build_full_path(upload_dir, unique_name);
+		if (!is_accessible_path(full_name))
+			break;
+	}
+	if (counter == MAX_FILENAME_COUNTER) {
+		console::log("[ERROR][UPLOAD FILE] More than 9999 files with same name...", MSG);
+		return "";
+	}
+	return unique_name;
 }

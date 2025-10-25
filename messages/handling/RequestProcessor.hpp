@@ -15,6 +15,9 @@
 
 #define DEFAULT_BUFFER_SIZE 8192
 
+// namespace
+const int MAX_FILENAME_COUNTER = 10000;
+
 class RequestProcessor {
 
 	private:
@@ -33,7 +36,7 @@ class RequestProcessor {
 
 		bool			processFileUpload(PostData& value);
 		bool			configUploadDir();
-		bool			writeFileUpload(const std::string& filename, PostData& file_data);
+		bool			writeFileUpload(PostData& file_data);
 
 	public:
 		RequestProcessor(const WebservConfig& config, HttpRequest* request);
@@ -47,6 +50,6 @@ class RequestProcessor {
 };
 
 ssize_t			write_on_fd(const int fd, const std::string& content, size_t &pos, size_t buf_size);
-std::string		generateFilename(const std::string& og_name);
+std::string		generateFilename(const std::string& wanted_name, const std::string& upload_dir);
 
 #endif // REQUESTPROCESSOR_HPP
