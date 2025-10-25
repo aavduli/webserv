@@ -33,6 +33,8 @@ public:
 	static void log(const std::string& log, Typelog type);
 	static void log(const std::string& log, const char* errStr, Typelog type);
 	static void log(const std::string& log, int nbr, Typelog type);
+
+	static void clearLogFile(Typelog type);
 };
 
 #endif

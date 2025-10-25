@@ -11,6 +11,7 @@
 /* ************************************************************************** */
 
 #include "WebservConfig.hpp"
+#include "../console/console.hpp"
 #include <cstdlib>
 #include <string>
 #include <sstream>
@@ -22,6 +23,7 @@ WebservConfig::WebservConfig(): _isValid(false){}
 WebservConfig::WebservConfig(const std::string& configFile):
 	_configFile(configFile), _isValid(false)
 {
+	console::log("config file = " +  _configFile, CONF);
 	loadConfig(configFile);
 }
 
@@ -61,6 +63,7 @@ std::string WebservConfig::getDirective(const std::string& directive)const{
 }
 
 bool WebservConfig::loadConfig(const std::string& configFile){
+	_configFile = configFile;
 	FileReader reader;
 	ConfigParser parser;
 
@@ -294,4 +297,31 @@ std::vector<std::string> WebservConfig::getCgiExtension(const std::string& locat
 		}
 	}
 	return extension;
+}
+
+void WebservConfig::printConfig() const {
+	console::log("====Configuration===", CONF);
+	console::log("config file: " + _configFile, CONF);
+	console::log("", CONF);
+
+	console::log("===Server configuration===", CONF);
+	for (std::map<std::string, std::string>::const_iterator it = _server.begin(); it != _server.end(); ++it){
+		console::log("   "+it->first + ": " +it->second, CONF);
+	}
+	console::log("", CONF);
+
+	if (!_locations.empty()){
+		console::log("==Locations==", CONF);
+		for (std::map<std::string, std::map<std::string, std::string> >::const_iterator locIt = _locations.begin();
+			locIt != _locations.end(); ++locIt){
+				console::log("location: " + locIt->first, CONF);
+				for (std::map<std::string, std::string>::const_iterator dirIt = locIt->second.begin();
+					dirIt != locIt->second.end(); ++dirIt){
+						console::log("    " + dirIt->first + ": "+dirIt->second, CONF);
+					}
+					console::log("", CONF);
+			}
+	}
+	console::log("===========", CONF);
+
 }

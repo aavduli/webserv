@@ -65,3 +65,13 @@ void console::log(const std::string& log, int nbr, Typelog type) {
 	else
 		std::cerr << "[console] Unknown log type" << std::endl;
 }
+
+void console::clearLogFile(Typelog type){
+	if (type == CONF) {
+		_conf.close();
+		_conf.open("logs/conf.log", std::ios::out | std::ios::trunc);
+		if (!_conf) std::cerr << "[Console] failed to open logs/conf.log" << std::endl;
+	}
+	//@aavudli you can add yours
+	//@ahanzi you can add yours
+}
