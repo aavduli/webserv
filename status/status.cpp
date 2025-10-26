@@ -3,7 +3,7 @@
 std::string	status_msg(Status e) {
 	switch (e) {
 		case E_INIT: return "Initialization";
-		case E_OK: return "Success";
+		case E_OK: return "OK";
 		case E_REDIRECT_PERMANENT: return "Moved Permanently";
 		case E_REDIRECT_TEMPORARY: return "Found (Moved Temporarily)";
 		case E_BAD_REQUEST: return "Bad Request";
