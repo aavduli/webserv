@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/22 15:29:22 by jim               #+#    #+#             */
-/*   Updated: 2025/09/22 16:58:44 by jim              ###   ########.fr       */
+/*   Updated: 2025/10/26 11:12:20 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,11 +17,15 @@
 #include <cstdlib>
 
 std::string ParsingUtils::trim(const std::string& str) const {
-	size_t start = str.find_first_not_of("\t\n\r");
+	std::string cleaned = str;
+	size_t commentPos = cleaned.find('#');
+	if (commentPos != std::string::npos)
+		cleaned = cleaned.substr(0, commentPos);
+	size_t start = cleaned.find_first_not_of(" \t\n\r");
 	if (start == std::string::npos) return "";
 
-	size_t end = str.find_last_not_of("\r\t\n");
-	return str.substr(start, end - start + 1);
+	size_t end = cleaned.find_last_not_of(" \t\n\r");
+	return cleaned.substr(start, end - start + 1);
 }
 
 std::vector<std::string> ParsingUtils::split(const std::string& str, char delimiter) const {
