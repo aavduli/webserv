@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/15 14:57:26 by jim               #+#    #+#             */
-/*   Updated: 2025/10/25 15:26:40 by jim              ###   ########.fr       */
+/*   Updated: 2025/10/26 11:13:29 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -384,7 +384,7 @@ bool ConfigValidator::validateCGIExtension(const std::string& extensions){
 		if (ext == ".py"){
 			has_pyhton = true;
 		} else {
-			setError("Unsupported CGI extension: " + ext + "(use '.pt')");
+			setError("Unsupported CGI extension: " + ext + "(use '.py')");
 			console::log(_lastError, ERROR);
 			if (BLOCKINGERROR) return false;
 		}
