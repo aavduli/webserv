@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/15 10:45:14 by jim               #+#    #+#             */
-/*   Updated: 2025/09/29 16:31:52 by jim              ###   ########.fr       */
+/*   Updated: 2025/10/26 15:03:06 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,7 +56,7 @@ ServerConfig ConfigParser::parseServer(const std::vector<std::string>& lines) co
 						config.directives[directive.first] = directive.second;
 					}
 				}
-			}
+			}break;
 
 			case IN_LOCATION_BLOCK: // TODO
 				break;

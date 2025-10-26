@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/07 15:20:30 by jim               #+#    #+#             */
-/*   Updated: 2025/10/20 15:01:40 by jim              ###   ########.fr       */
+/*   Updated: 2025/10/26 17:10:10 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 #include <sys/wait.h>
 #include <cstdlib>
 #include <cstring>
+#include <cerrno>
 #include <ctime>
 #include <signal.h>
 #include "../console/console.hpp"
@@ -151,7 +152,26 @@ std::string CgiExec::execute(const HttpRequest* request){
 	close(stdin_pipefd[0]);
 
 	if (request->getMethod() == "POST" && !request->getBody().empty()){
-		write(stdin_pipefd[1], request->getBody().c_str(), request->getBody().size());}
+		const char* data = request->getBody().c_str();
+		size_t remain = request->getBody().size();
+
+		while(remain > 0){
+			ssize_t written = write(stdin_pipefd[1], data, remain);
+			if (written < 0){
+				if (errno == 0){
+					console::log("[CGI] child process closed stdin (EPIPE)", ERROR);
+					break;
+				}
+				console::log("[CGI] write error to child stdin", ERROR);
+				break;
+			}
+			if (written == 0){
+				break; // in case of
+			}
+			data += written;
+			remain -= written;
+		}
+	}
 	close(stdin_pipefd[1]);
 
 	//timeout

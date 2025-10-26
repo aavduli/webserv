@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/22 15:29:22 by jim               #+#    #+#             */
-/*   Updated: 2025/10/26 11:12:20 by jim              ###   ########.fr       */
+/*   Updated: 2025/10/26 15:17:10 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,12 @@
 #include <algorithm>
 #include <cctype>
 #include <cstdlib>
+#include <cerrno>
+#include <climits>
+
+#ifndef SIZE_MAX
+# define SIZE_MAX ((size_t) -1)
+#endif
 
 std::string ParsingUtils::trim(const std::string& str) const {
 	std::string cleaned = str;
@@ -62,8 +68,10 @@ bool ParsingUtils::isValidIP(const std::string& ip)const{
 		for (size_t j = 0; j < parts[i].length(); j++){
 			if (!std::isdigit(parts[i][j])) return false;
 		}
-
-		int num = std::atoi(parts[i].c_str());
+		char* endptr;
+		errno = 0;
+		long num = std::strtol(parts[i].c_str(), &endptr, 10);
+		if (errno != 0 || *endptr != '\0' || num < 0 || num > 255) return false;
 		if (num < 0 || num > 255) return false;
 
 		if (parts[i].length()> 1 && parts[i][0] == '0') return false;
@@ -77,7 +85,10 @@ bool ParsingUtils::isValidPort(const std::string& port)const{
 	for (size_t i = 0; i < port.length(); i++){
 		if (!std::isdigit(port[i])) return false;
 	}
-	int num = std::atoi(port.c_str());
+	char *endptr;
+	errno = 0;
+	long num = std::strtol(port.c_str(), &endptr, 10);
+	if (errno != 0 || *endptr != '\0') return false;
 	return (num >= 1 && num <= 65535);
 }
 
@@ -111,6 +122,11 @@ size_t ParsingUtils::parseSize(const std::string& sizeStr) const{
 		}
 	}
 
-	size_t value = std::atoi(numPart.c_str());
+	char* endptr;
+	errno = 0;
+	unsigned long value = std::strtoul(numPart.c_str(), &endptr, 10);
+	if (errno != 0 || *endptr != '\0') return 0;
+	if (value > SIZE_MAX / multiplier) return 0;
+
 	return value * multiplier;
 }
