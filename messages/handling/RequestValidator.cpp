@@ -27,6 +27,7 @@ bool RequestValidator::validateRequest() {
 	if (!validateMethod()) return false;
 	if (!validatePath()) return false;
 	if (!validateContentLength()) return false;
+	if (!validateContentType()) return false;
 	if (!validateHeaderLimits()) return false;
 	if (!validateRedirection()) return false;
 	if (_last_status == E_INIT)
@@ -53,7 +54,15 @@ bool RequestValidator::validateHost() {
 
 	RequestUri	uri = _request->getUri();
 	std::string config_host = _config.getHost();
-	
+
+	if (_request->getHttpVersionMajor() == "1" && _request->getHttpVersionMinor() == "1") {
+		const std::vector<std::string>& h_values = _request->getHeaderValues("Host");
+		if (h_values.empty()) {
+			console::log("[ERROR][POST] Missing \"Host\" header", MSG);
+			_last_status = E_BAD_REQUEST;
+			return false;
+		}
+	}
 	if (uri.getHost().empty() && !_host_header.empty()) {
 		std::string tmp_host = _host_header.at(0);
 		size_t colon = tmp_host.find(":");
@@ -129,7 +138,7 @@ bool RequestValidator::validatePath() {
 	RequestUri	uri = _request->getUri();
 	const std::string& path = uri.getPath();
 
-	if (contains_traversal(path)) {
+	if (contains_unsafe_chars(path)) {
 		console::log("[ERROR][VALIDATION] URI path attempts traversal", MSG);
 		_last_status = E_BAD_REQUEST;
 		return false;
@@ -153,7 +162,7 @@ bool RequestValidator::validatePath() {
 	
 	if (!is_within_root(final_path, _request->ctx._document_root)) {
 		console::log("[ERROR][VALIDATION] URI path escapes document root", MSG);
-		_last_status = E_BAD_REQUEST;
+		_last_status = E_FORBIDDEN;
 		return false;
 	}
 	uri.setEffectivePath(final_path);
@@ -175,17 +184,31 @@ bool RequestValidator::validateContentLength() {
 	}
 
 	const std::vector<std::string>& content_length = _request->getHeaderValues("Content-Length");
-	if (content_length.empty() || content_length[0].empty()) {
+	if (_request->getMethod() == "POST" && (content_length.empty() || content_length[0].empty())) {
 		console::log("[ERROR][REQUEST PARSER] Missing \"Content-Length\" header", MSG);
 		_last_status = E_LENGTH_REQUIRED;
 		return false;
 	}
+	if (!content_length.empty()) {
+		size_t cl = to_size_t(content_length[0]);
+		if (cl != body_size) {
+			console::log("[ERROR][REQUEST PARSER] Invalid \"Content-Length\" header value " + content_length[0], MSG);
+			_last_status = E_BAD_REQUEST;
+			return false;
+		}
+	}
+	return true;
+}
 
-	size_t cl = to_size_t(content_length[0]);
-	if (cl != body_size) {
-		console::log("[ERROR][REQUEST PARSER] Invalid \"Content-Length\" header value " + content_length[0], MSG);
-		_last_status = E_BAD_REQUEST;
-		return false;
+bool RequestValidator::validateContentType() {
+
+	if (_request->getMethod() == "POST") {
+		const std::vector<std::string>& ct_values = _request->getHeaderValues("Content-Type");
+		if (ct_values.empty()) {
+			console::log("[ERROR][POST] Missing \"Content-Length\" header", MSG);
+			_last_status = E_BAD_REQUEST;
+			return false;
+		}
 	}
 	return true;
 }
