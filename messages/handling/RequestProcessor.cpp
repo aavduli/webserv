@@ -252,7 +252,7 @@ bool	RequestProcessor::processFileUpload(PostData& data) {
 	data.new_filename = generateFilename(data.filename, _request->ctx._upload_dir);
 	if (!writeFileUpload(data))
 		return false;
-	console::log("[INFO][POST] File upload			OK", MSG);
+	console::log("[INFO][POST] File upload				OK", MSG);
 	_last_status = E_OK;
 	return true;
 }
@@ -294,9 +294,14 @@ bool	RequestProcessor::processDeleteRequest() {
 	}
 	else
 		target_path = _request->getUri().getEffectivePath();
-
-	if (target_path.find("files") == std::string::npos) {
-		console::log("[ERROR][DELETE] Forbidden: File must be in files directory", MSG);
+// 
+// 	if (target_path.find("files") == std::string::npos) {
+// 		console::log("[ERROR][DELETE] Forbidden: File must be in files directory", MSG);
+// 		_last_status = E_FORBIDDEN;
+// 		return false;
+// 	}
+	if (!is_within_root(target_path, _request->ctx._document_root)) {
+		console::log("[ERROR][VALIDATION] Path escapes document root", MSG);
 		_last_status = E_FORBIDDEN;
 		return false;
 	}
@@ -334,7 +339,7 @@ std::string	generateFilename(const std::string& wanted_name, const std::string& 
 	std::string filename;
 	if (wanted_name.empty())
 		filename = "file";
-	else if (contains_traversal(wanted_name)) {
+	else if (contains_unsafe_chars(wanted_name)) {
 		console::log("[ERROR][UPLOAD FILE] Unsafe file name: " + wanted_name, MSG);
 		return "";
 	}
