@@ -61,7 +61,7 @@ void ResponseGenerator::generatePostResponse() {
 			html << "<br>";
 		}
 	}
-	html << "<br><a href=\"/browse\">Browse files</a></p>";
+	html << "<br><a href=\"/\">Back to homepage</a></p>\n";
 	html << "</body></html>";
 
 	_response->setStatus(E_OK);
@@ -79,7 +79,7 @@ void ResponseGenerator::generateDeleteResponse() {
 	html << "<body>\n";
 	html << "<h1>Success!</h1>\n";
 	html << "<p>File <strong>" << path << "</strong> was successfully removed.</p>";
-	html << "<br><a href=\"/\">Back to home</a></p>";
+	html << "<br><a href=\"/\">Back to homepage</a></p>\n";
 	html << "</body></html>";
 
 	_response->setStatus(E_OK);
@@ -232,7 +232,7 @@ std::string	ResponseGenerator::generateDefaultErrorHTML() {
 	html << "<html><head><title>" << getLastStatus() << " - " << status_msg(_response->getStatus()) << "</title></head>\n";
 	html << "<body><h1>" << getLastStatus() << " - " << status_msg(_response->getStatus()) << "</h1>\n";
 	html << "<p>Very sad.</p>";
-	html << "<p><a href=\"/\">Return to homepage</a></p>\n";
+	html << "<p><a href=\"/\">Back to homepage</a></p>\n";
 	html << "</body></html>";
 	return html.str();
 }
