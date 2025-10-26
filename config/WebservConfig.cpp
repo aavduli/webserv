@@ -17,6 +17,8 @@
 #include <sstream>
 #include "ParsingUtils.hpp"
 #include <sstream>
+#include <cstdlib>
+#include <cerrno>
 
 WebservConfig::WebservConfig(): _isValid(false){}
 
@@ -56,6 +58,8 @@ std::string WebservConfig::getConfigFile() const{
 	return _configFile;
 }
 
+
+
 //getDirective
 std::string WebservConfig::getDirective(const std::string& directive)const{
 	std::map<std::string, std::string>::const_iterator it = _server.find(directive);
@@ -92,6 +96,28 @@ bool WebservConfig::loadConfig(const std::string& configFile){
 		}
 
 	_server = serverConfig.directives;
+
+	//adding multpiple ports
+	_listen_ports.clear();
+
+	for (size_t i = 0; i < serverConfig.listen_ports.size(); i++){
+		std::string listen = serverConfig.listen_ports[i];
+		std::vector<std::string> parts = _utils.split(listen, ':');
+
+		char* endptr;
+		long port;
+
+		if (parts.size() == 2){
+			port = std::strtol(parts[1].c_str(), &endptr, 10); //foarmat "host:port"
+		}else{
+			port = std::strtol(listen.c_str(), &endptr, 10);//format "port"
+		}
+
+		if (port > 0 && port <= 65535){
+			_listen_ports.push_back(static_cast<int>(port));
+		}
+	}
+
 	_locations = convertToOldFormat(locationsConfig);
 	_isValid = true;
 	return _isValid;
@@ -324,4 +350,9 @@ void WebservConfig::printConfig() const {
 	}
 	console::log("===========", CONF);
 
+}
+
+
+std::vector<int> WebservConfig::getAllPorts() const {
+	return _listen_ports;
 }

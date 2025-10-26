@@ -39,9 +39,20 @@ int main(int ac, char **av) {
 		console::log("config loaded succeffulsy", CONF);
 		config.printConfig();
 	}
+
+
 	std::string portStr = config.getDirective("listen");
-	int port = atoi(portStr.c_str());
+	int port = std::atoi(portStr.c_str());
 	server serv(port);
+	/* =================Pour Avdyl==============
+	desole mon copain aavduli :(
+	faudra changer :
+		le const server, doit accepter std::vector<int>, dedans se trouve la lsite des ports + creer plusieurs socket .. i guess ?
+	replace the 3 lines "au dessus" with :
+
+	std::vector<int> ports = config.getAllPorts();
+	servrver.serv(ports);
+	*/
 	serv.serverManager(config);
 	console::closeFile();
 	return 0;

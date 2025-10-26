@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/15 10:45:14 by jim               #+#    #+#             */
-/*   Updated: 2025/10/26 15:03:06 by jim              ###   ########.fr       */
+/*   Updated: 2025/10/26 17:38:56 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,6 +41,9 @@ ServerConfig ConfigParser::parseServer(const std::vector<std::string>& lines) co
 				}
 				std::pair<std::string, std::string> directive = parseDirective(line);
 				if (!directive.first.empty()){
+					if (directive.first == "listen"){
+						config.listen_ports.push_back(directive.second);
+					}
 					if (directive.first == "error_page"){
 						std::istringstream iss (directive.second);
 						std::string code;
