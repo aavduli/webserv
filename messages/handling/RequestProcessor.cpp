@@ -317,7 +317,7 @@ bool	RequestProcessor::processDeleteRequest() {
 		_last_status = E_INTERNAL_SERVER_ERROR;
 		return false;
 	}
-	console::log("[INFO][DELETE] File deleted: " + target_path, MSG);
+	console::log("[INFO][DELETE] File deleted			OK", MSG);
 	_last_status = E_OK;
 	return true;
 }
