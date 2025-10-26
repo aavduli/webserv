@@ -10,8 +10,8 @@
 
 #include <sys/stat.h>
 
-#define MAX_URI_LENGTH 8000
-#define MAX_HEADERS_SIZE 8000
+const size_t MAX_URI_LENGTH = 2048;
+const size_t MAX_HEADERS_SIZE = 8192;
 
 class RequestValidator {
 

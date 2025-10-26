@@ -17,7 +17,7 @@ void		MessageHandler::setLastStatus(Status status) {_last_status = status;}
 
 std::string	handle_messages(const WebservConfig& config, const std::string &raw_request) {
 
-	console::log("=============[NEW REQUEST]=============", MSG);
+	console::log("========================================", MSG);
 
 	HttpRequest			request;
 	MessageHandler		handler(config, &request);
@@ -31,10 +31,7 @@ std::string	handle_messages(const WebservConfig& config, const std::string &raw_
 			handler.processRequest();
 	}
 	handler.generateResponse();
-
 	std::string complete_response = handler.serializeResponse();
-	console::log("[DEBUG] Response length: " + nb_to_string(complete_response.length()), MSG);
-
 	return complete_response;
 }
 
@@ -52,11 +49,9 @@ bool	MessageHandler::parseRequest(const std::string& raw_request) {
 }
 
 bool	MessageHandler::validateRequest() {
-
+	
 	RequestValidator	validator(_config, _request);
-
-	if (!validator.validateRequest())
-
+	
 	if (validator.validateRequest()) {
 		_last_status = validator.getLastStatus();
 		return true;
@@ -80,7 +75,7 @@ void MessageHandler::processRequest() {
 }
 
 void MessageHandler::generateResponse() {
-
+	
 	ResponseGenerator	generator(_config, _request, &_response, _last_status);
 
 	generator.generateResponse();

@@ -1,13 +1,19 @@
 #include "Parsing.hpp"
 #include "../console/console.hpp"
 
+bool is_accessible_path(const std::string& path) {
+	if (access(path.c_str(), F_OK) == 0)
+		return true;
+	return false;
+}
+
 bool is_valid_path(const std::string& path) {
 	
 	if (path.empty())
 		return false;
 
 	struct stat buf;
-	return stat(path.c_str(), &buf) == 0;
+	return (stat(path.c_str(), &buf) == 0);
 }
 
 bool is_valid_file_path(const std::string& path) {
@@ -16,7 +22,7 @@ bool is_valid_file_path(const std::string& path) {
 		return false;
 
 	struct stat buf;
-	return stat(path.c_str(), &buf) == 0 && S_ISREG(buf.st_mode);
+	return (stat(path.c_str(), &buf) == 0 && S_ISREG(buf.st_mode));
 }
 
 bool is_directory(const std::string& path) {
@@ -25,7 +31,7 @@ bool is_directory(const std::string& path) {
 		return false;
 
 	struct stat buf;
-	return stat(path.c_str(), &buf) == 0 && S_ISDIR(buf.st_mode);
+	return (stat(path.c_str(), &buf) == 0 && S_ISDIR(buf.st_mode));
 }
 
 std::string get_file_extension(const std::string& path) {
@@ -76,12 +82,18 @@ std::string build_full_path(const std::string& root_path, const std::string& rel
 }
 
 // traversal = use of ../ sequences (or other patterns) to escape document root
-bool contains_traversal(const std::string& path) {
+bool contains_unsafe_chars(const std::string& path) {
 
-	return path.find("../") != std::string::npos ||
+	if (path.find("../") != std::string::npos ||
 		path.find("..\\") != std::string::npos ||
+		path.find("~") != std::string::npos ||
 		path.find("%2e%2e") != std::string::npos ||
-		path.find("..%2f") != std::string::npos;
+		path.find("%2e%2e%2f") != std::string::npos ||
+		path.find("%2e%2e%5c") != std::string::npos ||
+		path.find("..%2f") != std::string::npos ||
+		path.find("%00") != std::string::npos)
+		return true;
+	return false;
 }
 
 // ensure paths are normalized for security validation (symbolic links, . / ..)
@@ -128,4 +140,15 @@ bool is_within_root(const std::string& path, const std::string& document_root) {
 	else if (canonical_path == canonical_root.substr(0, canonical_root.length() - 1))
 		return true;
 	return false;
+}
+
+std::string	get_read_file_content(std::ifstream& file) {
+	
+	std::string	str;
+	std::string	file_contents;
+	while (std::getline(file, str)) {
+		file_contents += str;
+		file_contents.push_back('\n');
+	}
+	return file_contents;
 }

@@ -18,17 +18,18 @@ Status RequestParser::getLastStatus() const {return _last_status;}
 bool RequestParser::parseRequest() {
 
 	if (!parseRequestLine()) {
-		console::log("[DEBUG] Failed to parse request line", MSG);
+		console::log("[INFO][PARSING] Failed to parse request line", MSG);
 		return false;
 	}
 	if (!parseHeaders()) {
-		console::log("[DEBUG] Failed to parse headers", MSG);
+		console::log("[INFO][PARSING] Failed to parse headers", MSG);
 		return false;
 	}
 	if (!parseBody()) {
-		console::log("[DEBUG] Failed to parse body", MSG);
+		console::log("[INFO][PARSING] Failed to parse body", MSG);
 		return false;
 	}
+	console::log("[INFO][PARSING] Request content		OK", MSG);
 	return true;
 }
 
@@ -99,7 +100,7 @@ bool RequestParser::parseUri(std::string request_line) {
 	RequestUri uri(raw_uri);
 	if (!uri.parse()) {
 		console::log("[ERROR][REQUEST PARSER] Invalid URI", MSG);
-		_last_status = E_NOT_FOUND;
+		_last_status = E_BAD_REQUEST;
 		return false;
 	}
 	_request->setUri(uri);
@@ -227,8 +228,11 @@ void	RequestParser::setRequestContext() {
 	std::string upload_dir = config["upload_dir"];
 	if (!upload_dir.empty())
 		ctx._upload_dir = upload_dir;
-
+	else
+		ctx._upload_dir = build_full_path(ctx._document_root, DEFAULT_DIR_NAME);
+	
 	_request->ctx = ctx;
+	console::log("[INFO][PARSING] Request context		OK", MSG);
 }
 
 std::string	RequestParser::findLocationName(const std::string& path) {

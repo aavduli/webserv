@@ -13,6 +13,7 @@ namespace ServerConstants {
 	
 	// Timeouts (in seconds)
 	static const int CONNECTION_TIMEOUT = 60;
+	static const int TIMEOUT_CHECK = 10;
 	static const int READ_TIMEOUT = 30;
 	static const int WRITE_TIMEOUT = 30;
 }

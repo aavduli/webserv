@@ -7,13 +7,15 @@
 class WebservConfig;
 
 struct PostData {
-	std::string		content;
 	std::string		filename;
+	std::string		new_filename;
+	std::string		content;
+	size_t			bytes_written;	// to remove
 	std::string		content_type;
 	bool			is_file;
 
-	PostData() : is_file(false) {}
-	PostData(const std::string& simple_content) : content(simple_content), is_file(false) {}	// URL-encoded data
+	PostData() : bytes_written(0), is_file(false) {}
+	PostData(const std::string& simple_content) : content(simple_content), bytes_written(0), is_file(false) {}	// URL-encoded data
 };
 
 struct RequestContext {
@@ -34,8 +36,7 @@ class HttpRequest : public HttpMessage {
 	private:
 		std::string							_method;
 		RequestUri							_uri;
-		std::map<std::string, PostData>	_post_data;
-		bool								_is_CGI;
+		std::map<std::string, PostData>		_post_data;
 
 	public:
 		RequestContext	ctx;
@@ -49,8 +50,6 @@ class HttpRequest : public HttpMessage {
 		void									setMethod(const std::string& method);
 		RequestUri								getUri() const;
 		void									setUri(const RequestUri& uri);
-		bool									getIsCGI() const;
-		void									setIsCGI(bool value);
 		std::map<std::string, PostData>			getPostData() const;
 		void									setPostData(const std::map<std::string, PostData>& post_data);
 };

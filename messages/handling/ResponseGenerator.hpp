@@ -4,6 +4,10 @@
 #include <dirent.h>
 #include "MessageHandler.hpp"
 #include "../../config/WebservConfig.hpp"
+#include "../../console/console.hpp"
+#include "../../cgi/CgiExec.hpp"
+#include <ctime>
+#include <sstream>
 
 class ResponseGenerator {
 
@@ -21,6 +25,7 @@ class ResponseGenerator {
 		void	generateErrorResponse();
 
 		void	generatePostResponse();
+		void	generateDeleteResponse();
 
 	public:
 		ResponseGenerator(const WebservConfig& config, HttpRequest* request, HttpResponse* response, Status status);
@@ -36,6 +41,7 @@ class ResponseGenerator {
 		std::string		generateDirectoryHTML();
 		std::string		generateDefaultErrorHTML();
 		std::string		generateRedirHTML();
+		std::string		generatePostSuccessHTML();
 		void			setHeaders();
 		void			parseCGIOutput(const std::string& cgi_output);
 		std::string		readFileContent(std::ifstream& file) const;
@@ -43,7 +49,6 @@ class ResponseGenerator {
 
 std::string		getMimeType(const std::string& extension);
 Status			findErrorStatus(const std::string& path);
-std::string		getReadFileContent(std::ifstream& file);
 std::string 	getCurrentGMTDate();
 
 #endif // RESPONSEGENERATOR_HPP

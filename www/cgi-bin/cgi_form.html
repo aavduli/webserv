@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CGI Test Form</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .form-section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; }
+        h2 { color: #333; }
+        input, textarea { margin: 5px 0; padding: 8px; width: 300px; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>CGI Test Forms</h1>
+    
+    <div class="form-section">
+        <h2>1. Simple CGI Script Test</h2>
+        <form action="/cgi-bin/script.py" method="GET">
+            <label>Name:</label><br>
+            <input type="text" name="name" placeholder="Your name"><br>
+            <label>Message:</label><br>
+            <input type="text" name="message" placeholder="Your message"><br>
+            <button type="submit">Run CGI Script</button>
+        </form>
+    </div>
+
+    <div class="form-section">
+        <h2>2. POST CGI Test</h2>
+        <form action="/cgi-bin/post_cgi.py" method="POST" enctype="application/x-www-form-urlencoded">
+            <label>Username:</label><br>
+            <input type="text" name="username" placeholder="username"><br>
+            <label>Email:</label><br>
+            <input type="email" name="email" placeholder="email@example.com"><br>
+            <button type="submit">Submit POST</button>
+        </form>
+    </div>
+
+    <div class="form-section">
+        <h2>3. Timeout Test</h2>
+        <form action="/cgi-bin/timeout_cgi.py" method="GET">
+            <label>Seconds to wait:</label><br>
+            <input type="number" name="seconds" value="2" min="1" max="10"><br>
+            <button type="submit">Test Timeout</button>
+        </form>
+    </div>
+
+    <p><a href="/">← Back to Home</a></p>
+</body>
+</html>

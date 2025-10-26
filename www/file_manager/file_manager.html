@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>File Manager</title>
+</head>
+<body>
+<body>
+	<h1>File Manager</h1>
+	
+	<div class="form-section">
+		<h2>Upload file</h2>
+		<form action="/files" method="POST" enctype="multipart/form-data">
+			<input type="file" name="file"><br>
+			<button type="submit">Upload</button>
+		</form>
+	</div>
+
+	<div class="form-section">
+		<h2>Browse Files</h2>
+		<p>View all uploaded files:</p>
+		<a href="/browse"><button type="button" class="nav-btn">Browse Files</button></a>
+	</div>
+
+	<div class="form-section">
+		<h2>Delete file(s)</h2>
+		<p><strong>Enter the exact filename to delete from uploads folder:</strong></p>
+		<form action="/files" method="POST">
+			<input type="hidden" name="_method" value="DELETE">
+			<label>Filename:</label><br>
+			<input type="text" name="filename" placeholder="example.txt" required><br><br>
+			<button type="submit">Delete</button>
+		</form>
+		<p><em>Note: This will permanently delete the file from the uploads directory.</em></p>
+	</div>
+
+</body>
+</html>	

@@ -3,7 +3,7 @@
 std::string	status_msg(Status e) {
 	switch (e) {
 		case E_INIT: return "Initialization";
-		case E_OK: return "Success";
+		case E_OK: return "OK";
 		case E_REDIRECT_PERMANENT: return "Moved Permanently";
 		case E_REDIRECT_TEMPORARY: return "Found (Moved Temporarily)";
 		case E_BAD_REQUEST: return "Bad Request";
@@ -16,6 +16,8 @@ std::string	status_msg(Status e) {
 		case E_UNSUPPORTED_MEDIA_TYPE: return "Unsupported Media Type";
 		case E_EXPECTATION_FAILED: return "Expectation Failed";
 		case E_TEAPOT: return "I'm a teapot";
+		case E_UNPROCESSABLE_CONTENT: return "Unprocessable Content";
+		case E_FAILED_DEPENDENCY: return "Failed Dendency";
 		case E_TOO_MANY_REQUESTS: return "Too Many Requests";
 		case E_HEADER_TOO_LARGE: return "Request Header Fields Too Large";
 		case E_INTERNAL_SERVER_ERROR: return "Internal Server Error";

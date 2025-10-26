@@ -1,4 +1,8 @@
 #include "RequestProcessor.hpp"
+#include <cerrno>
+#include <cstring>
+#include <sys/stat.h>
+#include <unistd.h>
 
 RequestProcessor::RequestProcessor(const WebservConfig& config, HttpRequest* request) : _config(config), _request(request), _last_status(E_INIT) {}
 RequestProcessor::RequestProcessor(const RequestProcessor& rhs) : _config(rhs._config), _request(rhs._request), _last_status(rhs._last_status) {}
@@ -16,38 +20,20 @@ Status RequestProcessor::getLastStatus() const {return _last_status;}
 // post can be data sharing, a CGI or a file upload
 bool RequestProcessor::processPostRequest() {
 
-	if (!decodePostBody())
-		return false;
-	if (isFileUpload())
-		return processFileUpload();
-	else if (isCGI())
-		_request->setIsCGI(true);
-	_last_status = E_OK;
-	return true;
-}
-
-bool	RequestProcessor::decodePostBody() {
-
 	const std::vector<std::string>& ct_values = _request->getHeaderValues("Content-Type");
 	if (ct_values.empty()) {
-		console::log("[ERROR][POST BODY DECODING] Content-Type empty", MSG);
+		console::log("[ERROR][POST] Content-Type empty", MSG);
 		_last_status = E_BAD_REQUEST;
-		return false;
 	}
 
 	std::string content_type = ct_values[0];
-	if (content_type.find("application/x-www-form-urlencoded") != std::string::npos) {
+	if (content_type.find("application/x-www-form-urlencoded") != std::string::npos)
 		processURLEncodedBody();
-	}
-	else if (content_type.find("multipart/form-data") != std::string::npos) {
+	else if (content_type.find("multipart/form-data") != std::string::npos)
 		processMultipartBody();
-	}
-	else if (content_type.find("text/") != std::string::npos) {
-		_last_status = E_OK;
-	}
-	else {
-		console::log("[ERROR][POST BODY DECODING] Invalid Content-Type", MSG);
-		_last_status = E_BAD_REQUEST;
+	else if (content_type.find("text/plain") == std::string::npos) {
+		console::log("[ERROR][POST] Invalid Content-Type", MSG);
+		_last_status = E_UNSUPPORTED_MEDIA_TYPE;
 	}
 	return (_last_status == E_OK);
 }
@@ -73,84 +59,73 @@ void	RequestProcessor::processURLEncodedBody() {
 		}
 	}
 	_request->setPostData(data);
-}
-
-std::string	RequestProcessor::urlDecode(const std::string& encoded) {
-
-	std::string	decoded;
-
-	for (size_t i = 0; i < encoded.size(); i++) {
-
-		// %xx where xx is hexadecimal representation of a ASCII char
-		if (encoded[i] == '%' && i + 2 < encoded.size()) {
-			char hex1 = encoded[i + 1];
-			char hex2 = encoded[i + 2];
-			
-			if (is_hex_digit(hex1) && is_hex_digit(hex2)) {
-				int hex_val = (hex_to_int(hex1) << 4) | hex_to_int(hex2);
-				decoded += static_cast<char>(hex_val);
-				i += 2;
-			}
-			else
-				decoded += encoded[i];
-		}
-		else if (encoded[i] == '+')
-			decoded += ' ';
-		else
-			decoded += encoded[i];
+	
+	// look for method override
+	if (data.find("_method") != data.end() && data["_method"].content == "DELETE") {
+		_request->setMethod("DELETE");
+		console::log("[INFO][DELETE] Method override detected: DELETE", MSG);
+		processDeleteRequest();
+		return;
 	}
-	return decoded;
+	_last_status = E_OK;
+	console::log("[INFO][POST] URL-encoded body			OK", MSG);
+
 }
 
-// TODO atomize
 void	RequestProcessor::processMultipartBody() {
 	
 	std::map<std::string, PostData> data;
 	const std::string& raw_body = _request->getBody();
+
 	std::string boundary = extractBoundary(_request->getHeaderValues("Content-Type"));
-	
-	if (boundary.empty()) {
-		console::log("[ERROR] Missing or invalid multipart boundary", MSG);
+	std::vector<std::string> parts = splitByBoundary(raw_body, boundary);
+
+	if (parts.empty()) {
 		_last_status = E_BAD_REQUEST;
 		return;
 	}
 
-	std::vector<std::string> parts = splitByBoundary(raw_body, boundary);
-	if (parts.empty()) {
-		console::log("[ERROR] No multipart parts found", MSG);
-		_last_status = E_BAD_REQUEST;
-		return;
-	}
-	
 	for (size_t i = 0; i < parts.size(); i++) {
-		
-		size_t header_end = parts[i].find("\r\n\r\n");
-		if (header_end == std::string::npos) {
-			console::log("[INFO] Malformed multipart part - missing header separator", MSG);
-			continue;
+		if (parts[i].find(boundary + "--") != std::string::npos)
+			break;
+		if (!processMultipartPart(parts[i], data, boundary)) {
+			_last_status = E_BAD_REQUEST;
+			return;
 		}
-		
-		std::map<std::string, std::vector<std::string> > headers = parseMultipartHeaders(parts[i].substr(0, header_end));
-		
-		std::string field_name = extractDispositionData(headers, "name=\"");
-		if (field_name.empty()) {
-			console::log("[INFO] Multipart: missing name attribute", MSG);
-			continue;
-		}
-		
-		PostData value;
-		value.content = parts[i].substr(header_end + 4);
-		
-		std::string filename = extractDispositionData(headers, "filename=\"");
-		if (!filename.empty()) {
-			value.filename = filename;
-			value.is_file = true;
-			if (headers.find("Content-Type") != headers.end() && !headers["Content-Type"].empty())
-				value.content_type = headers["Content-Type"][0];
-		}
-		data[field_name] = value;
 	}
 	_request->setPostData(data);
+	_last_status = E_OK;
+	console::log("[INFO][POST] Multipart body			OK", MSG);
+}
+
+bool	RequestProcessor::processMultipartPart(std::string& part, std::map<std::string, PostData>& data, const std::string& boundary) {
+	
+	size_t header_end = part.find("\r\n\r\n");
+	if (header_end == std::string::npos) {
+		console::log("[ERROR][MULTIPART] Missing header separator", MSG);
+		return false;
+	}
+
+	std::string header_str = part.substr(0, header_end);
+	std::map<std::string, std::vector<std::string> > headers = parseMultipartHeaders(header_str, boundary);
+	std::string field_name = extractDispositionData(headers, "name=\"");
+	if (field_name.empty())
+		return true; // skipping empty part
+	
+	PostData value;
+	value.content = part.substr(header_end + 4);
+	
+	std::string filename = extractDispositionData(headers, "filename=\"");
+	if (!filename.empty()) {
+		value.filename = filename;
+		value.is_file = true;
+		if (headers.find("Content-Type") != headers.end() && !headers["Content-Type"].empty())
+			value.content_type = headers["Content-Type"][0];
+		if (!processFileUpload(value))
+			return false;
+	}
+	data[field_name] = value;
+	return true;
 }
 
 std::string	RequestProcessor::extractBoundary(const std::vector<std::string>& ct_values) {
@@ -186,8 +161,10 @@ std::vector<std::string>	RequestProcessor::splitByBoundary(const std::string& bo
 	std::vector<std::string> raw_parts = str_to_vect(body, boundary);
 	std::vector<std::string> parts;
 	
-	if (raw_parts.size() < 2)
+	if (raw_parts.size() < 2) {
+		console::log("[DEBUG][MULTIPART] Not enough parts found", MSG);
 		return parts;
+	}
 
 	std::vector<std::string> to_trim;
 	to_trim.push_back("\r");
@@ -204,28 +181,25 @@ std::vector<std::string>	RequestProcessor::splitByBoundary(const std::string& bo
 	return parts;
 }
 
-std::map<std::string, std::vector<std::string> > RequestProcessor::parseMultipartHeaders(const std::string& header_str) {
+std::map<std::string, std::vector<std::string> > RequestProcessor::parseMultipartHeaders(std::string& header_str, const std::string& boundary) {
 
+	size_t start = header_str.find(boundary);
+	header_str = header_str.substr(start + boundary.length());
+	
 	std::map<std::string, std::vector<std::string> >	headers;
-	
-	if (header_str.empty()) {
-		console::log("[DEBUG] Empty multipart header section", MSG);
-		return headers;
-	}
-	
 	std::vector<std::string> lines = str_to_vect(header_str, "\r\n");
 	for (size_t i = 0; i < lines.size(); i++) {
 		if (lines[i].empty())
 			continue ;
-		
+
 		std::string name;
 		std::vector<std::string> values;
-		if (parseHeaderLine(lines[i], name, values)) {
+		if (::parseHeaderLine(lines[i], name, values)) {
 			if (!values.empty())
 				headers[name] = values;
 		}
 		else
-			console::log("[DEBUG] Failed to parse multipart header: " + lines[i], MSG);
+			console::log("[ERROR][MULTIPART] Header section parsing failed", MSG);
 	}
 	return headers;
 }
@@ -234,7 +208,7 @@ std::string RequestProcessor::extractDispositionData(const std::map<std::string,
 
 	std::map<std::string, std::vector<std::string> >::const_iterator it = headers.find("Content-Disposition");
 	if (it == headers.end() || it->second.empty()) {
-		console::log("[DEBUG] Content-Disposition header missing in multipart part", MSG);
+		console::log("[ERROR][MULTIPART DISPOSITION] Content-Disposition header missing in section", MSG);
 		return "";
 	}
 	
@@ -248,84 +222,151 @@ std::string RequestProcessor::extractDispositionData(const std::map<std::string,
 		if (end_pos != std::string::npos && end_pos > name_pos)
 			value = disposition.substr(name_pos, end_pos - name_pos);
 		else
-			console::log("[DEBUG] Empty or malformed disposition attribute: " + key, MSG);
+			console::log("[ERROR][MULTIPART DISPOSITION] Empty or malformed disposition attribute: " + key, MSG);
 	}
 	return value;
 }
 
-/*
-	Destination path resolution (upload dir or CGI handler)
-	Directory creation if upload_dir doesn't exist (optional safety)
-	Unique filename generation for uploads	// timestamp
-	'Upload some file to the server and get it back.'
+bool	RequestProcessor::processFileUpload(PostData& data) {
 
-
-	For uploads:
-		Check write permissions on destination directory
-		Create file with unique name if needed (avoid overwrites)
-		Write received body to disk using write() (non-blocking aware)
-		Handle disk space errors
-
-	For CGI execution:
-		Set up environment variables (REQUEST_METHOD, CONTENT_LENGTH, CONTENT_TYPE, etc.)
-		Pass full body as stdin to CGI process		where to get it? data["cgi"].content?
-		fork() child process, execute CGI via execve(), waitpid()
-		Read CGI output and response headers
-		Handle CGI timeout/crash scenarios
-
-
-	Destination path resolution:
-
-	Determine upload directory from config
-	Generate unique filenames to prevent overwrites
-	Validate file extensions against allowed list
-
-	
-	File writing:
-
-	Create upload directory if it doesn't exist
-	Write multipart file content to disk
-	Handle partial writes and disk space errors
-	Set proper file permissions
-*/
-
-bool	RequestProcessor::isCGI() {
-
-	// what is CGI? post data content? content-type?
-
-	std::map<std::string, PostData> data = _request->getPostData();
-	// check on data for CGI 
-
-	return false;
-}
-
-bool	RequestProcessor::isFileUpload() {
-	// TODO: Implement proper file upload detection logic
-	// Check if any PostData has is_file = true
-	const std::map<std::string, PostData>& post_data = _request->getPostData();
-	for (std::map<std::string, PostData>::const_iterator it = post_data.begin(); it != post_data.end(); ++it) {
-		if (it->second.is_file)
-			return true;
+	if (_request->ctx._upload_enabled == false) {
+		console::log("[ERROR][UPLOAD DIR] File upload not allowed", MSG);
+		_last_status = E_METHOD_NOT_ALLOWED;
+		return false;
 	}
-	return false;
-}
 
-bool	RequestProcessor::processFileUpload() {
-	console::log("[INFO][POST REQUEST] Processing file upload", MSG);
-	// TODO: Implement actual file upload processing
+	std::string dir_path = _request->ctx._upload_dir;
+	if (is_accessible_path(dir_path)) {
+		if (access(dir_path.c_str(), W_OK) != 0) {
+			console::log("[ERROR][UPLOAD DIR] Permission denied", MSG);
+			_last_status = E_FORBIDDEN;
+			return false;
+		}
+	}
+	else if (mkdir(dir_path.c_str(), 0755) == -1) {
+		console::log("[ERROR][UPLOAD DIR] Failed to create directory " + dir_path, MSG);
+		_last_status = E_UNPROCESSABLE_CONTENT;
+		return false;
+	}
+
+	data.new_filename = generateFilename(data.filename, _request->ctx._upload_dir);
+	if (!writeFileUpload(data))
+		return false;
+	console::log("[INFO][POST] File upload				OK", MSG);
 	_last_status = E_OK;
 	return true;
 }
 
-bool	RequestProcessor::checkUploadPermissions() {
-	// TODO: Implement upload permission checking
-	// Check if upload directory exists and is writable
+bool	RequestProcessor::writeFileUpload(PostData& file_data) {
+
+	std::string filename = file_data.new_filename;
+	if (filename.empty()) {
+		_last_status = E_BAD_REQUEST;
+		return false;
+	}
+
+	std::string full_path = build_full_path(_request->ctx._upload_dir, filename);
+	std::ofstream file(full_path.c_str(), std::ios::binary);
+	if (!file.is_open()) {
+		console::log("[ERROR][WRITE FILE] Unable to open file " + filename, MSG);
+		_last_status = findErrorStatus(full_path);
+		return false;
+	}
+	file.write(file_data.content.c_str(), file_data.content.size());
+	file.close();
+	_last_status = E_OK;
 	return true;
 }
 
 bool	RequestProcessor::processDeleteRequest() {
-	console::log("[INFO][DELETE REQUEST] Processing DELETE request", MSG);
-	// TODO: Implement DELETE request processing
+
+	std::string target_path;
+
+	const std::map<std::string, PostData>& post_data = _request->getPostData();
+	if (!post_data.empty() && post_data.find("filename") != post_data.end()) {
+		std::string filename = post_data.at("filename").content;
+		if (filename.empty()) {
+			console::log("[ERROR][DELETE] No filename provided in form", MSG);
+			_last_status = E_BAD_REQUEST;
+			return false;
+		}
+		target_path = _request->ctx._upload_dir + "/" + filename;
+	}
+	else
+		target_path = _request->getUri().getEffectivePath();
+// 
+// 	if (target_path.find("files") == std::string::npos) {
+// 		console::log("[ERROR][DELETE] Forbidden: File must be in files directory", MSG);
+// 		_last_status = E_FORBIDDEN;
+// 		return false;
+// 	}
+	if (!is_within_root(target_path, _request->ctx._document_root)) {
+		console::log("[ERROR][VALIDATION] Path escapes document root", MSG);
+		_last_status = E_FORBIDDEN;
+		return false;
+	}
+
+	if (!is_valid_file_path(target_path)) {
+		console::log("[ERROR][DELETE] File not found: " + target_path, MSG);
+		_last_status = E_NOT_FOUND;
+		return false;
+	}
+
+	if (unlink(target_path.c_str()) != 0) {
+		console::log("[ERROR][DELETE] Failed to delete file: " + target_path, MSG);
+		_last_status = E_INTERNAL_SERVER_ERROR;
+		return false;
+	}
+	console::log("[INFO][DELETE] File deleted			OK", MSG);
 	_last_status = E_OK;
 	return true;
+}
+
+ssize_t	write_on_fd(const int fd, const std::string& content, size_t& pos, size_t buf_size) {
+
+	ssize_t	bytes_written = 0;
+	while (pos < content.size()) {
+		bytes_written = write(fd, &content[pos], buf_size);
+		if (bytes_written == -1)
+			return bytes_written;
+		pos += bytes_written;
+	}
+	return bytes_written;
+}
+
+std::string	generateFilename(const std::string& wanted_name, const std::string& upload_dir) {
+
+	std::string filename;
+	if (wanted_name.empty())
+		filename = "file";
+	else if (contains_unsafe_chars(wanted_name)) {
+		console::log("[ERROR][UPLOAD FILE] Unsafe file name: " + wanted_name, MSG);
+		return "";
+	}
+	else
+		filename = wanted_name;
+	filename = canonicalize_path(filename);
+
+	std::string full_name = build_full_path(upload_dir, filename);
+	if (!is_accessible_path(full_name))
+		return filename;
+	
+	std::string extension = get_file_extension(filename);
+	std::string base_name = filename.substr(0, filename.size() - (extension.size() + 1));
+	std::string unique_name;
+
+	int counter = 1;
+	for (; counter < MAX_FILENAME_COUNTER; counter++) {
+		unique_name = base_name + nb_to_string(counter);
+		if (!extension.empty())
+			unique_name = unique_name + "." + extension;
+		full_name = build_full_path(upload_dir, unique_name);
+		if (!is_accessible_path(full_name))
+			break;
+	}
+	if (counter == MAX_FILENAME_COUNTER) {
+		console::log("[ERROR][UPLOAD FILE] More than 9999 files with same name...", MSG);
+		return "";
+	}
+	return unique_name;
 }

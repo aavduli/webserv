@@ -5,6 +5,7 @@
 #include <sstream>
 #include <limits>
 #include <sys/stat.h>
+#include <unistd.h>
 #include <string>
 #include <vector>
 #include <algorithm>
@@ -18,10 +19,11 @@ template<typename T> std::string nb_to_string(T value) {
 	ss << value;
 	return ss.str();
 }
-size_t 						to_size_t(std::string str);
+size_t 						to_size_t(const std::string& str);
 std::vector<std::string>	str_to_vect(const std::string& str, const std::string& del);
 std::vector<std::string>	str_to_vect_exept_between(const std::string& str, const std::string& del, const std::string& open, const std::string& close);
 int							hex_to_int(char c);
+std::string					urlDecode(const std::string& encoded);
 
 // STRING MANIPULATION
 bool		move_past_char(size_t* pos, const std::string& str, const std::string del);
@@ -41,6 +43,7 @@ bool	is_text_str(const std::string& str);
 bool	is_hex_digit(char c);
 
 // Files and paths
+bool				is_accessible_path(const std::string& path);
 bool				is_valid_path(const std::string& path);
 bool				is_valid_file_path(const std::string& path);
 bool				is_directory(const std::string& path);
@@ -49,9 +52,11 @@ std::string			get_file_extension(const std::string& path);
 
 std::string			remove_suffix(const std::string& str, const std::string& suffix);
 std::string			remove_prefix(const std::string& path, const std::string& prefix);
-std::string			build_full_path(const std::string& document_root, const std::string& path);
-bool				contains_traversal(const std::string& path);
+std::string			build_full_path(const std::string& root_path, const std::string& relative_path);
+bool				contains_unsafe_chars(const std::string& path);
 std::string			canonicalize_path(const std::string& path);
 bool				is_within_root(const std::string& path, const std::string& document_root);
+
+std::string			get_read_file_content(std::ifstream& file);
 
 #endif //PARSING_HPP

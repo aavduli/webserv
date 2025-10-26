@@ -32,6 +32,8 @@ bool RequestValidator::validateRequest() {
 	if (!validateRedirection()) return false;
 	if (_last_status == E_INIT)
 		_last_status = E_OK;
+	console::log("[INFO][VALIDATION] Request valid		OK", MSG);
+
 	return true;
 }
 
@@ -40,8 +42,8 @@ bool RequestValidator::validateVersion() {
 	std::ostringstream oss;
 	oss << _request->getHttpVersionMajor() << "." << _request->getHttpVersionMinor();
 	const std::string& version = oss.str();
-	if (version != "1.1" && version != "1.0" && version != "0.9") {
-		console::log("[ERROR][REQUEST VALIDATOR] Unsupported HTTP version", MSG);
+	if (version != "1.1" && version != "1.0") {
+		console::log("[ERROR][VALIDATION] Unsupported HTTP version", MSG);
 		_last_status = E_UNSUPPORTED_VERSION;
 		return false;
 	}
@@ -52,7 +54,15 @@ bool RequestValidator::validateHost() {
 
 	RequestUri	uri = _request->getUri();
 	std::string config_host = _config.getHost();
-	
+
+	if (_request->getHttpVersionMajor() == "1" && _request->getHttpVersionMinor() == "1") {
+		const std::vector<std::string>& h_values = _request->getHeaderValues("Host");
+		if (h_values.empty()) {
+			console::log("[ERROR][POST] Missing \"Host\" header", MSG);
+			_last_status = E_BAD_REQUEST;
+			return false;
+		}
+	}
 	if (uri.getHost().empty() && !_host_header.empty()) {
 		std::string tmp_host = _host_header.at(0);
 		size_t colon = tmp_host.find(":");
@@ -62,7 +72,7 @@ bool RequestValidator::validateHost() {
 			uri.setHost(tmp_host);
 	}
 	if (!uri.getHost().empty() && uri.getHost().compare(config_host) && uri.getHost().compare(_config.getServerName())) {
-		console::log("[ERROR][REQUEST VALIDATOR] Invalid Host", MSG);
+		console::log("[ERROR][VALIDATION] Invalid Host", MSG);
 		_last_status = E_BAD_REQUEST;
 		return false;
 	}
@@ -86,12 +96,12 @@ bool RequestValidator::validatePort() {
 			char* endptr;
 			long port_value = std::strtol(header_port.c_str(), &endptr, 10);
 			if (*endptr != '\0' || port_value < 1 || port_value > 65535) {
-				console::log("[ERROR][REQUEST VALIDATOR] Invalid port value", MSG);
+				console::log("[ERROR][VALIDATION] Invalid port value", MSG);
 				_last_status = E_BAD_REQUEST;
 				return false;
 			}
 			if (static_cast<int>(port_value) != config_port) {
-				console::log("[ERROR][REQUEST VALIDATOR] Request port doesn't match server config", MSG);
+				console::log("[ERROR][VALIDATION] Request port doesn't match server config", MSG);
 				_last_status = E_BAD_REQUEST;
 				return false;
 			}
@@ -118,7 +128,7 @@ bool RequestValidator::validateMethod() {
 		if (method == *it)
 			return true;
 	}
-	console::log("[ERROR][REQUEST VALIDATOR] Invalid request method", MSG);
+	console::log("[ERROR][VALIDATION] Invalid request method", MSG);
 	_last_status = E_METHOD_NOT_ALLOWED;
 	return false;
 }
@@ -128,8 +138,8 @@ bool RequestValidator::validatePath() {
 	RequestUri	uri = _request->getUri();
 	const std::string& path = uri.getPath();
 
-	if (contains_traversal(path)) {
-		console::log("[ERROR][REQUEST VALIDATOR] URI path attempts traversal", MSG);
+	if (contains_unsafe_chars(path)) {
+		console::log("[ERROR][VALIDATION] URI path attempts traversal", MSG);
 		_last_status = E_BAD_REQUEST;
 		return false;
 	}
@@ -138,14 +148,21 @@ bool RequestValidator::validatePath() {
 	std::string full_path = build_full_path(_request->ctx._document_root, relative_path);
 	std::string final_path  = canonicalize_path(full_path);
 
+	bool is_upload_post = (_request->getMethod() == "POST" && _request->ctx._upload_enabled);
+	
 	if (!is_valid_path(final_path)) {
-		console::log("[ERROR][REQUEST VALIDATOR] Invalid path: " + final_path, MSG);
-		_last_status = E_NOT_FOUND;
-		return false;
+		if (!is_upload_post) {
+			console::log("[ERROR][VALIDATION] Invalid path: " + final_path, MSG);
+			_last_status = E_NOT_FOUND;
+			return false;
+		}
+		console::log("[INFO][VALIDATION] Upload POST to non-existent path, will be created", MSG);
+		final_path = _request->ctx._upload_dir;
 	}
+	
 	if (!is_within_root(final_path, _request->ctx._document_root)) {
-		console::log("[ERROR][REQUEST VALIDATOR] URI path escapes document root", MSG);
-		_last_status = E_BAD_REQUEST;
+		console::log("[ERROR][VALIDATION] URI path escapes document root", MSG);
+		_last_status = E_FORBIDDEN;
 		return false;
 	}
 	uri.setEffectivePath(final_path);
@@ -161,23 +178,24 @@ bool RequestValidator::validateContentLength() {
 
 	size_t client_max_body_size = _config.getMaxContentLength();
 	if (body_size > client_max_body_size) {
-		console::log("[ERROR][REQUEST VALIDATOR] Body size too large", MSG);
+		console::log("[ERROR][VALIDATION] Body size too large", MSG);
 		_last_status = E_PAYLOAD_TOO_LARGE;
 		return false;
 	}
 
 	const std::vector<std::string>& content_length = _request->getHeaderValues("Content-Length");
-	if (content_length.empty() || content_length[0].empty()) {
+	if (_request->getMethod() == "POST" && (content_length.empty() || content_length[0].empty())) {
 		console::log("[ERROR][REQUEST PARSER] Missing \"Content-Length\" header", MSG);
 		_last_status = E_LENGTH_REQUIRED;
 		return false;
 	}
-
-	size_t cl = to_size_t(content_length[0]);
-	if (cl == std::numeric_limits<size_t>::max() || cl != body_size) {
-		console::log("[ERROR][REQUEST PARSER] Invalid \"Content-Length\" header value", MSG);
-		_last_status = E_BAD_REQUEST;
-		return false;
+	if (!content_length.empty()) {
+		size_t cl = to_size_t(content_length[0]);
+		if (cl != body_size) {
+			console::log("[ERROR][REQUEST PARSER] Invalid \"Content-Length\" header value " + content_length[0], MSG);
+			_last_status = E_BAD_REQUEST;
+			return false;
+		}
 	}
 	return true;
 }
@@ -185,20 +203,10 @@ bool RequestValidator::validateContentLength() {
 bool RequestValidator::validateContentType() {
 
 	if (_request->getMethod() == "POST") {
-		
-		const std::vector<std::string>& ct_headers = _request->getHeaderValues("Content-Type");
-		if (ct_headers.empty()) {
-			console::log("[ERROR][REQUEST VALIDATOR] POST method requires Content-Type header", MSG);
+		const std::vector<std::string>& ct_values = _request->getHeaderValues("Content-Type");
+		if (ct_values.empty()) {
+			console::log("[ERROR][POST] Missing \"Content-Length\" header", MSG);
 			_last_status = E_BAD_REQUEST;
-			return false;
-		}
-	
-		std::string content_type = ct_headers[0];
-		if (content_type.find("application/x-www-form-urlencoded") == std::string::npos &&
-			content_type.find("multipart/form-data") == std::string::npos &&
-			content_type.find("text/") == std::string::npos) {
-			console::log("[ERROR][REQUEST VALIDATOR] Unsupported content type: " + content_type, MSG);
-			_last_status = E_UNSUPPORTED_MEDIA_TYPE;
 			return false;
 		}
 	}
@@ -209,7 +217,7 @@ bool RequestValidator::validateHeaderLimits() {
 
 	size_t headers_size = _request->getHeadersSize();
 	if (headers_size > MAX_HEADERS_SIZE) {
-		console::log("[ERROR][REQUEST VALIDATOR] Header size too large", MSG);
+		console::log("[ERROR][VALIDATION] Header size too large", MSG);
 		_last_status = E_HEADER_TOO_LARGE;
 		return false;
 	}

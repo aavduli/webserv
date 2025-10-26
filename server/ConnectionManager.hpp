@@ -9,6 +9,7 @@
 #include <vector>
 #include <stdexcept>
 #include "eventManager.hpp"
+#include "ServerConstants.hpp"
 #include "NetworkHandler.hpp"
 
 
@@ -27,6 +28,8 @@ class connectionManager {
 		size_t getConnectionCount();
 
 		Conn& getConnection(int clientFD);
+		void updateActivity(int clientFD);
+		std::vector<int> getTimedOutConnection(time_t currentTime);
 		const Conn& getConnection(int clientFD) const;
 		void removeAllConnection();
 		std::vector<int> getConnectionFds() const;

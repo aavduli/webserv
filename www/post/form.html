@@ -14,79 +14,31 @@
     <h1>POST Request Test Forms</h1>
     
     <div class="form-section">
-        <h2>1. Simple URL-Encoded Form</h2>
+        <h2>Simple URL-Encoded Form</h2>
         <form action="/success" method="POST" enctype="application/x-www-form-urlencoded">
             <label>Username:</label><br>
-            <input type="text" name="username" placeholder="Enter username"><br>
+            <input type="text" name="username" placeholder="angela"><br>
             <label>Password:</label><br>
-            <input type="password" name="password" placeholder="Enter password"><br>
+            <input type="password" name="password" placeholder="123456"><br>
             <label>Email:</label><br>
-            <input type="email" name="email" placeholder="user@example.com"><br>
-            <button type="submit">Submit URL-Encoded</button>
+            <input type="email" name="email" placeholder="angela@webserv.ch"><br>
+            <button type="submit">Submit</button>
         </form>
     </div>
 
     <div class="form-section">
-        <h2>2. Text Area Form</h2>
-        <form action="/success" method="POST">
-            <label>Message:</label><br>
-            <textarea name="message" rows="4" placeholder="Enter your message here..."></textarea><br>
-            <label>Category:</label><br>
-            <select name="category">
-                <option value="feedback">Feedback</option>
-                <option value="question">Question</option>
-                <option value="complaint">Complaint</option>
-            </select><br>
-            <button type="submit">Submit Message</button>
-        </form>
-    </div>
-
-    <div class="form-section">
-        <h2>3. File Upload Form (Multipart)</h2>
-        <form action="/upload" method="POST" enctype="multipart/form-data">
+        <h2>Multipart Form</h2>
+        <form action="/success" method="POST" enctype="multipart/form-data">
             <label>Description:</label><br>
             <input type="text" name="description" placeholder="File description"><br>
-            <label>Upload File:</label><br>
-            <input type="file" name="upload_file" accept=".txt,.jpg,.png,.pdf"><br>
             <label>Additional Notes:</label><br>
             <textarea name="notes" rows="2" placeholder="Optional notes..."></textarea><br>
-            <button type="submit">Upload File</button>
+            <button type="submit">Submit</button>
         </form>
     </div>
 
     <div class="form-section">
-        <h2>4. Multiple Files Upload</h2>
-        <form action="/upload" method="POST" enctype="multipart/form-data">
-            <label>Project Name:</label><br>
-            <input type="text" name="project_name" placeholder="Project name"><br>
-            <label>File 1:</label><br>
-            <input type="file" name="file1"><br>
-            <label>File 2:</label><br>
-            <input type="file" name="file2"><br>
-            <label>File 3:</label><br>
-            <input type="file" name="file3"><br>
-            <button type="submit">Upload Multiple Files</button>
-        </form>
-    </div>
-
-    <div class="form-section">
-        <h2>5. Mixed Data Form</h2>
-        <form action="/success" method="POST" enctype="multipart/form-data">
-            <label>Name:</label><br>
-            <input type="text" name="full_name" placeholder="Full Name"><br>
-            <label>Age:</label><br>
-            <input type="number" name="age" min="1" max="120"><br>
-            <label>Profile Picture:</label><br>
-            <input type="file" name="profile_pic" accept="image/*"><br>
-            <label>Bio:</label><br>
-            <textarea name="bio" rows="3" placeholder="Tell us about yourself..."></textarea><br>
-            <input type="checkbox" name="subscribe" value="yes"> Subscribe to newsletter<br>
-            <button type="submit">Submit Profile</button>
-        </form>
-    </div>
-
-    <div class="form-section">
-        <h2>6. Empty Form Test</h2>
+        <h2>Empty Form Test</h2>
         <form action="/success" method="POST">
             <p>This form has no fields to test empty POST body handling.</p>
             <button type="submit">Submit Empty</button>
