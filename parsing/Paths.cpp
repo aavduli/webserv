@@ -82,15 +82,18 @@ std::string build_full_path(const std::string& root_path, const std::string& rel
 }
 
 // traversal = use of ../ sequences (or other patterns) to escape document root
-bool contains_traversal(const std::string& path) {
+bool contains_unsafe_chars(const std::string& path) {
 
-	return path.find("../") != std::string::npos ||
+	if (path.find("../") != std::string::npos ||
 		path.find("..\\") != std::string::npos ||
 		path.find("~") != std::string::npos ||
 		path.find("%2e%2e") != std::string::npos ||
 		path.find("%2e%2e%2f") != std::string::npos ||
 		path.find("%2e%2e%5c") != std::string::npos ||
-		path.find("..%2f") != std::string::npos;
+		path.find("..%2f") != std::string::npos ||
+		path.find("%00") != std::string::npos)
+		return true;
+	return false;
 }
 
 // ensure paths are normalized for security validation (symbolic links, . / ..)
