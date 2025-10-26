@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   config_data.hpp                                    :+:      :+:    :+:   */
+/*   ConfigData.hpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/15 10:41:41 by jim               #+#    #+#             */
-/*   Updated: 2025/09/15 11:59:52 by jim              ###   ########.fr       */
+/*   Updated: 2025/10/26 17:37:06 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@
 
 struct ServerConfig{
 	std::map<std::string, std::string> directives;
+	std::vector<std::string> listen_ports;
 	bool isEmpty() const{
 		return directives.empty();
 	}
