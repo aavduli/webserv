@@ -2,17 +2,25 @@
 <html>
 <head>
     <title>POST Success</title>
+	<link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <div>
-        <h1>Success!</h1>
-        <p>Your form has been successfully submitted.</p>
-        <a href="/">Back to homepage</a>
-        <div id="timestamp"></div>
-    </div>
-    <script>
-        document.getElementById('timestamp').textContent = 
-            'Processed at: ' + new Date().toLocaleString();
-    </script>
+	<div class="main-title">
+		<h1>Success!</h1>
+		<p class="subtitle">Your form has been successfully submitted</p>
+	</div>
+	
+    <div class="card">
+		<div class="inner">
+			<div class="links">
+				<a href="/">Return to homepage</a>
+			</div>
+			<div id="timestamp"></div>
+		</div>
+	</div>
+	<script>
+		document.getElementById('timestamp').textContent = 
+			'Processed at: ' + new Date().toLocaleString();
+	</script>
 </body>
 </html>

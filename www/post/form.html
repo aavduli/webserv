@@ -1,48 +1,53 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>POST Request Test Forms</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 40px; }
-        .form-section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; }
-        h2 { color: #333; }
-        input, textarea { margin: 5px 0; padding: 8px; width: 300px; }
-        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
-    </style>
+	<title>POST Request Test Forms</title>
+	<link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
-    <h1>POST Request Test Forms</h1>
-    
-    <div class="form-section">
-        <h2>Simple URL-Encoded Form</h2>
-        <form action="/success" method="POST" enctype="application/x-www-form-urlencoded">
-            <label>Username:</label><br>
-            <input type="text" name="username" placeholder="angela"><br>
-            <label>Password:</label><br>
-            <input type="password" name="password" placeholder="123456"><br>
-            <label>Email:</label><br>
-            <input type="email" name="email" placeholder="angela@webserv.ch"><br>
-            <button type="submit">Submit</button>
-        </form>
-    </div>
+	<div class="main-title">
+		<h1>Test forms</h1>
+		<p class="subtitle">Test different POST request methods</p>
+	</div>
+	
+	<div class="card">
+		<div class="inner form">
+			<h2>URL-Encoded Form</h2>
+			<form action="/success" method="POST" enctype="application/x-www-form-urlencoded">
+				<label>Username:</label><br>
+				<input type="text" name="username" placeholder="username"><br>
+				<label>Password:</label><br>
+				<input type="password" name="password" placeholder="123456"><br>
+				<label>Email:</label><br>
+				<input type="email" name="email" placeholder="user@webserv.ch"><br>
+				<div class="links">
+					<button type="submit">Submit</button>
+				</div>
+			</form>
+		</div>
 
-    <div class="form-section">
-        <h2>Multipart Form</h2>
-        <form action="/success" method="POST" enctype="multipart/form-data">
-            <label>Description:</label><br>
-            <input type="text" name="description" placeholder="File description"><br>
-            <label>Additional Notes:</label><br>
-            <textarea name="notes" rows="2" placeholder="Optional notes..."></textarea><br>
-            <button type="submit">Submit</button>
-        </form>
-    </div>
+		<div class="inner form">
+			<h2>Multipart Form</h2>
+			<form action="/success" method="POST" enctype="multipart/form-data">
+				<label>Description:</label><br>
+				<input type="text" name="description" placeholder="File description"><br>
+				<label>Additional Notes:</label><br>
+				<textarea name="notes" rows="2" placeholder="Optional notes..."></textarea><br>
+				<div class="links">
+					<button type="submit">Submit</button>
+				</div>
+			</form>
+		</div>
 
-    <div class="form-section">
-        <h2>Empty Form Test</h2>
-        <form action="/success" method="POST">
-            <p>This form has no fields to test empty POST body handling.</p>
-            <button type="submit">Submit Empty</button>
-        </form>
-    </div>
+		<div class="inner form">
+			<h2>Empty Form</h2>
+			<form action="/success" method="POST">
+				<p>This form has no fields.</p>
+				<div class="links">
+					<button type="submit">Submit</button>
+				</div>
+			</form>
+		</div>
+	</div>
 </body>
 </html>
