@@ -10,7 +10,7 @@
 class server {
 	private:
 		int _port;
-		int _shutdown_requested;
+		static int _shutdown_requested;
 		static struct sigaction _sa;
 	public:
 		server(int port);
