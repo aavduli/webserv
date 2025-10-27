@@ -2,9 +2,11 @@
 #include "server/server.hpp"
 #include "config/WebservConfig.hpp"
 #include "cgi/CgiExec.hpp"
-#include <fstream>
+
+const bool PRINTCONFIG = false;
 
 int main(int ac, char **av) {
+
 	console::openFile();
 	std::string filename;
 	if (ac == 2){
