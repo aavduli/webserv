@@ -228,8 +228,12 @@ size_t WebservConfig::getMaxContentLength() const{
 	return 1048576; // like Default MEssage parser todo asking bebou for what to do
 }
 
-// bool WebservConfig::matchesServerName(const std::string& host) const{
-// 	std::string serverName = getServerName();
+bool WebservConfig::hasLocation(const std::string& path) const{
+	return _locations.find(path) != _locations.end();
+}
+
+bool WebservConfig::matchesServerName(const std::string& host) const{
+	std::string serverName = getServerName();
 
 // 	//exacte match
 // 	if(host == serverName) return true;
@@ -318,12 +322,12 @@ void WebservConfig::printConfig() const {
 		}
 
 		if (!_locations.empty()){
-			console::log("==Locations==", CONF);
+			console::log("==========Locations==", CONF);
 			for (std::map<std::string, std::map<std::string, std::string> >::const_iterator locIt = _locations.begin(); locIt != _locations.end(); ++locIt){
-					console::log("location: " + locIt->first, CONF);
+					console::log("        location: " + locIt->first, CONF);
 					for (std::map<std::string, std::string>::const_iterator dirIt = locIt->second.begin();
 						dirIt != locIt->second.end(); ++dirIt){
-							console::log("    " + dirIt->first + ": "+dirIt->second, CONF);
+							console::log("            " + dirIt->first + ": "+dirIt->second, CONF);
 						}
 						console::log("", CONF);
 				}
