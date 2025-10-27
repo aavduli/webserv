@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
+
 import os
 import sys
 from urllib.parse import parse_qs
 
-print("Content-Type: text/html\r")
-print("\r")
-print("<html><body>")
-print("<h1>CGI Test Success</h1>")
-print(f"<p>REQUEST_METHOD: {os.environ.get('REQUEST_METHOD')}</p>")
-print(f"<p>CONTENT_LENGTH: {os.environ.get('CONTENT_LENGTH')}</p>")
+print("Content-Type: text/html")
+print("")
 
 print("<html>")
 print("<head><title>CGI Environment Test</title></head>")
@@ -52,9 +49,14 @@ print(f"<p><strong>REMOTE_ADDR:</strong> {os.environ.get('REMOTE_ADDR', 'Not set
 
 print("<h2>POST Data (from STDIN):</h2>")
 if os.environ.get('REQUEST_METHOD') == 'POST':
-    content_length = int(os.environ.get('CONTENT_LENGTH', 0))
-    post_data = sys.stdin.read(content_length)
-    print(f"<p>POST Data: {post_data}</p>")
+	content_length = os.environ.get('CONTENT_LENGTH')
+	if content_length:
+		post_data = sys.stdin.read(int(content_length))
+		print(f"<p><strong>POST Body:</strong> {post_data}</p>")
+	else:
+		print("<p>No CONTENT_LENGTH set</p>")
+else:
+	print("<p>Not a POST request</p>")
 
 
 
