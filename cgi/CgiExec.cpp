@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/07 15:20:30 by jim               #+#    #+#             */
-/*   Updated: 2025/10/26 17:10:10 by jim              ###   ########.fr       */
+/*   Updated: 2025/10/27 14:54:45 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,7 @@
 #include <ctime>
 #include <signal.h>
 #include "../console/console.hpp"
+#include <fcntl.h>
 #define TIMEOUT_CGI 5
 
 extern char** environ;
@@ -38,6 +39,8 @@ std::string CgiExec::execute(const HttpRequest* request){
 		console::log("[CGI] failed to create pipe", ERROR);
 		return "";
 	}
+	fcntl(pipefd[0], F_SETFD, FD_CLOEXEC);
+	fcntl(pipefd[1], F_SETFD, FD_CLOEXEC);
 
 	//need to send stdin for post
 	int stdin_pipefd[2];
@@ -47,6 +50,8 @@ std::string CgiExec::execute(const HttpRequest* request){
 		close(pipefd[1]);
 		return "";
 	}
+	fcntl(stdin_pipefd[0], F_SETFD, FD_CLOEXEC);
+	fcntl(stdin_pipefd[1], F_SETFD, FD_CLOEXEC);
 
 	//fork
 	pid_t pid = fork();
@@ -54,8 +59,12 @@ std::string CgiExec::execute(const HttpRequest* request){
 		console::log("[CGI] Fork failed", ERROR);
 		close(pipefd[0]);
 		close(pipefd[1]);
+		close(stdin_pipefd[0]);
+		close(stdin_pipefd[1]);
 		return "";
 	}
+
+
 
 	if (pid == 0){
 		close(pipefd[0]);
@@ -103,15 +112,6 @@ std::string CgiExec::execute(const HttpRequest* request){
 		}
 		close(stdin_pipefd[1]);
 
-
-
-		//POST
-		//TODO multipart - plaintext
-		//todo content type
-		//error reposnose
-		//header
-
-
 		//HTTP heeaders (HTTP_*)
 		std::map<std::string, std::vector<std::string> > headers = request->getHeaders();
 		for (std::map<std::string, std::vector<std::string> >::const_iterator it = headers.begin();
@@ -135,12 +135,7 @@ std::string CgiExec::execute(const HttpRequest* request){
 		}
 		console::log(_script_path.c_str(), ERROR);
 		char* argv[] = {(char*)"python3", (char*)_script_path.c_str(), (char*) NULL};
-		//print all variable environment  DEBUG
-		// for (char **env = environ; *env != 0; env++){
-		// 	console::log("[CGI ENV] " + std::string(*env), MSG);
-		// }
 		execve(_python_path.c_str(), argv, environ);
-
 
 		//if exce fail
 		console::log("[CGI] exceve failed: "+std::string(strerror(errno)), ERROR);
@@ -185,7 +180,8 @@ std::string CgiExec::execute(const HttpRequest* request){
 		//check global timeout
 		if (time(NULL) - start_time >= TIMEOUT_CGI){
 			console::log("[CGI] timeout reached, killing process", ERROR);
-			kill(pid, SIGKILL);
+			if (kill(pid, 0) == 0)
+				kill(pid, SIGKILL);
 			waitpid(pid, &status, 0);
 			close(pipefd[0]);
 			return "";
