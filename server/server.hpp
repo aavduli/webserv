@@ -9,7 +9,7 @@
 
 class server {
 	private:
-		int _port;
+		std::vector<int> _port;
 		static int _shutdown_requested;
 		static struct sigaction _sa;
 	public:
