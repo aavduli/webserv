@@ -26,6 +26,7 @@ class ResponseGenerator {
 
 		void	generatePostResponse();
 		void	generateDeleteResponse();
+		//void	parseCGIOutput(const std::string& cgi_output);
 
 	public:
 		ResponseGenerator(const WebservConfig& config, HttpRequest* request, HttpResponse* response, Status status);

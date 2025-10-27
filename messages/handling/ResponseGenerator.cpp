@@ -47,7 +47,7 @@ void ResponseGenerator::generatePostResponse() {
 	html << "<body>\n";
 	html << "<h1>Success!</h1>\n";
 	html << "<p>Your POST request was processed successfully.</p>";
-	
+
 	// show post data if any
 	const std::map<std::string, PostData>& post_data = _request->getPostData();
 	if (!post_data.empty()) {
@@ -89,7 +89,7 @@ void ResponseGenerator::generateDeleteResponse() {
 
 // non-blocking read with buffer
 void ResponseGenerator::generateStaticFileResponse() {
-	
+
 	const std::string& path = _request->getUri().getEffectivePath();
 
 	std::ifstream file(path.c_str());
@@ -160,11 +160,63 @@ void ResponseGenerator::generateErrorResponse() {
 void ResponseGenerator::generateCGIResponse() {
 
 	console::log("[INFO] Generating CGI response", MSG);
-	_response->setBodyType(B_CGI);
+
+	const std::string& script_path = _request->getUri().getEffectivePath();
+	std::string python_path = _config.getCgiPath(_request->ctx._location_name);
+
+	CgiExec executor(script_path, python_path, &_config);
+	std::string cgi_output = executor.execute(_request);
+
+	if (cgi_output.empty()){
+		console::log("[ERROR] CGI execution failed", MSG);
+		_last_status = E_INTERNAL_SERVER_ERROR;
+		return generateErrorResponse();
+	}
+
+
+	//parsing cgi output
+	parseCGIOutput(cgi_output);
+	_response->setStatus(E_OK);
+	_response->setBodyType(B_CGI);  // CGI sets its own Content-Type
 }
 
+void ResponseGenerator::parseCGIOutput(const std::string& cgi_output){
+	//first find the empty lime, separator header body
+	size_t header_end= cgi_output.find("\n\n");
+	if (header_end == std::string::npos){
+		//no head ? :(
+		_response->setBody(cgi_output);
+		_response->setBodyType(B_CGI);
+		return;
+	}
+
+	//separator header body
+	std::string header_part = cgi_output.substr(0,header_end);
+	std::string body_part = cgi_output.substr(header_end + 2); // count +2 for \n\n
+
+	//parse header line by line
+	std::istringstream header_stream(header_part);
+	std::string line;
+	while(std::getline(header_stream, line)){
+		size_t colon_position = line.find(':');
+		if (colon_position != std::string::npos){
+			std::string header_name = line.substr(0, colon_position);
+			std::string header_value = line.substr(colon_position + 1);
+
+			//delet space
+			while (!header_value.empty() && header_value[0] == ' '){
+				header_value = header_value.substr(1);}
+
+			_response->addHeader(header_name, str_to_vect(header_value, ""));
+		}
+	}
+	_response->setBody(body_part);
+}
+
+
+
 void ResponseGenerator::setHeaders() {
-	
+
 	_response->addHeader("Date", str_to_vect(getCurrentGMTDate(), ""));
 	_response->addHeader("Connection", str_to_vect("close", ""));
 
@@ -189,7 +241,7 @@ void ResponseGenerator::setHeaders() {
 }
 
 std::string	ResponseGenerator::generateDirectoryHTML() {
-	
+
 	const std::string& url_path = _request->getUri().getPath();
 	const std::string& dir_path = _request->getUri().getEffectivePath();
 	DIR* dir = opendir(dir_path.c_str());
@@ -219,7 +271,7 @@ std::string	ResponseGenerator::generateDirectoryHTML() {
 			continue;
 		std::string file_path = build_full_path(url_path, name);
 		html << "<p><a href=\"" << file_path << "\">" << name << "</a>\n</p>";
-	}	
+	}
 	closedir(dir);
 	html << "</body></html>";
 	return html.str();
@@ -250,7 +302,7 @@ std::string	ResponseGenerator::generateRedirHTML() {
 }
 
 void	ResponseGenerator::addValidIndex() {
-	
+
 	std::string path = _request->getUri().getEffectivePath();
 	if (!is_directory(path) || _request->ctx._index_list.empty())
 		return ;
@@ -283,7 +335,7 @@ bool	ResponseGenerator::isValidCGI() const {
 	std::string extension = get_file_extension(path);
 	if (!extension.empty() && extension[0] != '.')
 		extension = "." + extension;
-	
+
 	std::vector<std::string> valid_cgi_extensions = str_to_vect(cgi_extensions, " ");
 	for (size_t i = 0; i < valid_cgi_extensions.size(); i++) {
 		if (extension == valid_cgi_extensions[i])
@@ -293,7 +345,7 @@ bool	ResponseGenerator::isValidCGI() const {
 }
 
 Status	findErrorStatus(const std::string& path) {
-	
+
 	struct stat file_stat;
 
 	// stat failed = invalid path
@@ -339,7 +391,7 @@ std::string getMimeType(const std::string& extension) {
 	if (extension == "xml") {
 		return "application/xml";
 	}
-	
+
 	// Image types
 	if (extension == "png") {
 		return "image/png";
@@ -359,7 +411,7 @@ std::string getMimeType(const std::string& extension) {
 	if (extension == "webp") {
 		return "image/webp";
 	}
-	
+
 	// Font types
 	if (extension == "woff") {
 		return "font/woff";
@@ -373,7 +425,7 @@ std::string getMimeType(const std::string& extension) {
 	if (extension == "eot") {
 		return "application/vnd.ms-fontobject";
 	}
-	
+
 	// Document types
 	if (extension == "pdf") {
 		return "application/pdf";
@@ -384,7 +436,7 @@ std::string getMimeType(const std::string& extension) {
 	if (extension == "docx") {
 		return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 	}
-	
+
 	// Archive types
 	if (extension == "zip") {
 		return "application/zip";
@@ -405,15 +457,15 @@ std::string getCurrentGMTDate() {
 	time_t now;
 	struct tm* gmt;
 	char buf[100];
-	
+
 	time(&now);				// get current time
 	gmt = gmtime(&now);		// convert to GMT/UTC
 
 	// %2d:%02d (gmt->tm_hour+2)%24, gmt->tm_min))
 
-	// format: Sun, 06 Nov 1994 08:49:37 GMT 
+	// format: Sun, 06 Nov 1994 08:49:37 GMT
 	strftime(buf, sizeof(buf), "%a, %d %b %Y %H:%M GMT", gmt);
-	
+
 	std::string date(buf);
 	return date;
 }
