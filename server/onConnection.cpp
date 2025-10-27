@@ -101,7 +101,6 @@ bool onConn::chunked_complete(const std::string& body, size_t &cut_after) {
 	}
 	return false;
 }
-// TODO check for post request by searching "--\r\n\r\n" if content-type = multipart/form data == chunked request
 
 bool onConn::update_and_ready(Conn& c, size_t &req_end) {
 	req_end = 0;

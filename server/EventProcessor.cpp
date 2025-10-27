@@ -125,7 +125,11 @@ void eventProcessor::runEventLoop(const WebservConfig& config) {
 		for (int i = 0; i < nfds; ++i) {
 			int fd = _eventManager[i].data.fd;
 			uint32_t events = _eventManager[i].events;
-			if (isServerSocket(fd)) {
+			if (server::getShutDownRequest) {
+				std::cout << "leave the loop...." << std::endl;
+				break;
+			}
+			else if (isServerSocket(fd)) {
 				handleServerEvents();
 			}
 			else if (isDisconnectionEvent(events)) {
@@ -142,6 +146,10 @@ void eventProcessor::runEventLoop(const WebservConfig& config) {
 		if ((currentTime - lastTimeOutCheck) >= timeOutInterval) {
 			checkAndCleanTimeout();
 			lastTimeOutCheck = currentTime;
+		}
+		else if (server::getShutDownRequest) {
+			std::cout << "Stop signals received, removed all connections and disconnecting.... Bye" << std::endl;
+			_connectionManager.removeAllConnection();
 		}
 	}
 }
