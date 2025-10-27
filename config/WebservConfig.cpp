@@ -249,6 +249,9 @@ size_t WebservConfig::getMaxContentLength() const{
 // bool WebservConfig::matchesServerName(const std::string& host) const{
 // 	std::string serverName = getServerName();
 
+// bool WebservConfig::matchesServerName(const std::string& host) const{
+// 	std::string serverName = getServerName();
+
 // 	//exacte match
 // 	if(host == serverName) return true;
 
@@ -338,6 +341,25 @@ void WebservConfig::printConfig() const {
 	}
 	console::log("===========", CONF);
 
+			//port
+			for (size_t j = 0; j < _servers[i].listen_ports.size(); j++) {
+				console::log("   listen: " + _servers[i].listen_ports[j], CONF);
+			}
+			console::log("", CONF);
+		}
+
+		if (!_locations.empty()){
+			console::log("==========Locations==", CONF);
+			for (std::map<std::string, std::map<std::string, std::string> >::const_iterator locIt = _locations.begin(); locIt != _locations.end(); ++locIt){
+					console::log("        location: " + locIt->first, CONF);
+					for (std::map<std::string, std::string>::const_iterator dirIt = locIt->second.begin();
+						dirIt != locIt->second.end(); ++dirIt){
+							console::log("            " + dirIt->first + ": "+dirIt->second, CONF);
+						}
+						console::log("", CONF);
+				}
+		}
+		console::log("===========", CONF);
 }
 
 

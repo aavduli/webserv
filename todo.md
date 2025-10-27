@@ -5,4 +5,4 @@
   - Corriger typo pyhton_path → python_path dans CgiExec.hpp
   - Supprimer code commenté (WebservConfig.cpp:148-154)
   - multiserveur / port
-  
+  - printconfig no location for first server. 
