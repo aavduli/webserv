@@ -39,5 +39,6 @@ class ConfigParser{
 		static std::string normalizeRootPath(const std::string& path);
 		ServerConfig parseServer(const std::vector<std::string>& lines) const;
 		LocationsConfig parseLocations(const std::vector<std::string>& lines) const;
+		std::vector<ServerConfig> parseAllServers(const std::vector<std::string>& lines) const;
 };
 #endif

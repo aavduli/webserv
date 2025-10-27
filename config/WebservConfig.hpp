@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/08 16:24:01 by jim               #+#    #+#             */
-/*   Updated: 2025/10/26 17:45:48 by jim              ###   ########.fr       */
+/*   Updated: 2025/10/27 16:38:07 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,8 +26,7 @@
 class WebservConfig{
 	private:
 		ConfigParser  _parser;
-		std::map<std::string, std::string> _server;
-		std::vector<int> _listen_ports;
+		std::vector<ServerConfig> _servers;
 		std::map<std::string, std::map<std::string, std::string> > _locations;
 		std::string		_configFile;
 		bool			_isValid;
@@ -62,8 +61,13 @@ class WebservConfig{
 		std::string getRoot() const;
 		std::string getIndex() const;
 
-		std::vector<int> getAllPorts() const; // hihi oopsi sorry
+		std::vector<ServerConfig> getAllServers() const;
+		const ServerConfig* getServerByPort(int port) const;
+		const ServerConfig* getServerByIndex(size_t index) const;
+		size_t getServerCount() const;
 
+		std::vector<int> getAllPorts() const;
+		
 		std::string getErrorPage(int code) const;
 		size_t getMaxContentLength() const;
 

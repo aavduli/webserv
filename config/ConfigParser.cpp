@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/15 10:45:14 by jim               #+#    #+#             */
-/*   Updated: 2025/10/26 17:38:56 by jim              ###   ########.fr       */
+/*   Updated: 2025/10/27 17:49:33 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -177,4 +177,65 @@ LocationsConfig ConfigParser::parseLocations(const std::vector<std::string> & li
 		config.locations[currentLocationPath] = currentLocation;
 
 	return config;
+}
+
+std::vector<ServerConfig> ConfigParser::parseAllServers(const std::vector<std::string>&  lines) const{
+	std::vector<ServerConfig> servers;
+	ServerConfig currentServer;
+	ParseState state = OUTSIDE_BLOCK;
+	bool inServer = false;
+
+	for(size_t i = 0; i <lines.size(); ++i){
+		const std::string& line = lines[i];
+
+		if (line.empty() || line[0] == '#') continue;
+		//begin of block server
+		if (line.find(SERVER_START) == 0 && state == OUTSIDE_BLOCK){
+			if (inServer)
+				servers.push_back(currentServer);
+			//new srv
+			currentServer = ServerConfig();
+			state = IN_SERVER_BLOCK;
+			inServer = true;
+			continue;
+		}
+
+		//in server bloc
+		if (state == IN_SERVER_BLOCK){
+			if (line == BLOCK_END){
+				servers.push_back(currentServer);
+				state = OUTSIDE_BLOCK;
+				inServer = false;
+				continue;
+			}
+
+			//skip loca block
+			if (line.find(LOCATION_START) == 0){
+				skipBlock(i, lines);
+				continue;
+			}
+
+			std::pair<std::string, std::string> directive = parseDirective(line);
+			if (!directive.first.empty()){
+				if (directive.first == "listen"){
+					currentServer.listen_ports.push_back(directive.second);
+				}
+				if (directive.first == "error_page"){
+					std::istringstream iss(directive.second);
+					std::string code;
+					std::string filepath;
+					if (iss >> code >> filepath){
+						std::string key = "error_page_" +code;
+						currentServer.directives[key] = filepath;
+					}else{
+						currentServer.directives[directive.first] = directive.second;
+					}
+				}else{
+					currentServer.directives[directive.first] = directive.second;
+				}
+			}
+		}
+	}
+	return servers;
+
 }
