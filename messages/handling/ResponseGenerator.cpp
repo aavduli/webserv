@@ -177,57 +177,53 @@ void ResponseGenerator::generateErrorResponse() {
 void ResponseGenerator::generateCGIResponse() {
 
 	console::log("[INFO] Generating CGI response", MSG);
-
-	const std::string& script_path = _request->getUri().getEffectivePath();
-	std::string python_path = _config.getCgiPath(_request->ctx._location_name);
-
-	CgiExec executor(script_path, python_path, &_config);
-	std::string cgi_output = executor.execute(_request);
-
-	if (cgi_output.empty()){
-		console::log("[ERROR] CGI execution failed", MSG);
-		_last_status = E_INTERNAL_SERVER_ERROR;
-		return generateErrorResponse();
-	}
-
-
-	//parsing cgi output
-	parseCGIOutput(cgi_output);
-	_response->setStatus(E_OK);
-	_response->setBodyType(B_CGI);  // CGI sets its own Content-Type
+	_response->setBodyType(B_CGI);
 }
 
-void ResponseGenerator::parseCGIOutput(const std::string& cgi_output){
-	//first find the empty lime, separator header body
-	size_t header_end= cgi_output.find("\n\n");
-	if (header_end == std::string::npos){
-		//no head ? :(
-		_response->setBody(cgi_output);
-		_response->setBodyType(B_CGI);
-		return;
+std::string HTMLTemplate::render() const {
+	
+	std::stringstream html;
+	html << "<!DOCTYPE html>\n";
+	html << "<html><head>";
+	html << "<title>" << title << "</title>";
+	html << "<link rel=\"stylesheet\" href=\"/css/style.css\">";
+	html << "</head>\n";
+	
+	html << "<body";
+	if (!page_type.empty())
+		html << " class=\"" + page_type + "\"";
+	html << ">\n";
+	
+	if (has_main_title) {
+		html << "\t<div class=\"main-title\">\n";
+		html << "\t\t<h1>" << title << "</h1>\n";
+		if (!subtitle.empty())
+			html << "\t\t<p class=\"subtitle\">" << subtitle << "</p>\n";
+		html << "\t</div>\n\n";
 	}
-
-	//separator header body
-	std::string header_part = cgi_output.substr(0,header_end);
-	std::string body_part = cgi_output.substr(header_end + 2); // count +2 for \n\n
-
-	//parse header line by line
-	std::istringstream header_stream(header_part);
-	std::string line;
-	while(std::getline(header_stream, line)){
-		size_t colon_position = line.find(':');
-		if (colon_position != std::string::npos){
-			std::string header_name = line.substr(0, colon_position);
-			std::string header_value = line.substr(colon_position + 1);
-
-			//delet space
-			while (!header_value.empty() && header_value[0] == ' '){
-				header_value = header_value.substr(1);}
-
-			_response->addHeader(header_name, str_to_vect(header_value, ""));
-		}
+	
+	html << "\t<div class=\"card\">\n";
+	html << "\t\t<div class=\"inner";
+	if (!card_type.empty())
+		html << " " + card_type;
+	html << "\">\n";
+	
+	if (!has_main_title) {
+		html << "\t\t\t<h1>" << title << "</h1>\n";
+		if (!subtitle.empty())
+			html << "\t\t\t<p class=\"subtitle\">" << subtitle << "</p>\n";
 	}
-	_response->setBody(body_part);
+	
+	if (!content.empty())
+		html << "<br>" << content << "<br>";
+	
+	html << "\t\t<div class=\"links\">\n";
+	html << "\t\t\t<a href=\"/\">Back to homepage</a>\n";
+	html << "\t\t</div>\n";
+	html << "\t</div>\n";
+	html << "\t</div>\n";
+	html << "</body></html>";
+	return html.str();
 }
 
 std::string HTMLTemplate::render() const {
