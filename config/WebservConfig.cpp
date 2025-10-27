@@ -205,7 +205,7 @@ std::string WebservConfig::getErrorPage(int code) const {
 	std::string codeStr = oss.str();
 
 	//adding getter for multiple error code page
-	std::string keyPrefixe = "error_page" + codeStr;
+	std::string keyPrefixe = "error_page_" + codeStr;
 	std::map<std::string, std::string>::const_iterator it = _server.find(keyPrefixe);
 
 	if (it != _server.end()){
