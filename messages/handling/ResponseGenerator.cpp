@@ -1,13 +1,12 @@
 #include "ResponseGenerator.hpp"
 
-ResponseGenerator::ResponseGenerator(const WebservConfig& config, HttpRequest* request, HttpResponse* response, Status status) : _config(config), _request(request), _response(response), _last_status(status), _done(false) {}
-ResponseGenerator::ResponseGenerator(const ResponseGenerator& rhs) : _config(rhs._config), _request(rhs._request), _response(rhs._response), _last_status(rhs._last_status), _done(rhs._done) {}
+ResponseGenerator::ResponseGenerator(const WebservConfig& config, HttpRequest* request, HttpResponse* response, Status status) : _config(config), _request(request), _response(response), _last_status(status) {}
+ResponseGenerator::ResponseGenerator(const ResponseGenerator& rhs) : _config(rhs._config), _request(rhs._request), _response(rhs._response), _last_status(rhs._last_status){}
 ResponseGenerator& ResponseGenerator::operator=(const ResponseGenerator& rhs) {
 	if (this != &rhs) {
 		_request = rhs._request;
 		_response = rhs._response;
 		_last_status = rhs._last_status;
-		_done = rhs._done;
 	}
 	return *this;
 }
@@ -18,20 +17,18 @@ void ResponseGenerator::generateResponse() {
 
 	if (_last_status == E_REDIRECT_PERMANENT || _last_status == E_REDIRECT_TEMPORARY)
 		generateRedirResponse();
+	else if (_last_status == E_OK && _request->getMethod() == "POST")
+		generatePostResponse();
+	else if (_last_status == E_OK && _request->getMethod() == "DELETE")
+		generateDeleteResponse();
+	else if (_last_status == E_OK && isValidCGI())
+		generateCGIResponse();
 	else if (_last_status == E_OK) {
-		if (_request->getMethod() == "POST")
-			generatePostResponse();
-		else if (_request->getMethod() == "DELETE")
-			generateDeleteResponse();
-		else if (isValidCGI())
-			generateCGIResponse();
-		else {
-			addValidIndex();
-			if (is_directory(_request->getUri().getEffectivePath()))
-				generateDirectoryResponse();
-			else
-				generateStaticFileResponse();
-		}
+		addValidIndex();
+		if (is_directory(_request->getUri().getEffectivePath()))
+			generateDirectoryResponse();
+		else
+			generateStaticFileResponse();
 	}
 	else
 		generateErrorResponse();
@@ -41,53 +38,35 @@ void ResponseGenerator::generateResponse() {
 // TODO check if correct logic
 void ResponseGenerator::generatePostResponse() {
 
-	std::stringstream html;
-	html << "<!DOCTYPE html>\n";
-	html << "<html><head><title>Success</title></head>\n";
-	html << "<body>\n";
-	html << "<h1>Success!</h1>\n";
-	html << "<p>Your POST request was processed successfully.</p>";
-	
-	// show post data if any
+	std::string content;
 	const std::map<std::string, PostData>& post_data = _request->getPostData();
 	if (!post_data.empty()) {
-		html << "<p>";
+		content = "<p>";
 		for (std::map<std::string, PostData>::const_iterator it = post_data.begin(); it != post_data.end(); ++it) {
-			html << "<strong>" << it->first << ":</strong> ";
+			content += "<strong>" + it->first + ":</strong> ";
 			if (it->second.is_file)
-				html << it->second.new_filename;
+				content += it->second.new_filename;
 			else
-				html << it->second.content;
-			html << "<br>";
+				content += it->second.content;
+			content += "<br>";
 		}
 	}
-	html << "<br><a href=\"/\">Back to homepage</a></p>\n";
-	html << "</body></html>";
 
+	HTMLTemplate tmpl("Success", "POST Method", content, "", "", false);
 	_response->setStatus(E_OK);
-	_response->setBody(html.str());
+	_response->setBody(tmpl.render());
 	_response->setBodyType(B_HTML);
 }
 
 // TODO check if correct logic
 void ResponseGenerator::generateDeleteResponse() {
 
-	const std::string& path = _request->getUri().getPath();
-	std::stringstream html;
-	html << "<!DOCTYPE html>\n";
-	html << "<html><head><title>Success</title></head>\n";
-	html << "<body>\n";
-	html << "<h1>Success!</h1>\n";
-	html << "<p>File <strong>" << path << "</strong> was successfully removed.</p>";
-	html << "<br><a href=\"/\">Back to homepage</a></p>\n";
-	html << "</body></html>";
-
+	HTMLTemplate tmpl("Success", "DELETE Method", "<p>File was successfully removed.</p>", "", "", false);
 	_response->setStatus(E_OK);
-	_response->setBody(html.str());
+	_response->setBody(tmpl.render());
 	_response->setBodyType(B_HTML);
 }
 
-// non-blocking read with buffer
 void ResponseGenerator::generateStaticFileResponse() {
 	
 	const std::string& path = _request->getUri().getEffectivePath();
@@ -112,27 +91,60 @@ void ResponseGenerator::generateDirectoryResponse() {
 		_last_status = E_FORBIDDEN;
 		return generateErrorResponse();
 	}
-
-	const std::string& path = _request->getUri().getEffectivePath();
-	DIR* dir = opendir(path.c_str());
+	const std::string& dir_path = _request->getUri().getEffectivePath();
+	DIR* dir = opendir(dir_path.c_str());
 	if (!dir) {
 		console::log("[ERROR][GENERATE RESPONSE] Couldn't open directory", MSG);
-		_last_status = findErrorStatus(path);
+		_last_status = findErrorStatus(dir_path);
 		return generateErrorResponse();
 	}
-	_response->setBody(generateDirectoryHTML());
+
+	const std::string& url_path = _request->getUri().getPath();
+	std::string content;
+
+	if (url_path != "/" && url_path.length() > 1) {					// if not root, link parent dir
+		std::string parent_path = remove_suffix(url_path, "/");		// remove trailing /
+		size_t last_slash = parent_path.find_last_of('/');
+		if (last_slash == 0)
+			parent_path = "/";
+		else
+			parent_path = parent_path.substr(0, last_slash);
+		content = "<p><a href=\"" + parent_path + "\">../</a>\n</p>";
+	}
+
+	struct dirent *en;
+	while ((en = readdir(dir)) != NULL) {
+		std::string name = en->d_name;
+		if (name == "." || name == "..")
+			continue;
+		std::string file_path = build_full_path(url_path, name);
+		content += "<p><a href=\"" + file_path + "\">" + name + "</a>\n</p>";
+	}
+	closedir(dir);
+
+	HTMLTemplate tmpl("Directory Listing", "Index of " + _request->ctx._location_name, content, "", "", false);
+	_response->setBody(tmpl.render());
 	_response->setBodyType(B_HTML);
 	_response->setStatus(E_OK);
-	closedir(dir);
 	console::log("[INFO][GET] Directory listing			OK", MSG);
 }
 
 void ResponseGenerator::generateRedirResponse() {
 
 	const std::string& destination = _request->getUri().getRedirDestination();
+	_response->addHeader("Location", str_to_vect(destination, ""));
+
+	std::string title = nb_to_string(_last_status);
+	std::string subtitle;
+	if (_last_status == E_REDIRECT_PERMANENT)
+		subtitle = "Moved Permanently";
+	else
+		subtitle = "Found (Moved Temporarily)";
+	std::string content = "<p>New location: <a href=\"" + destination + "\"></a></p>\n";
+	HTMLTemplate tmpl(title, subtitle, content, "", "", false);
+
 	_response->setStatus(_last_status);
-	_response->addHeader("Location", str_to_vect(destination, ""));		// required
-	_response->setBody(generateRedirHTML());
+	_response->setBody(tmpl.render());
 	_response->setBodyType(B_HTML);
 	console::log("[INFO][GET] Redirection				OK", MSG);
 }
@@ -141,26 +153,77 @@ void ResponseGenerator::generateErrorResponse() {
 
 	_response->setStatus(_last_status);
 	std::string error_page_path = _config.getErrorPage(_last_status);
-
-	if (!error_page_path.empty()) {		// custom error page
-		std::ifstream file(error_page_path.c_str());
-		if (file.is_open()) {
-			_response->setBody(get_read_file_content(file));
-			file.close();
-			_response->setBodyType(B_FILE);
-			return ;
+	if (!error_page_path.empty()) {
+		if (is_valid_file_path(error_page_path)) {
+			std::ifstream file(error_page_path.c_str());
+			if (file.is_open()) {
+				std::string content = get_read_file_content(file);
+				_response->setBody(content);
+				file.close();
+				_response->setBodyType(B_HTML);
+				console::log("[INFO][RESPONSE] Custom error page	OK", MSG);
+				return ;
+			}
 		}
-		console::log("[ERROR][GENERATE RESPONSE] Failed to read custom error path: " + error_page_path, MSG);
+		console::log("[ERROR][GENERATE RESPONSE] Invalid custom error page: " + error_page_path, MSG);
 	}
-	_response->setBody(generateDefaultErrorHTML());
+
+	HTMLTemplate tmpl(nb_to_string(_last_status), status_msg(_last_status), "", "error", "error-page", false);
+	_response->setBody(tmpl.render());
 	_response->setBodyType(B_HTML);
-	console::log("[INFO][RESPONSE] Error response		OK", MSG);
+	console::log("[INFO][RESPONSE] Default error page	OK", MSG);
 }
 
 void ResponseGenerator::generateCGIResponse() {
 
 	console::log("[INFO] Generating CGI response", MSG);
 	_response->setBodyType(B_CGI);
+}
+
+std::string HTMLTemplate::render() const {
+	
+	std::stringstream html;
+	html << "<!DOCTYPE html>\n";
+	html << "<html><head>";
+	html << "<title>" << title << "</title>";
+	html << "<link rel=\"stylesheet\" href=\"/css/style.css\">";
+	html << "</head>\n";
+	
+	html << "<body";
+	if (!page_type.empty())
+		html << " class=\"" + page_type + "\"";
+	html << ">\n";
+	
+	if (has_main_title) {
+		html << "\t<div class=\"main-title\">\n";
+		html << "\t\t<h1>" << title << "</h1>\n";
+		if (!subtitle.empty())
+			html << "\t\t<p class=\"subtitle\">" << subtitle << "</p>\n";
+		html << "\t</div>\n\n";
+	}
+	
+	html << "\t<div class=\"card\">\n";
+	html << "\t\t<div class=\"inner";
+	if (!card_type.empty())
+		html << " " + card_type;
+	html << "\">\n";
+	
+	if (!has_main_title) {
+		html << "\t\t\t<h1>" << title << "</h1>\n";
+		if (!subtitle.empty())
+			html << "\t\t\t<p class=\"subtitle\">" << subtitle << "</p>\n";
+	}
+	
+	if (!content.empty())
+		html << "<br>" << content << "<br>";
+	
+	html << "\t\t<div class=\"links\">\n";
+	html << "\t\t\t<a href=\"/\">Back to homepage</a>\n";
+	html << "\t\t</div>\n";
+	html << "\t</div>\n";
+	html << "\t</div>\n";
+	html << "</body></html>";
+	return html.str();
 }
 
 void ResponseGenerator::setHeaders() {
@@ -186,67 +249,6 @@ void ResponseGenerator::setHeaders() {
 		std::string body_size = nb_to_string(_response->getBody().size());
 		_response->addHeader("Content-Length", str_to_vect(body_size, ""));
 	}
-}
-
-std::string	ResponseGenerator::generateDirectoryHTML() {
-	
-	const std::string& url_path = _request->getUri().getPath();
-	const std::string& dir_path = _request->getUri().getEffectivePath();
-	DIR* dir = opendir(dir_path.c_str());
-	if (!dir)
-		return "<html><body><h1>Error: Cannot open directory</h1></body></html>";
-
-	std::stringstream html;
-	html << "<!DOCTYPE html>\n";
-	html << "<html>\n<head>\n";
-	html << "<title>Index of " << _request->ctx._location_name << "</title></head>\n";
-	html << "<body><h1>Index of " << _request->ctx._location_name << "</h1>\n";
-
-	if (url_path != "/" && url_path.length() > 1) {					// if not root, link parent dir
-		std::string parent_path = remove_suffix(url_path, "/");		// remove trailing /
-		size_t last_slash = parent_path.find_last_of('/');
-		if (last_slash == 0)
-			parent_path = "/";
-		else
-			parent_path = parent_path.substr(0, last_slash);
-		html << "<p><a href=\"" << parent_path << "\">../</a>\n</p>";
-	}
-
-	struct dirent *en;
-	while ((en = readdir(dir)) != NULL) {
-		std::string name = en->d_name;
-		if (name == "." || name == "..")
-			continue;
-		std::string file_path = build_full_path(url_path, name);
-		html << "<p><a href=\"" << file_path << "\">" << name << "</a>\n</p>";
-	}	
-	closedir(dir);
-	html << "</body></html>";
-	return html.str();
-}
-
-std::string	ResponseGenerator::generateDefaultErrorHTML() {
-
-	std::stringstream html;
-	html << "<!DOCTYPE html>\n";
-	html << "<html><head><title>" << getLastStatus() << " - " << status_msg(_response->getStatus()) << "</title></head>\n";
-	html << "<body><h1>" << getLastStatus() << " - " << status_msg(_response->getStatus()) << "</h1>\n";
-	html << "<p>Very sad.</p>";
-	html << "<p><a href=\"/\">Back to homepage</a></p>\n";
-	html << "</body></html>";
-	return html.str();
-}
-
-std::string	ResponseGenerator::generateRedirHTML() {
-
-	std::stringstream html;
-	html << "<!DOCTYPE html>\n";
-	html << "<html><head><title>Redirected</title></head>\n";
-	html << "<body>\n";
-	html << "<h1>" << (_last_status == E_REDIRECT_PERMANENT ? "Moved Permanently" : "Moved Temporarily") << "</h1>\n";
-	html << "<p>The document has moved <a href=\"" << _request->getUri().getRedirDestination() << "\">here</a>.</p>\n";
-	html << "</body></html>";
-	return html.str();
 }
 
 void	ResponseGenerator::addValidIndex() {
