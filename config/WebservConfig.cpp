@@ -242,28 +242,28 @@ bool WebservConfig::hasLocation(const std::string& path) const{
 	return _locations.find(path) != _locations.end();
 }
 
-bool WebservConfig::matchesServerName(const std::string& host) const{
-	std::string serverName = getServerName();
+// bool WebservConfig::matchesServerName(const std::string& host) const{
+// 	std::string serverName = getServerName();
 
-	//exacte match
-	if(host == serverName) return true;
+// 	//exacte match
+// 	if(host == serverName) return true;
 
-	//with port
-	std::ostringstream oss;
-	oss << getPort();
-	std::string hostWPort = serverName +":"+oss.str();
-	if (host == hostWPort) return true;
+// 	//with port
+// 	std::ostringstream oss;
+// 	oss << getPort();
+// 	std::string hostWPort = serverName +":"+oss.str();
+// 	if (host == hostWPort) return true;
 
-	//matching without default port
-	if (getPort() == 80 || getPort() == 443){
-		size_t colonPos = host.find(':');
-		if (colonPos != std::string::npos){
-			std::string hostOnly = host.substr(0, colonPos);
-			if (hostOnly == serverName) return true;
-		}
-	}
-	return false;
-}
+// 	//matching without default port
+// 	if (getPort() == 80 || getPort() == 443){
+// 		size_t colonPos = host.find(':');
+// 		if (colonPos != std::string::npos){
+// 			std::string hostOnly = host.substr(0, colonPos);
+// 			if (hostOnly == serverName) return true;
+// 		}
+// 	}
+// 	return false;
+// }
 
 //std::vector<std::string> hostValue = _request.getHeaderValues("Host");
 bool WebservConfig::isValidHostHeader(const std::string& host) const{
@@ -331,12 +331,12 @@ void WebservConfig::printConfig() const {
 		}
 
 		if (!_locations.empty()){
-			console::log("==Locations==", CONF);
+			console::log("==========Locations==", CONF);
 			for (std::map<std::string, std::map<std::string, std::string> >::const_iterator locIt = _locations.begin(); locIt != _locations.end(); ++locIt){
-					console::log("location: " + locIt->first, CONF);
+					console::log("        location: " + locIt->first, CONF);
 					for (std::map<std::string, std::string>::const_iterator dirIt = locIt->second.begin();
 						dirIt != locIt->second.end(); ++dirIt){
-							console::log("    " + dirIt->first + ": "+dirIt->second, CONF);
+							console::log("            " + dirIt->first + ": "+dirIt->second, CONF);
 						}
 						console::log("", CONF);
 				}
