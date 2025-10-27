@@ -42,9 +42,6 @@ class ResponseGenerator {
 		void	generateStaticFileResponse();
 		void	generateErrorResponse();
 
-		void	generatePostResponse();
-		void	generateDeleteResponse();
-
 	public:
 		ResponseGenerator(const WebservConfig& config, HttpRequest* request, HttpResponse* response, Status status);
 		ResponseGenerator(const ResponseGenerator& rhs);
