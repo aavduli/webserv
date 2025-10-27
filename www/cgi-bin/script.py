@@ -2,6 +2,7 @@
 
 import os
 import sys
+from urllib.parse import parse_qs
 
 print("Content-Type: text/html")
 print("")
@@ -9,6 +10,25 @@ print("")
 print("<html>")
 print("<head><title>CGI Environment Test</title></head>")
 print("<body>")
+
+query_string = os.environ.get('QUERY_STRING', '')
+if query_string:
+	# Parser les paramètres
+	params = parse_qs(query_string)
+
+	# Extraire name et message
+	name = params.get('name', [''])[0]
+	message = params.get('message', [''])[0]
+
+	print("<div class='result'>")
+	print(f"<h2>Form Data Received:</h2>")
+	print(f"<p><strong>Name:</strong> {name if name else 'Not provided'}</p>")
+	print(f"<p><strong>Message:</strong> {message if message else 'Not provided'}</p>")
+	print("</div>")
+else:
+	print("<p>No data received. Please fill the form.</p>")
+
+
 print("<h1>CGI Environment Variables</h1>")
 
 print("<h2>Basic CGI Variables:</h2>")
