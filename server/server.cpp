@@ -1,19 +1,18 @@
 #include "server.hpp"
 
+int server::_shutdown_requested = 0;
 struct sigaction server::_sa;
 
-server::server(int port) : _port(port), _shutdown_requested(0) {}
+server::server(int port) : _port(port) {}
 
 server::~server() {}
 
 void server::signalHandler(int signal) {
 	if (signal == SIGTERM) {
-		std::cout << "\nSIGTERM RECIEVED" << std::endl;
 		console::log("sigaction SIGTERM, shutting down....", SRV);
 		server::setShutDownRequest();
 	}
 	else if (signal == SIGINT) {
-		std::cout << "\nSIGINT RECIEVED" << std::endl;
 		console::log("sigaction SIGINT, shutting down...", SRV);
 		server::setShutDownRequest();
 	}
@@ -37,8 +36,8 @@ void server::setupSignalHandler() {
 
 void server::serverManager(WebservConfig& config) {
 	console::log("===STARTING WEBSERVER===", SRV);
-	NetworkHandler::ignoreSigPipe();
 	server::setupSignalHandler();
+	NetworkHandler::ignoreSigPipe();
 
 	int serverFd = NetworkHandler::createServerSocket();
 	NetworkHandler::setupSocketOptions(serverFd);
@@ -56,8 +55,9 @@ void server::serverManager(WebservConfig& config) {
 	console::log("Starting Event loop", SRV);
 	evPro.runEventLoop(config);
 	console::log("Event Loop stopped .... starting disconnection", SRV);
-	if (_shutdown_requested)
-		std::cout << "shutdown requested" << std::endl;
+	if (_shutdown_requested) {
+		std::cout << YELLOW << "\nShutdown requested... bye !" << RESET << std::endl;
+	}
 }
 
 int server::getPort() const {
@@ -65,7 +65,7 @@ int server::getPort() const {
 }
 
 int server::getShutDownRequest() {
-	return ;
+	return _shutdown_requested;
 }
 
 void server::setShutDownRequest() {

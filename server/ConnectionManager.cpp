@@ -65,7 +65,6 @@ const Conn& connectionManager::getConnection(int clientFD) const {
 }
 
 void connectionManager::removeAllConnection() {
-	std::cout << "Removing all connection" << std::endl;
 	console::log("Removing all connection: " + intToString(_connections.size()), SRV);
 	for (std::map<int, Conn>::const_iterator it = _connections.begin(); it != _connections.end(); ++it) {
 		int fd = it->first;
