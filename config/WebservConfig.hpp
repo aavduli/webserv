@@ -66,6 +66,8 @@ class WebservConfig{
 
 		std::vector<int> getAllPorts() const;
 
+		std::vector<int> getAllPorts() const;
+		
 		std::string getErrorPage(int code) const;
 		size_t getMaxContentLength() const;
 
