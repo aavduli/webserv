@@ -68,5 +68,9 @@ for key, value in os.environ.items():
 print("<h2>Working Directory:</h2>")
 print(f"<p><strong>Current Dir:</strong> {os.getcwd()}</p>")
 
-print("</body>")
-print("</html>")
+
+
+print("""    </div>
+    <p><a href="/form">← Back to Test Forms</a></p>
+</body>
+</html>""")

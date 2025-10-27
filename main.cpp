@@ -34,6 +34,7 @@ int main(int ac, char **av) {
 		}
 		test.close();
 		console::closeFile();
+		std::cout << "Configuration error: " << config.getLastError() << std::endl;
 		return 1;
 	}
 	else{
