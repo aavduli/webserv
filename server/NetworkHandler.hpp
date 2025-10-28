@@ -13,6 +13,8 @@
 #include <cerrno>
 #include <csignal>
 #include <cstdlib>
+#include <vector>
+#include <algorithm>
 #include "../console/console.hpp"
 
 enum NetworkError {
@@ -26,10 +28,12 @@ enum NetworkError {
 
 class NetworkHandler {
 	private:
+		static std::vector<int> _server_socket;
 		NetworkHandler();
 		static void logNetworkError(const std::string& operation, const std::string& error);
 	public:
 		//server creation and configuration
+		static bool initializeServer(std::vector<int>& ports);
 		static int createServerSocket();
 		static void setupSocketOptions(int fd);
 		static int makeNonblocking(int fd);
@@ -50,4 +54,9 @@ class NetworkHandler {
 
 		//Address
 		static struct sockaddr_in createSockkaddr(int port);
+		static void cleanup();
+
+		//getters
+		static bool isServerFd(int fd);
+		static const std::vector<int>& getServerSocket();
 };

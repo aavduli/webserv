@@ -10,21 +10,21 @@
 // 8. Remove EPOLLOUT from epoll
 // 9. Close connection
 
-eventProcessor::eventProcessor(eventManager& em, connectionManager& cm, int serverFd) : _eventManager(em), _connectionManager(cm), _serverFd(serverFd), _shouldStop(false) {
+eventProcessor::eventProcessor(eventManager& em, connectionManager& cm, const std::vector<int>& serverSocket) : _eventManager(em), _connectionManager(cm), _serverSocket(serverSocket), _shouldStop(false) {
 }
 
 eventProcessor::~eventProcessor() {}
 
 //private helper method
-void eventProcessor::acceptNewConnections() {
+void eventProcessor::acceptNewConnections(int serverFd) {
 	while (true) {
 		struct sockaddr_storage clientAddr;
-		int clientFd = NetworkHandler::acceptConnection(_serverFd, clientAddr);
+		int clientFd = NetworkHandler::acceptConnection(serverFd, clientAddr);
 		if (clientFd < 0)
 			break;
 		_eventManager.addFd(clientFd, EPOLLIN | EPOLLRDHUP);
 		_connectionManager.addConnection(clientFd);
-		console::log("New client on server:", clientFd, SRV);
+		console::log("New client to server on FD:", clientFd, SRV);
 	}
 }
 
@@ -114,7 +114,7 @@ void eventProcessor::runEventLoop(const WebservConfig& config) {
 	time_t lastTimeOutCheck = time(NULL);
 	const int timeOutInterval = ServerConstants::TIMEOUT_CHECK;
 
-	while (!_shouldStop) {
+	while (!server::getShutDownRequest()) {
 		int nfds = _eventManager.wait(5000);
 		if (nfds < 0) {
 			if (errno == EINTR) continue;
@@ -129,7 +129,7 @@ void eventProcessor::runEventLoop(const WebservConfig& config) {
 				break;
 			}
 			else if (isServerSocket(fd)) {
-				handleServerEvents();
+				acceptNewConnections(fd);
 			}
 			else if (isDisconnectionEvent(events)) {
 				handleClientDisconnection(fd);
@@ -168,9 +168,6 @@ void eventProcessor::stopEventLoop() {
 	console::log("Event stop loop requested", SRV);
 }
 
-void eventProcessor::handleServerEvents() {
-	acceptNewConnections();
-}
 void eventProcessor::handleClientDisconnection(int clientFd) {
 	_connectionManager.removeConnection(clientFd);
 	//EPOLLUP | EPOLLERR | EPOLLRDUP
@@ -217,15 +214,17 @@ void eventProcessor::handleClientData(int clientFd, const WebservConfig& config)
 }
 
 bool eventProcessor::isServerSocket(int fd) const {
-	if (fd == _serverFd)
+	if (std::find(_serverSocket.begin(), _serverSocket.end(), fd) != _serverSocket.end())
 		return true;
 	return false;
 }
+
 bool eventProcessor::isDisconnectionEvent(uint32_t event) const {
 	if (event & (EPOLLHUP | EPOLLERR | EPOLLRDHUP))
 		return true;
 	return false;
 }
+
 bool eventProcessor::isDataReadyEvent(uint32_t event) const {
 	if (event & EPOLLIN)
 		return true;
