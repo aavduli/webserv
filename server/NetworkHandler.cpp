@@ -1,7 +1,32 @@
 #include "NetworkHandler.hpp"
 
+std::vector<int> NetworkHandler::_server_socket;
+
 void NetworkHandler::logNetworkError(const std::string &operation, const std::string &error) {
 	console::log(operation + error, ERROR);
+}
+
+bool NetworkHandler::initializeServer(std::vector<int>& ports) {
+	for (size_t i = 0; i < ports.size(); ++i) {
+		int port = ports[i];
+		int server_fd = socket(AF_INET, SOCK_STREAM, 0);
+		if (server_fd < 0) {
+			console::log("Failed to create socket for port: ", port, ERROR);
+			continue ;
+		}
+		if (makeNonblocking(server_fd) != 0) {
+			close(server_fd);
+			continue ;
+		}
+		setupSocketOptions(server_fd);
+		struct sockaddr_in addr = createSockkaddr(port);
+		if (bindAndListen(server_fd, addr) != NET_SUCCESS) {
+			console::log("Failed to bind and listen on port: ", port, ERROR);
+			continue ;
+		}
+		_server_socket.push_back(server_fd);
+	}
+	return !_server_socket.empty();
 }
 
 //do operation on FD. SET_FL == file status FLAG / F_SETFD == file descriptor flags FD_CLOEXEC = atomicaly close the fd on exec
@@ -131,4 +156,21 @@ struct sockaddr_in NetworkHandler::createSockkaddr(int port) {
 	address.sin_addr.s_addr = htonl(INADDR_ANY);
 	address.sin_port = htons(port);
 	return address;
+}
+
+void NetworkHandler::cleanup() {
+	for (size_t i = 0; i < _server_socket.size(); ++i) {
+		int fd = _server_socket[i];
+		if (fd > 0)
+			close(fd);
+	}
+	_server_socket.clear();
+}
+
+bool NetworkHandler::isServerFd(int fd) {
+	return std::find(_server_socket.begin(), _server_socket.end(), fd) != _server_socket.end();
+}
+
+const std::vector<int>& NetworkHandler::getServerSocket() {
+	return _server_socket;
 }

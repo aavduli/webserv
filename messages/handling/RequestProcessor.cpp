@@ -294,12 +294,7 @@ bool	RequestProcessor::processDeleteRequest() {
 	}
 	else
 		target_path = _request->getUri().getEffectivePath();
-// 
-// 	if (target_path.find("files") == std::string::npos) {
-// 		console::log("[ERROR][DELETE] Forbidden: File must be in files directory", MSG);
-// 		_last_status = E_FORBIDDEN;
-// 		return false;
-// 	}
+
 	if (!is_within_root(target_path, _request->ctx._document_root)) {
 		console::log("[ERROR][VALIDATION] Path escapes document root", MSG);
 		_last_status = E_FORBIDDEN;

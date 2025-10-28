@@ -35,7 +35,7 @@ jobs:
       - name: Test config parsing
         run: |
           # Test if server can start with default config
-          timeout 5s ./webserv test &
+          timeout 5s ./webserv default &
           sleep 2
           pkill -f "./webserv" || true
 
@@ -54,7 +54,7 @@ jobs:
 
       - name: Test HTTP request with curl
         run: |
-          ./webserv test &
+          ./webserv default &
           SERVER_PID=$!
 
           sleep 3

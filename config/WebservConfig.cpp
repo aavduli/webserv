@@ -73,7 +73,7 @@ bool WebservConfig::loadConfig(const std::string& configFile){
 	}
 
 	//validate all servers and lcoations
-	std::cout<<"[DEBUG] parsed" << serverConfigs.size() << " servers" << std::endl;
+	//std::cout<<"[DEBUG] parsed" << serverConfigs.size() << " servers" << std::endl;
 	for (size_t i = 0; i < serverConfigs.size(); i++){
 		if (!_validator.validateServerConfig(serverConfigs[i])){
 			std::ostringstream oss;

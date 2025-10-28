@@ -9,6 +9,23 @@
 #include <ctime>
 #include <sstream>
 
+struct HTMLTemplate {
+
+	std::string	title;
+	std::string	subtitle;
+	std::string	content;
+	std::string	card_type;			// "error", "form", ""
+	std::string	page_type;			// "error-page", ""
+	bool		has_main_title;		// true for forms/file manager, false for errors
+
+	HTMLTemplate(const std::string& t = "", const std::string& st = "", 
+				const std::string& c = "", const std::string& ct = "", 
+				const std::string& pt = "", bool hmt = false)
+		: title(t), subtitle(st), content(c), card_type(ct), page_type(pt), has_main_title(hmt) {}
+
+	std::string render() const;
+};
+
 class ResponseGenerator {
 
 	private:
@@ -16,17 +33,14 @@ class ResponseGenerator {
 		HttpRequest*			_request;
 		HttpResponse*			_response;
 		Status					_last_status;
-		bool					_done;
 
-		void	generateStaticFileResponse();
 		void	generateRedirResponse();
-		void	generateCGIResponse();
-		void	generateDirectoryResponse();
-		void	generateErrorResponse();
-
 		void	generatePostResponse();
 		void	generateDeleteResponse();
-		//void	parseCGIOutput(const std::string& cgi_output);
+		void	generateCGIResponse();
+		void	generateDirectoryResponse();
+		void	generateStaticFileResponse();
+		void	generateErrorResponse();
 
 	public:
 		ResponseGenerator(const WebservConfig& config, HttpRequest* request, HttpResponse* response, Status status);
@@ -35,17 +49,11 @@ class ResponseGenerator {
 		~ResponseGenerator();
 
 		Status			getLastStatus() const;
+		void			generateResponse();
 		bool			isValidCGI() const;
 		void			addValidIndex();
-
-		void			generateResponse();
-		std::string		generateDirectoryHTML();
-		std::string		generateDefaultErrorHTML();
-		std::string		generateRedirHTML();
-		std::string		generatePostSuccessHTML();
 		void			setHeaders();
 		void			parseCGIOutput(const std::string& cgi_output);
-		std::string		readFileContent(std::ifstream& file) const;
 };
 
 std::string		getMimeType(const std::string& extension);
