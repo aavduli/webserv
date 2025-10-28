@@ -3,7 +3,7 @@
 int server::_shutdown_requested = 0;
 struct sigaction server::_sa;
 
-server::server(int port) : _port(port) {}
+server::server(const std::vector<int>& port) : _port(port) {}
 
 server::~server() {}
 
@@ -39,28 +39,34 @@ void server::serverManager(WebservConfig& config) {
 	server::setupSignalHandler();
 	NetworkHandler::ignoreSigPipe();
 
-	int serverFd = NetworkHandler::createServerSocket();
-	NetworkHandler::setupSocketOptions(serverFd);
-	struct sockaddr_in address = NetworkHandler::createSockkaddr(_port);
-	if (NetworkHandler::bindAndListen(serverFd, address) != NET_SUCCESS) {
-		console::log("Failed to bind and listen on port", ERROR);
-		NetworkHandler::closeConnection(serverFd);
+	if (!NetworkHandler::initializeServer(_port)) {
+		console::log("Failed to initialize servers on any port", ERROR);
 		return ;
 	}
-	std::cout << GREEN << "server listening on port:" << _port << RESET << std::endl;
+	const std::vector<int>& serverSocket = NetworkHandler::getServerSocket();
+	std::cout << GREEN << "server listening on port:" << std::endl;
+	for (size_t i = 0; i < _port.size(); ++i) {
+		std::cout << _port[i] << " ";
+	}
+	std::cout << RESET << std::endl;
+
 	eventManager evMng(1024);
 	connectionManager cmMng(evMng, 1000);
-	eventProcessor evPro(evMng, cmMng, serverFd);
-	evMng.addFd(serverFd, EPOLLIN);
+	for (size_t i = 0; i < serverSocket.size(); i++) {
+		int serverFd = serverSocket[i];
+		evMng.addFd(serverFd, EPOLLIN);
+	}
+	eventProcessor evPro(evMng, cmMng, NetworkHandler::getServerSocket());
 	console::log("Starting Event loop", SRV);
 	evPro.runEventLoop(config);
 	console::log("Event Loop stopped .... starting disconnection", SRV);
+	NetworkHandler::cleanup();
 	if (_shutdown_requested) {
 		std::cout << YELLOW << "\nShutdown requested... bye !" << RESET << std::endl;
 	}
 }
 
-int server::getPort() const {
+const std::vector<int>& server::getPort() const {
 	return _port;
 }
 

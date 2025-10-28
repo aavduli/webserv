@@ -16,24 +16,23 @@ class eventProcessor {
 	private:
 		eventManager& _eventManager;
 		connectionManager& _connectionManager;
-		int _serverFd;
+		std::vector<int> _serverSocket;
 		bool _shouldStop;
 
 	private:
-		void acceptNewConnections();
+		void acceptNewConnections(int serverFd);
 		void handleReceiveError(int clientFd, ssize_t recvResult);
 		void sendResponse(int clientFd, const std::string& response);
 		void sendTimeOutResponse(int clientFd);
 
 	public:
-		eventProcessor(eventManager& em, connectionManager& cm, int serverFd);
+		eventProcessor(eventManager& em, connectionManager& cm, const std::vector<int>& serverSocket);
 		~eventProcessor();
 
 		void runEventLoop(const WebservConfig& config);
 		void checkAndCleanTimeout();
 		void stopEventLoop();
 
-		void handleServerEvents();
 		void handleClientDisconnection(int clientFd);
 		void handleClientData(int clientFd, const WebservConfig& config);
 		void handleClientWriteReady(int clientFd);
