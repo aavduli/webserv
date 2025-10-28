@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/15 14:57:26 by jim               #+#    #+#             */
-/*   Updated: 2025/10/26 11:13:29 by jim              ###   ########.fr       */
+/*   Updated: 2025/10/28 13:08:15 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -131,11 +131,21 @@ bool ConfigValidator::validateServerConfig(const ServerConfig& config) {
 	ParsingUtils utils;
 
 	// check mandatory dircrive
-	if (config.directives.find("listen") == config.directives.end()) {
+	if (config.listen_ports.empty()) {
 		setError("Missing required 'listen' directive");
 		console::log(_lastError, ERROR);
 		return (BLOCKINGERROR ? false : true);
 	}
+	for (size_t i = 0; i < config.listen_ports.size(); i++) {
+		std::vector<std::string> parts = utils.split(config.listen_ports[i], ':');
+		std::string portStr = (parts.size() == 2) ? parts[1] : config.listen_ports[i];
+		if (!utils.isValidPort(portStr)) {
+			setError("Invalid port: " + portStr);
+			console::log(_lastError, ERROR);
+			if (BLOCKINGERROR) return false;
+		}
+	}
+
 
 	// validate each directive
 	for (std::map<std::string, std::string>::const_iterator it = config.directives.begin();
@@ -144,16 +154,7 @@ bool ConfigValidator::validateServerConfig(const ServerConfig& config) {
 		const std::string& key = it->first;
 		const std::string& value = it->second;
 
-		if (key == "listen") {
-			std::vector<std::string> parts = utils.split(value, ':');
-			std::string portStr = (parts.size() == 2) ? parts[1] : value;
-			if (!utils.isValidPort(portStr)) {
-				_lastError = "Invalid port: " + portStr;
-				console::log(_lastError, ERROR);
-				if (BLOCKINGERROR) return false;
-			}
-		}
-		else if (key == "host") {
+		if (key == "host") {
 			if (!utils.isValidIP(value)) {
 				_lastError = "Invalid IP address: " + value;
 				console::log(_lastError, ERROR);
