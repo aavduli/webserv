@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/08 16:24:01 by jim               #+#    #+#             */
-/*   Updated: 2025/10/27 16:38:07 by jim              ###   ########.fr       */
+/*   Updated: 2025/10/28 13:10:43 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,7 +27,6 @@ class WebservConfig{
 	private:
 		ConfigParser  _parser;
 		std::vector<ServerConfig> _servers;
-		std::map<std::string, std::map<std::string, std::string> > _locations;
 		std::string		_configFile;
 		bool			_isValid;
 		ConfigValidator	_validator;
@@ -42,7 +41,6 @@ class WebservConfig{
 
 		bool loadConfig(const std::string& configFile);
 		bool isValid() const;
-		std::map<std::string, std::map<std::string, std::string> > convertToOldFormat(const LocationsConfig& locationsConfig) const;
 
 		//validation host
 		bool matchesServerName(const std::string& host) const;
@@ -67,16 +65,19 @@ class WebservConfig{
 		size_t getServerCount() const;
 
 		std::vector<int> getAllPorts() const;
-		
+
 		std::string getErrorPage(int code) const;
 		size_t getMaxContentLength() const;
 
-		//location
+		// default server
 		bool hasLocation(const std::string& path) const;
-
-		//locations access
-		const std::map<std::string, std::map<std::string, std::string> > &getAllLocations() const;
 		std::map<std::string, std::string> getLocationConfig(const std::string &path) const;
+
+		//location
+		bool hasLocation(const std::string& path, size_t serverIndex) const;
+		//locations access
+		const std::map<std::string, LocationConfig>& getLocations(size_t serverIndex) const;
+		std::map<std::string, std::string> getLocationConfig(const std::string &path, size_t serverIndex) const;
 
 		//CGI support
 		std::string getCgiPath(const std::string& location_path) const;
@@ -85,6 +86,8 @@ class WebservConfig{
 		//utils method
 		std::string getConfigFile()const;
 		void printConfig() const;
+
+
 
 };
 
