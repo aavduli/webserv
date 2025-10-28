@@ -14,7 +14,7 @@ bool NetworkHandler::initializeServer(std::vector<int>& ports) {
 			console::log("Failed to create socket for port: ", port, ERROR);
 			continue ;
 		}
-		if (makeNonblocking(server_fd) != 0) {
+		if (makeNonblocking(server_fd) != NET_SUCCESS) {
 			close(server_fd);
 			continue ;
 		}
@@ -36,7 +36,7 @@ int NetworkHandler::makeNonblocking(int fd) {
 	if (fcntl (fd, F_SETFL, fl | O_NONBLOCK) == -1) return NON_BLOCK_ERROR;
 
 	int clo = fcntl(fd, F_GETFD, 0);
-	if (clo == -1) return -1;
+	if (clo == -1) return NON_BLOCK_ERROR;
 	if (fcntl(fd, F_SETFD, clo | FD_CLOEXEC) == -1) return NON_BLOCK_ERROR;
 
 	return NET_SUCCESS;
@@ -119,8 +119,10 @@ ssize_t NetworkHandler::sendFullData(int fd, char *buffer, ssize_t remainingByte
 	while (totalSend < remainingBytes) {
 		ssize_t sent = send(fd, buffer + totalSend, remainingBytes - totalSend, 0);
 		if (sent < 0) {
-			if (errno == EAGAIN || errno == EWOULDBLOCK) continue;
-			return sent;
+			if (errno == EAGAIN || errno == EWOULDBLOCK) {
+				return totalSend;
+			}
+			return -1;
 		}
 		if (sent == 0) break;
 		totalSend += sent;
@@ -138,13 +140,13 @@ void NetworkHandler::ignoreSigPipe() {
 bool NetworkHandler::isSocketError(int fd) {
 	if (fd == -1) return true;
 	
-	// Check if socket is actually valid by trying to get socket options
+
 	int error = 0;
 	socklen_t len = sizeof(error);
 	int result = getsockopt(fd, SOL_SOCKET, SO_ERROR, &error, &len);
 	
-	if (result != 0) return true;  // getsockopt failed
-	if (error != 0) return true;   // Socket has an error condition
+	if (result != 0) return true;
+	if (error != 0) return true;
 	
 	return false;
 }
