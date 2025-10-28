@@ -181,7 +181,7 @@ LocationsConfig ConfigParser::parseLocations(const std::vector<std::string> & li
 	return config;
 }
 
-std::vector<ServerConfig> ConfigParser::parseAllServers(const std::vector<std::string>&  lines) const{
+std::vector<ServerConfig> ConfigParser::parseAllServers(const std::vector<std::string>& lines) const{
 	std::vector<ServerConfig> servers;
 	ServerConfig currentServer;
 	ParseState state = OUTSIDE_BLOCK;

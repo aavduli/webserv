@@ -45,19 +45,6 @@ std::string WebservConfig::getDirective(const std::string& directive) const {
 	if (_servers.empty()) return "";
 	std::map<std::string, std::string>::const_iterator it =_servers[0].directives.find(directive);
 	return (it != _servers[0].directives.end()) ? it->second : "";
- }
-
-//getAllLocation
-const std::map<std::string, std::map<std::string, std::string> >& WebservConfig::getAllLocations() const{
-	return _locations;
-}
-
-std::map<std::string, std::string> WebservConfig::getLocationConfig(const std::string& path) const{
-	std::map<std::string, std::map<std::string, std::string> >::const_iterator it = _locations.find(path);
-	if (it != _locations.end())
-		return it->second;
-	std::map<std::string, std::string> empty;
-	return empty;
 }
 
 std::string WebservConfig::getConfigFile() const{
@@ -85,31 +72,29 @@ bool WebservConfig::loadConfig(const std::string& configFile){
 		return false;
 	}
 
-	//validate all servers
-	for (size_t i = 0; i <serverConfigs.size(); i++){
+	//validate all servers and lcoations
+	std::cout<<"[DEBUG] parsed" << serverConfigs.size() << " servers" << std::endl;
+	for (size_t i = 0; i < serverConfigs.size(); i++){
 		if (!_validator.validateServerConfig(serverConfigs[i])){
 			std::ostringstream oss;
 			oss << "[ERROR] Server " << i << " config error: " << _validator.getLastError();
 			console::log(oss.str(), ERROR);
 			return false;
 		}
-	}
-
-	//parse and validate locations
-	LocationsConfig locationsConfig = parser.parseLocations(lines);
-	for (std::map<std::string, LocationConfig>::const_iterator it = locationsConfig.locations.begin(); it != locationsConfig.locations.end(); ++it){
-		if (!_validator.validateLocationConfig(it->second)){
-			console::log("[ERROR] " + it->first + " config error: " + _validator.getLastError(), ERROR);
-			return false;
+		for (std::map<std::string, LocationConfig>::const_iterator it = serverConfigs[i].locations.begin();
+			it != serverConfigs[i].locations.end(); ++it) {
+			if (!_validator.validateLocationConfig(it->second)){
+				std::ostringstream oss;
+				oss << "[ERROR] Server " << i << " location " << it->first << " config error: " << _validator.getLastError();
+				console::log(oss.str(), ERROR);
+				return false;
+			}
 		}
 	}
 
 	_servers = serverConfigs;
-	_locations = convertToOldFormat(locationsConfig);
 	_isValid = true;
 	return _isValid;
-
-}
 
 
 }
@@ -305,34 +290,35 @@ void WebservConfig::printConfig() const {
 	console::log("", CONF);
 
 	for (size_t i = 0; i < _servers.size(); i++) {
-			std::ostringstream oss;
-			oss << "===Server " << i << " configuration===";
-			console::log(oss.str(), CONF);
+		std::ostringstream oss;
+		oss << "===Servesr " << i << " configuration==";
+		console::log(oss.str(), CONF);
 
-			for (std::map<std::string, std::string>::const_iterator it = _servers[i].directives.begin();
-				it != _servers[i].directives.end(); ++it){
-				console::log("   "+it->first + ": " +it->second, CONF);
-			}
+		for (std::map<std::string, std::string>::const_iterator it = _servers[i].directives.begin();
+			it != _servers[i].directives.end(); ++it){
+			console::log("   "+it->first + ": " +it->second, CONF);
+		}
 
-			//port
-			for (size_t j = 0; j < _servers[i].listen_ports.size(); j++) {
-				console::log("   listen: " + _servers[i].listen_ports[j], CONF);
+		for (size_t j = 0; j < _servers[i].listen_ports.size(); j++) {
+			console::log("   listen: " + _servers[i].listen_ports[j], CONF);
+		}
+		console::log("", CONF);
+
+
+		if (!_servers[i].locations.empty()) {
+			console::log("   --Locations --", CONF);
+			for (std::map<std::string, LocationConfig>::const_iterator locIt = _servers[i].locations.begin();
+				locIt != _servers[i].locations.end(); ++locIt) {
+				console::log("      location: " + locIt->first, CONF);
+				for (std::map<std::string, std::string>::const_iterator dirIt = locIt->second.directives.begin();
+					dirIt != locIt->second.directives.end(); ++dirIt) {
+					console::log("         " + dirIt->first + ": " + dirIt->second, CONF);
+				}
 			}
 			console::log("", CONF);
 		}
-
-		if (!_locations.empty()){
-			console::log("==========Locations==", CONF);
-			for (std::map<std::string, std::map<std::string, std::string> >::const_iterator locIt = _locations.begin(); locIt != _locations.end(); ++locIt){
-					console::log("        location: " + locIt->first, CONF);
-					for (std::map<std::string, std::string>::const_iterator dirIt = locIt->second.begin();
-						dirIt != locIt->second.end(); ++dirIt){
-							console::log("            " + dirIt->first + ": "+dirIt->second, CONF);
-						}
-						console::log("", CONF);
-				}
-		}
-		console::log("===========", CONF);
+	}
+	console::log("=========", CONF);
 }
 
 
