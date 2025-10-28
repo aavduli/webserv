@@ -40,12 +40,6 @@ const std::map<std::string, std::string>& WebservConfig::getServer() const{
 	return _server;
 }
 
-
-//getAllLocation
-const std::map<std::string, std::map<std::string, std::string> >& WebservConfig::getAllLocations() const{
-	return _locations;
-}
-
 std::string WebservConfig::getDirective(const std::string& directive) const {
 	if (_servers.empty()) return "";
 	std::map<std::string, std::string>::const_iterator it =_servers[0].directives.find(directive);
@@ -83,44 +77,29 @@ bool WebservConfig::loadConfig(const std::string& configFile){
 		return false;
 	}
 
-	for (std::map<std::string, LocationConfig>::const_iterator it = locationsConfig.locations.begin();
-		it != locationsConfig.locations.end(); ++it){
+	//validate all servers and lcoations
+	std::cout<<"[DEBUG] parsed" << serverConfigs.size() << " servers" << std::endl;
+	for (size_t i = 0; i < serverConfigs.size(); i++){
+		if (!_validator.validateServerConfig(serverConfigs[i])){
+			std::ostringstream oss;
+			oss << "[ERROR] Server " << i << " config error: " << _validator.getLastError();
+			console::log(oss.str(), ERROR);
+			return false;
+		}
+		for (std::map<std::string, LocationConfig>::const_iterator it = serverConfigs[i].locations.begin();
+			it != serverConfigs[i].locations.end(); ++it) {
 			if (!_validator.validateLocationConfig(it->second)){
-				console::log("Location " + it->first + " config error: " + _validator.getLastError(), CONF);
+				std::ostringstream oss;
+				oss << "[ERROR] Server " << i << " location " << it->first << " config error: " << _validator.getLastError();
+				console::log(oss.str(), ERROR);
 				return false;
 			}
 		}
-
-	_server = serverConfig.directives;
-
-	//adding multpiple ports
-	_listen_ports.clear();
-
-	for (size_t i = 0; i < serverConfig.listen_ports.size(); i++){
-		std::string listen = serverConfig.listen_ports[i];
-		std::vector<std::string> parts = _utils.split(listen, ':');
-
-		char* endptr;
-		long port;
-
-		if (parts.size() == 2){
-			port = std::strtol(parts[1].c_str(), &endptr, 10); //foarmat "host:port"
-		}else{
-			port = std::strtol(listen.c_str(), &endptr, 10);//format "port"
-		}
-
-		if (port > 0 && port <= 65535){
-			_listen_ports.push_back(static_cast<int>(port));
-		}
 	}
 
-	_locations = convertToOldFormat(locationsConfig);
+	_servers = serverConfigs;
 	_isValid = true;
 	return _isValid;
-}
-
-std::map<std::string, std::map<std::string, std::string> > WebservConfig::convertToOldFormat(const LocationsConfig& locationsConfig) const {
-	std::map<std::string, std::map<std::string, std::string> > oldFormat;
 
 
 }
@@ -249,9 +228,6 @@ size_t WebservConfig::getMaxContentLength() const{
 // bool WebservConfig::matchesServerName(const std::string& host) const{
 // 	std::string serverName = getServerName();
 
-// bool WebservConfig::matchesServerName(const std::string& host) const{
-// 	std::string serverName = getServerName();
-
 // 	//exacte match
 // 	if(host == serverName) return true;
 
@@ -321,48 +297,76 @@ void WebservConfig::printConfig() const {
 	console::log("config file: " + _configFile, CONF);
 	console::log("", CONF);
 
-	console::log("===Server configuration===", CONF);
-	for (std::map<std::string, std::string>::const_iterator it = _server.begin(); it != _server.end(); ++it){
-		console::log("   "+it->first + ": " +it->second, CONF);
-	}
-	console::log("", CONF);
+	for (size_t i = 0; i < _servers.size(); i++) {
+		std::ostringstream oss;
+		oss << "===Servesr " << i << " configuration==";
+		console::log(oss.str(), CONF);
 
-	if (!_locations.empty()){
-		console::log("==Locations==", CONF);
-		for (std::map<std::string, std::map<std::string, std::string> >::const_iterator locIt = _locations.begin();
-			locIt != _locations.end(); ++locIt){
-				console::log("location: " + locIt->first, CONF);
-				for (std::map<std::string, std::string>::const_iterator dirIt = locIt->second.begin();
-					dirIt != locIt->second.end(); ++dirIt){
-						console::log("    " + dirIt->first + ": "+dirIt->second, CONF);
-					}
-					console::log("", CONF);
-			}
-	}
-	console::log("===========", CONF);
+		for (std::map<std::string, std::string>::const_iterator it = _servers[i].directives.begin();
+			it != _servers[i].directives.end(); ++it){
+			console::log("   "+it->first + ": " +it->second, CONF);
+		}
 
-			//port
-			for (size_t j = 0; j < _servers[i].listen_ports.size(); j++) {
-				console::log("   listen: " + _servers[i].listen_ports[j], CONF);
+		for (size_t j = 0; j < _servers[i].listen_ports.size(); j++) {
+			console::log("   listen: " + _servers[i].listen_ports[j], CONF);
+		}
+		console::log("", CONF);
+
+
+		if (!_servers[i].locations.empty()) {
+			console::log("   --Locations --", CONF);
+			for (std::map<std::string, LocationConfig>::const_iterator locIt = _servers[i].locations.begin();
+				locIt != _servers[i].locations.end(); ++locIt) {
+				console::log("      location: " + locIt->first, CONF);
+				for (std::map<std::string, std::string>::const_iterator dirIt = locIt->second.directives.begin();
+					dirIt != locIt->second.directives.end(); ++dirIt) {
+					console::log("         " + dirIt->first + ": " + dirIt->second, CONF);
+				}
 			}
 			console::log("", CONF);
 		}
-
-		if (!_locations.empty()){
-			console::log("==========Locations==", CONF);
-			for (std::map<std::string, std::map<std::string, std::string> >::const_iterator locIt = _locations.begin(); locIt != _locations.end(); ++locIt){
-					console::log("        location: " + locIt->first, CONF);
-					for (std::map<std::string, std::string>::const_iterator dirIt = locIt->second.begin();
-						dirIt != locIt->second.end(); ++dirIt){
-							console::log("            " + dirIt->first + ": "+dirIt->second, CONF);
-						}
-						console::log("", CONF);
-				}
-		}
-		console::log("===========", CONF);
+	}
+	console::log("=========", CONF);
 }
 
 
 std::vector<int> WebservConfig::getAllPorts() const {
 	return _listen_ports;
+}
+
+const std::map<std::string, LocationConfig>& WebservConfig::getLocations(size_t serverIndex) const {
+	static std::map<std::string, LocationConfig> empty;
+	if (serverIndex >= _servers.size()) return empty;
+	return _servers[serverIndex].locations;
+}
+
+bool WebservConfig::hasLocation(const std::string& path, size_t serverIndex) const {
+	if (serverIndex >= _servers.size()) return false;
+	return _servers[serverIndex].locations.find(path) != _servers[serverIndex].locations.end();
+}
+
+std::map<std::string, std::string> WebservConfig::getLocationConfig(const std::string& path, size_t serverIndex) const {
+	if (serverIndex >= _servers.size()) {
+		std::map<std::string, std::string> empty;
+		return empty;
+	}
+
+	std::map<std::string, LocationConfig>::const_iterator it = _servers[serverIndex].locations.find(path);
+	if (it != _servers[serverIndex].locations.end()) {
+		return it->second.directives;
+	}
+
+	std::map<std::string, std::string> empty;
+	return empty;
+}
+
+bool WebservConfig::hasLocation(const std::string& path) const {
+	if (_servers.empty()) return false;
+	return hasLocation(path, 0);
+}
+
+std::map<std::string, std::string> WebservConfig::getLocationConfig(const std::string& path) const {
+	std::map<std::string, std::string> empty;
+	if (_servers.empty()) return empty;
+	return getLocationConfig(path, 0);
 }
