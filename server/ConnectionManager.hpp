@@ -13,6 +13,8 @@
 #include "NetworkHandler.hpp"
 
 
+std::string intToString(int value);
+
 class connectionManager {
 	private:
 		std::map<int, Conn> _connections;
@@ -22,10 +24,12 @@ class connectionManager {
 		connectionManager(eventManager& em, size_t maxConn);
 		~connectionManager();
 
-		bool addConnection(int clientFD);
+		bool addConnection(int clientFD, int ServerFD);
 		void removeConnection(int clientFD);
 		bool hasConnection(int clientFD) const;
 		size_t getConnectionCount();
+		std::vector<int> getConnectionsForServer(int serverFD) const;
+		int getConnectionCountForServer(int serverFD) const;
 
 		Conn& getConnection(int clientFD);
 		void updateActivity(int clientFD);
