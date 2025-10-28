@@ -73,7 +73,11 @@ bool WebservConfig::loadConfig(const std::string& configFile){
 	}
 
 	//validate all servers and lcoations
+<<<<<<< HEAD
 	std::cout<<"[DEBUG] parsed" << serverConfigs.size() << " servers" << std::endl;
+=======
+	//std::cout<<"[DEBUG] parsed" << serverConfigs.size() << " servers" << std::endl;
+>>>>>>> main
 	for (size_t i = 0; i < serverConfigs.size(); i++){
 		if (!_validator.validateServerConfig(serverConfigs[i])){
 			std::ostringstream oss;
@@ -213,13 +217,13 @@ size_t WebservConfig::getMaxContentLength() const{
 	return 1048576; // like Default MEssage parser todo asking bebou for what to do
 }
 
-bool WebservConfig::hasLocation(const std::string& path) const{
-	return _locations.find(path) != _locations.end();
-}
+// bool WebservConfig::matchesServerName(const std::string& host) const{
+// 	std::string serverName = getServerName();
 
-bool WebservConfig::matchesServerName(const std::string& host) const{
-	std::string serverName = getServerName();
+// 	//exacte match
+// 	if(host == serverName) return true;
 
+<<<<<<< HEAD
 // 	//exacte match
 // 	if(host == serverName) return true;
 
@@ -229,6 +233,14 @@ bool WebservConfig::matchesServerName(const std::string& host) const{
 // 	std::string hostWPort = serverName +":"+oss.str();
 // 	if (host == hostWPort) return true;
 
+=======
+// 	//with port
+// 	std::ostringstream oss;
+// 	oss << getPort();
+// 	std::string hostWPort = serverName +":"+oss.str();
+// 	if (host == hostWPort) return true;
+
+>>>>>>> main
 // 	//matching without default port
 // 	if (getPort() == 80 || getPort() == 443){
 // 		size_t colonPos = host.find(':');

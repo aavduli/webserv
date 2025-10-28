@@ -6,7 +6,11 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/15 10:45:14 by jim               #+#    #+#             */
+<<<<<<< HEAD
 /*   Updated: 2025/10/28 13:01:27 by jim              ###   ########.fr       */
+=======
+/*   Updated: 2025/10/28 14:17:35 by jim              ###   ########.fr       */
+>>>>>>> main
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -251,7 +255,11 @@ std::vector<ServerConfig> ConfigParser::parseAllServers(const std::vector<std::s
 			if (!directive.first.empty()){
 				if (directive.first == "listen"){
 					currentServer.listen_ports.push_back(directive.second);
+<<<<<<< HEAD
 					std::cout <<"[DEBUG] added listen" << directive.second << std::endl;
+=======
+					//std::cout <<"[DEBUG] added listen" << directive.second << std::endl;
+>>>>>>> main
 				}else if (directive.first == "error_page"){
 					std::istringstream iss(directive.second);
 					std::string code;

@@ -6,7 +6,11 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/08 16:24:01 by jim               #+#    #+#             */
+<<<<<<< HEAD
 /*   Updated: 2025/10/28 13:10:43 by jim              ###   ########.fr       */
+=======
+/*   Updated: 2025/10/28 13:49:05 by jim              ###   ########.fr       */
+>>>>>>> main
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,8 +69,11 @@ class WebservConfig{
 		size_t getServerCount() const;
 
 		std::vector<int> getAllPorts() const;
+<<<<<<< HEAD
 
 		std::vector<int> getAllPorts() const;
+=======
+>>>>>>> main
 
 		std::string getErrorPage(int code) const;
 		size_t getMaxContentLength() const;
