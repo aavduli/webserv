@@ -226,52 +226,6 @@ std::string HTMLTemplate::render() const {
 	return html.str();
 }
 
-// std::string HTMLTemplate::render() const {
-
-// 	std::stringstream html;
-// 	html << "<!DOCTYPE html>\n";
-// 	html << "<html><head>";
-// 	html << "<title>" << title << "</title>";
-// 	html << "<link rel=\"stylesheet\" href=\"/css/style.css\">";
-// 	html << "</head>\n";
-
-// 	html << "<body";
-// 	if (!page_type.empty())
-// 		html << " class=\"" + page_type + "\"";
-// 	html << ">\n";
-
-// 	if (has_main_title) {
-// 		html << "\t<div class=\"main-title\">\n";
-// 		html << "\t\t<h1>" << title << "</h1>\n";
-// 		if (!subtitle.empty())
-// 			html << "\t\t<p class=\"subtitle\">" << subtitle << "</p>\n";
-// 		html << "\t</div>\n\n";
-// 	}
-
-// 	html << "\t<div class=\"card\">\n";
-// 	html << "\t\t<div class=\"inner";
-// 	if (!card_type.empty())
-// 		html << " " + card_type;
-// 	html << "\">\n";
-
-// 	if (!has_main_title) {
-// 		html << "\t\t\t<h1>" << title << "</h1>\n";
-// 		if (!subtitle.empty())
-// 			html << "\t\t\t<p class=\"subtitle\">" << subtitle << "</p>\n";
-// 	}
-
-// 	if (!content.empty())
-// 		html << "<br>" << content << "<br>";
-
-// 	html << "\t\t<div class=\"links\">\n";
-// 	html << "\t\t\t<a href=\"/\">Back to homepage</a>\n";
-// 	html << "\t\t</div>\n";
-// 	html << "\t</div>\n";
-// 	html << "\t</div>\n";
-// 	html << "</body></html>";
-// 	return html.str();
-// }
-
 void ResponseGenerator::setHeaders() {
 
 	_response->addHeader("Date", str_to_vect(getCurrentGMTDate(), ""));
