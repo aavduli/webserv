@@ -1,4 +1,5 @@
 #include "MessageHandler.hpp"
+#include "../../server/ConnectionManager.hpp" 
 
 MessageHandler::MessageHandler(const WebservConfig& config, HttpRequest* request) : _config(config), _request(request), _response(), _last_status(E_INIT) {}
 MessageHandler::MessageHandler(const MessageHandler& rhs) : _config(rhs._config), _request(rhs._request), _response(rhs._response), _last_status(rhs._last_status) {}
@@ -23,6 +24,32 @@ std::string	handle_messages(const WebservConfig& config, const std::string &raw_
 	MessageHandler		handler(config, &request);
 
 	if (raw_request.empty()) {
+		console::log("[ERROR][HANDLE MESSAGES] Empty request", MSG);
+		handler.setLastStatus(E_BAD_REQUEST);
+	}
+	else if (handler.parseRequest(raw_request)) {
+		if (handler.validateRequest())
+			handler.processRequest();
+	}
+	handler.generateResponse();
+	std::string complete_response = handler.serializeResponse();
+	return complete_response;
+}
+
+std::string	handle_messages_with_port(const WebservConfig& config, const std::string &raw_request, int port) {
+
+	console::log("========================================", MSG);
+	console::log("[INFO] Processing request for port: " + intToString(port), MSG);
+
+	HttpRequest			request;
+	MessageHandler		handler(config, &request);
+
+	const ServerConfig* serverConfig = config.getServerByPort(port);
+	if (!serverConfig) {
+		console::log("[ERROR][HANDLE MESSAGES] No server config found for port: " + intToString(port), MSG);
+		handler.setLastStatus(E_NOT_FOUND);
+	}
+	else if (raw_request.empty()) {
 		console::log("[ERROR][HANDLE MESSAGES] Empty request", MSG);
 		handler.setLastStatus(E_BAD_REQUEST);
 	}

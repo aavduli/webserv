@@ -71,8 +71,10 @@ bool RequestValidator::validateHost() {
 		else
 			uri.setHost(tmp_host);
 	}
+	//here may be the probleme
 	if (!uri.getHost().empty() && uri.getHost().compare(config_host) && uri.getHost().compare(_config.getServerName())) {
 		console::log("[ERROR][VALIDATION] Invalid Host", MSG);
+		console::log("[URI][HOST] " + uri.getHost(), MSG);
 		_last_status = E_BAD_REQUEST;
 		return false;
 	}
@@ -92,7 +94,7 @@ bool RequestValidator::validatePort() {
 		size_t colon = host_header.find(":");
 		if (colon != std::string::npos) {
 			std::string header_port = host_header.substr(colon + 1);
-
+			//maybe other problem there
 			char* endptr;
 			long port_value = std::strtol(header_port.c_str(), &endptr, 10);
 			if (*endptr != '\0' || port_value < 1 || port_value > 65535) {

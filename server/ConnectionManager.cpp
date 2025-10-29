@@ -1,4 +1,6 @@
 #include "ConnectionManager.hpp"
+#include <sys/socket.h>
+#include <netinet/in.h>
 
 connectionManager::connectionManager(eventManager& em, size_t maxConn) :_maxConn(maxConn), _eventManager(em) {
 	if (maxConn <= 0)
@@ -14,7 +16,7 @@ std::string intToString(int value) {
 	return oss.str();
 }
 
-bool connectionManager::addConnection(int clientFD) {
+bool connectionManager::addConnection(int clientFD, int serverFD) {
 	if (_connections.size() >=  _maxConn) {
 		console::log("Max connection has been reached", SRV);
 		return false;
@@ -23,8 +25,15 @@ bool connectionManager::addConnection(int clientFD) {
 		console::log("Connection already exists for FD: " + intToString(clientFD), ERROR);
 		return false;
 	}
-	_connections[clientFD] = Conn();
-	console::log("Add connection for FD: " + intToString(clientFD), SRV);
+	Conn newConn;
+	newConn.serverFd = serverFD;
+	struct sockaddr_in addr;
+	socklen_t addr_len = sizeof(addr);
+	if (getsockname(serverFD, (struct sockaddr*)&addr, &addr_len) == 0) {
+		newConn.clientPort = ntohs(addr.sin_port);
+	}
+	_connections[clientFD] = newConn;
+	console::log("Add connection for FD: " + intToString(clientFD) + " from server FD: " + intToString(serverFD) + " port: " + intToString(newConn.clientPort), SRV);
 	return true;
 }
 
@@ -126,4 +135,24 @@ void connectionManager::printConnectionStats() const {
             console::log("  FD " + intToString(it->first), SRV);
         }
     }
+}
+
+std::vector<int> connectionManager::getConnectionsForServer(int serverFD) const {
+    std::vector<int> serverConnections;
+    for (std::map<int, Conn>::const_iterator it = _connections.begin(); it != _connections.end(); ++it) {
+        if (it->second.serverFd == serverFD) {
+            serverConnections.push_back(it->first);
+        }
+    }
+    return serverConnections;
+}
+
+int connectionManager::getConnectionCountForServer(int serverFD) const {
+    int count = 0;
+    for (std::map<int, Conn>::const_iterator it = _connections.begin(); it != _connections.end(); ++it) {
+        if (it->second.serverFd == serverFD) {
+            count++;
+        }
+    }
+    return count;
 }

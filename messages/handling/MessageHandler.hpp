@@ -37,5 +37,6 @@ class MessageHandler {
 };
 
 std::string	handle_messages(const WebservConfig& config, const std::string& raw_request);
+std::string	handle_messages_with_port(const WebservConfig& config, const std::string& raw_request, int port);  // Add port-aware handler
 
 #endif //MESSAGEHANDLER_HPP

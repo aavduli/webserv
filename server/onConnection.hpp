@@ -20,6 +20,8 @@ struct Conn {
 	std::string outBuffer;
 	size_t outSent;
 	bool hasDataToSend;
+	int serverFd;
+	int clientPort;  // Track which port this connection came from
 
 	Conn();
 };
@@ -39,11 +41,12 @@ class onConn {
 		static void updateActivity(Conn& c);
 
 		static size_t headers_end_pos(const std::string &buf);
+		static std::string extractHostHeader(const Conn& c); 
 
 	private:
-		static void try_mark_headers(Conn &c);
-		static void inspect_headers_minimally(Conn &c); //sets content_len, chunked
-		static bool chunked_complete(const std::string &body, size_t &cut_after); //when chunked
+		static bool try_mark_headers(Conn &c);
+		static void inspect_headers_minimally(Conn &c);
+		static bool chunked_complete(const std::string &body, size_t &cut_after);
 };
 
 #endif

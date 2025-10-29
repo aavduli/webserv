@@ -1,15 +1,5 @@
 #include "EventProcessor.hpp"
 
-// 1. Generate 100KB response
-// 2. send() → 30KB sent, 70KB remaining
-// 3. Add EPOLLOUT to epoll
-// 4. EPOLLOUT event → socket ready
-// 5. send() → 50KB sent, 20KB remaining  
-// 6. EPOLLOUT event → socket ready
-// 7. send() → 20KB sent, 0KB remaining
-// 8. Remove EPOLLOUT from epoll
-// 9. Close connection
-
 eventProcessor::eventProcessor(eventManager& em, connectionManager& cm, const std::vector<int>& serverSocket) : _eventManager(em), _connectionManager(cm), _serverSocket(serverSocket), _shouldStop(false) {
 }
 
@@ -23,7 +13,7 @@ void eventProcessor::acceptNewConnections(int serverFd) {
 		if (clientFd < 0)
 			break;
 		_eventManager.addFd(clientFd, EPOLLIN | EPOLLRDHUP);
-		_connectionManager.addConnection(clientFd);
+		_connectionManager.addConnection(clientFd, serverFd);
 		console::log("New client to server on FD:", clientFd, SRV);
 	}
 }
@@ -101,7 +91,7 @@ void eventProcessor::handleClientWriteReady(int clientFd) {
 		}
 	}
 	else if (bytesSent == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
-		return ; //not ready to send keep waiting for EPOLLOUT
+		return ;
 	}
 	else {
 		console::log("Send error during EPOLLOUT on FD: ", clientFd, SRV);
@@ -200,8 +190,16 @@ void eventProcessor::handleClientData(int clientFd, const WebservConfig& config)
 	size_t requestEndPos;
 	if (onConn::update_and_ready(connection, requestEndPos)) {
 		std::string completeRequest = connection.in.substr(0, requestEndPos);
-		const std::string& response = handle_messages(config, completeRequest);
-		// std::string response = build_http_response(200, "OK", response_str);
+		
+		std::string response;
+		if (connection.clientPort > 0) {
+			response = handle_messages_with_port(config, completeRequest, connection.clientPort);
+			console::log("Processed request for port: " + intToString(connection.clientPort), SRV);
+		} else {
+			response = handle_messages(config, completeRequest);
+			console::log("Processed request without port info (fallback)", SRV);
+		}
+		
 		sendResponse(clientFd, response);
 		connection.in.erase(0, requestEndPos);
 	}
