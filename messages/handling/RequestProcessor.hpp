@@ -1,10 +1,10 @@
 #ifndef REQUESTPROCESSOR_HPP
 #define REQUESTPROCESSOR_HPP
 
+#include "RequestParser.hpp"
 #include "../data/HttpMessage.hpp"
 #include "../data/HttpRequest.hpp"
 #include "../data/HttpResponse.hpp"
-#include "../parsing/RequestParser.hpp"
 #include "../../config/WebservConfig.hpp"
 #include "../../console/console.hpp"
 #include "../../parsing/Parsing.hpp"
@@ -13,9 +13,7 @@
 #include <errno.h>
 #include <fcntl.h>
 
-#define DEFAULT_BUFFER_SIZE 8192
-
-// namespace
+const size_t DEFAULT_BUFFER_SIZE = 8192;
 const int MAX_FILENAME_COUNTER = 10000;
 
 class RequestProcessor {
