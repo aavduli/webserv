@@ -13,6 +13,9 @@ class RequestParser {
 		std::string				_raw_request;
 		size_t					_current_pos;
 		Status					_last_status;
+
+		int						_port;
+		const ServerConfig*		_server_config;
 		
 		bool			parseRequestLine();
 		bool			parseMethod(std::string request_line);
@@ -25,7 +28,7 @@ class RequestParser {
 		std::string		findLocationName(const std::string& path);
 		
 	public:
-		RequestParser(const WebservConfig& config, HttpRequest* request, const std::string& raw_request);
+		RequestParser(const WebservConfig& config, HttpRequest* request, const std::string& raw_request, const int& port);
 		RequestParser(const RequestParser& rhs);
 		RequestParser& operator=(const RequestParser& rhs);
 		~RequestParser();

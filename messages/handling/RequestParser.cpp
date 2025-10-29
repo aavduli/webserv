@@ -1,13 +1,26 @@
 #include "RequestParser.hpp"
 
-RequestParser::RequestParser(const WebservConfig& config, HttpRequest* request, const std::string& raw_request) : _config(config), _request(request), _raw_request(raw_request), _current_pos(0), _last_status(E_INIT) {}
-RequestParser::RequestParser(const RequestParser& rhs) : _config(rhs._config), _request(rhs._request), _raw_request(rhs._raw_request), _current_pos(rhs._current_pos), _last_status(rhs._last_status) {}
+RequestParser::RequestParser(const WebservConfig& config, HttpRequest* request, const std::string& raw_request, const int& port) : _config(config), _request(request), _raw_request(raw_request), _current_pos(0), _last_status(E_INIT), _port(port) {
+	if (port > 0) {
+		_server_config = config.getServerByPort(_port);
+		if (_server_config)
+			console::log("[INFO][PARSING] Using server config for port " + nb_to_string(_port), MSG);
+		else
+			console::log("[INFO][PARSING] No server config found for port " + nb_to_string(_port) + ", using global config", MSG);
+	}
+	else {
+		_server_config = 0;
+		console::log("[INFO][PARSING] No port specified, using global config", MSG);
+	}
+}
+RequestParser::RequestParser(const RequestParser& rhs) : _config(rhs._config), _request(rhs._request), _raw_request(rhs._raw_request), _current_pos(rhs._current_pos), _last_status(rhs._last_status), _port(rhs._port) {}
 RequestParser& RequestParser::operator=(const RequestParser& rhs) {
 	if (this != &rhs) {
 		_request = rhs._request;
 		_raw_request = rhs._raw_request;
 		_current_pos = rhs._current_pos;
 		_last_status = rhs._last_status;
+		_port = rhs._port;
 	}
 	return *this;
 }
@@ -191,25 +204,41 @@ bool RequestParser::parseBody() {
 	return true;
 }
 
+// different methods used to get same kind of variables...
 void	RequestParser::setRequestContext() {
 
 	RequestContext ctx;
 	std::string path = _request->getUri().getPath();
 
 	ctx._location_name = findLocationName(path);
-	if (ctx._location_name.empty())
-		ctx._location_config = _config.getServer();
-	else
-		ctx._location_config = _config.getLocationConfig(ctx._location_name);
+	if (ctx._location_name.empty()) {
+		// Use server-specific configuration when no location matches
+		if (_server_config)
+			ctx._location_config = _server_config->directives;
+		else
+			ctx._location_config = _config.getServer();
+	} else {
+		// Get location config from server-specific locations
+		if (_server_config && _server_config->locations.find(ctx._location_name) != _server_config->locations.end())
+			ctx._location_config = _server_config->locations.at(ctx._location_name).directives;
+		else
+			ctx._location_config = _config.getLocationConfig(ctx._location_name);
+	}
 
 	std::map<std::string, std::string> config = ctx._location_config;
 	std::string root = config["root"];
-	if (root.empty())
-		ctx._document_root = _config.getRoot();
-	else
+	if (root.empty()) {
+		// Use server-specific root if available
+		if (_server_config && _server_config->directives.find("root") != _server_config->directives.end())
+			ctx._document_root = _server_config->directives.at("root");
+		else
+			ctx._document_root = _config.getRoot();
+	} else
 		ctx._document_root = root;
 
 	std::string index = config["index"];
+	if (index.empty() && _server_config && _server_config->directives.find("index") != _server_config->directives.end())
+		index = _server_config->directives.at("index");
 	std::vector<std::string> indexes = str_to_vect(index, " ");
 	ctx._index_list = indexes;
 
@@ -235,8 +264,41 @@ void	RequestParser::setRequestContext() {
 	console::log("[INFO][PARSING] Request context		OK", MSG);
 }
 
+// not clean duplicates sections...
 std::string	RequestParser::findLocationName(const std::string& path) {
 	
+	// Use server-specific locations if available
+	if (_server_config) {
+		if (_server_config->locations.find(path) != _server_config->locations.end())
+			return path;
+		
+		std::string match = "";
+		std::string test_path = path;
+
+		while (!test_path.empty()) {
+			if (_server_config->locations.find(test_path) != _server_config->locations.end()) {
+				if (test_path.length() > match.length()) {
+					match = test_path;
+				}
+			}
+			size_t last_slash = test_path.find_last_of('/');
+			if (last_slash == 0) {
+				test_path = "/";
+				if (_server_config->locations.find(test_path) != _server_config->locations.end()) {
+					if (match.empty())
+						match = test_path;
+				}
+				break;
+			}
+			else if (last_slash == std::string::npos)
+				break;
+			else
+				test_path = test_path.substr(0, last_slash);
+		}
+		return match;
+	}
+	
+	// Fallback to global config if no server-specific config
 	if (_config.hasLocation(path))
 		return path;
 	

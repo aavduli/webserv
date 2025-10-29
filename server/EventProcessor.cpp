@@ -164,7 +164,6 @@ void eventProcessor::handleClientDisconnection(int clientFd) {
 } 
 
 void eventProcessor::handleClientData(int clientFd, const WebservConfig& config) {
-	(void)config;
 	Conn& connection = _connectionManager.getConnection(clientFd); 
 	onConn::updateActivity(connection);
 	
@@ -190,16 +189,8 @@ void eventProcessor::handleClientData(int clientFd, const WebservConfig& config)
 	size_t requestEndPos;
 	if (onConn::update_and_ready(connection, requestEndPos)) {
 		std::string completeRequest = connection.in.substr(0, requestEndPos);
-		
 		std::string response;
-		if (connection.clientPort > 0) {
-			response = handle_messages_with_port(config, completeRequest, connection.clientPort);
-			console::log("Processed request for port: " + intToString(connection.clientPort), SRV);
-		} else {
-			response = handle_messages(config, completeRequest);
-			console::log("Processed request without port info (fallback)", SRV);
-		}
-		
+		response = handle_messages(config, completeRequest, connection.clientPort);
 		sendResponse(clientFd, response);
 		connection.in.erase(0, requestEndPos);
 	}

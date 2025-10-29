@@ -63,6 +63,7 @@ bool RequestValidator::validateHost() {
 			return false;
 		}
 	}
+	
 	if (uri.getHost().empty() && !_host_header.empty()) {
 		std::string tmp_host = _host_header.at(0);
 		size_t colon = tmp_host.find(":");
@@ -72,14 +73,19 @@ bool RequestValidator::validateHost() {
 			uri.setHost(tmp_host);
 	}
 	//here may be the probleme
-	if (!uri.getHost().empty() && uri.getHost().compare(config_host) && uri.getHost().compare(_config.getServerName())) {
-		console::log("[ERROR][VALIDATION] Invalid Host", MSG);
-		console::log("[URI][HOST] " + uri.getHost(), MSG);
-		_last_status = E_BAD_REQUEST;
-		return false;
-	}
-	else if (uri.getHost().empty())
+	std::string uri_host = uri.getHost();
+	if (uri_host.empty())
 		uri.setHost(config_host);
+	else {
+		if (!uri_host.compare("localhost"))
+			uri_host = "127.0.0.1";
+		if (uri_host.compare(config_host) && uri_host.compare(_config.getServerName())) {
+			console::log("[ERROR][VALIDATION] Invalid Host", MSG);
+			console::log("[URI][HOST] " + uri_host, MSG);
+			_last_status = E_BAD_REQUEST;
+			return false;
+		}
+	}
 	_request->setUri(uri);
 	return true;
 }
@@ -87,7 +93,7 @@ bool RequestValidator::validateHost() {
 bool RequestValidator::validatePort() {
 
 	RequestUri	uri = _request->getUri();
-	int config_port = _config.getPort();
+	std::vector<int> all_ports = _config.getAllPorts();
 
 	if (!_host_header.empty()) {
 		std::string host_header = _host_header.at(0);
@@ -102,8 +108,18 @@ bool RequestValidator::validatePort() {
 				_last_status = E_BAD_REQUEST;
 				return false;
 			}
-			if (static_cast<int>(port_value) != config_port) {
-				console::log("[ERROR][VALIDATION] Request port doesn't match server config", MSG);
+			
+			// Check if port exists in any of the configured servers
+			bool port_found = false;
+			for (size_t i = 0; i < all_ports.size(); i++) {
+				if (all_ports[i] == static_cast<int>(port_value)) {
+					port_found = true;
+					break;
+				}
+			}
+			
+			if (!port_found) {
+				console::log("[ERROR][VALIDATION] Request port doesn't match any server config", MSG);
 				_last_status = E_BAD_REQUEST;
 				return false;
 			}

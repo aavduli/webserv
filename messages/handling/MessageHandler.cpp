@@ -16,55 +16,41 @@ MessageHandler::~MessageHandler() {}
 Status		MessageHandler::getLastStatus() const {return _last_status;}
 void		MessageHandler::setLastStatus(Status status) {_last_status = status;}
 
-std::string	handle_messages(const WebservConfig& config, const std::string &raw_request) {
+std::string	handle_messages(const WebservConfig& config, const std::string &raw_request, int port) {
 
 	console::log("========================================", MSG);
+	if (port > 0)
+		console::log("[INFO] Processing request for port: " + nb_to_string(port), MSG);
+	else
+		console::log("[INFO] Processing request (default server)", MSG);
 
 	HttpRequest			request;
 	MessageHandler		handler(config, &request);
+
+	if (port > 0) {
+		if (!config.getServerByPort(port)) {
+			console::log("[ERROR][HANDLE MESSAGES] No server config found for port: " + nb_to_string(port), MSG);
+			handler.setLastStatus(E_NOT_FOUND);
+			handler.generateResponse();
+			return handler.serializeResponse();
+		}
+	}
 
 	if (raw_request.empty()) {
 		console::log("[ERROR][HANDLE MESSAGES] Empty request", MSG);
 		handler.setLastStatus(E_BAD_REQUEST);
 	}
-	else if (handler.parseRequest(raw_request)) {
+	else if (handler.parseRequest(raw_request, port)) {
 		if (handler.validateRequest())
 			handler.processRequest();
 	}
 	handler.generateResponse();
-	std::string complete_response = handler.serializeResponse();
-	return complete_response;
+	return handler.serializeResponse();
 }
 
-std::string	handle_messages_with_port(const WebservConfig& config, const std::string &raw_request, int port) {
+bool	MessageHandler::parseRequest(const std::string& raw_request, const int& port) {
 
-	console::log("========================================", MSG);
-	console::log("[INFO] Processing request for port: " + intToString(port), MSG);
-
-	HttpRequest			request;
-	MessageHandler		handler(config, &request);
-
-	const ServerConfig* serverConfig = config.getServerByPort(port);
-	if (!serverConfig) {
-		console::log("[ERROR][HANDLE MESSAGES] No server config found for port: " + intToString(port), MSG);
-		handler.setLastStatus(E_NOT_FOUND);
-	}
-	else if (raw_request.empty()) {
-		console::log("[ERROR][HANDLE MESSAGES] Empty request", MSG);
-		handler.setLastStatus(E_BAD_REQUEST);
-	}
-	else if (handler.parseRequest(raw_request)) {
-		if (handler.validateRequest())
-			handler.processRequest();
-	}
-	handler.generateResponse();
-	std::string complete_response = handler.serializeResponse();
-	return complete_response;
-}
-
-bool	MessageHandler::parseRequest(const std::string& raw_request) {
-
-	RequestParser	parser(_config, _request, raw_request);
+	RequestParser	parser(_config, _request, raw_request, port);
 
 	if (parser.parseRequest()) {
 		parser.setRequestContext();

@@ -26,7 +26,7 @@ class MessageHandler {
 		MessageHandler& operator=(const MessageHandler& rhs);
 		virtual ~MessageHandler();
 
-		bool			parseRequest(const std::string& raw_request);
+		bool			parseRequest(const std::string& raw_request, const int& port);
 		bool			validateRequest();
 		void			processRequest();
 		void			generateResponse();
@@ -36,7 +36,6 @@ class MessageHandler {
 		void			setLastStatus(Status status);
 };
 
-std::string	handle_messages(const WebservConfig& config, const std::string& raw_request);
-std::string	handle_messages_with_port(const WebservConfig& config, const std::string& raw_request, int port);  // Add port-aware handler
+std::string	handle_messages(const WebservConfig& config, const std::string& raw_request, int port);
 
 #endif //MESSAGEHANDLER_HPP
