@@ -33,6 +33,6 @@ sys.stdout.flush()
 time.sleep(seconds)
 
 print(f"<p><strong>Success!</strong> Waited {seconds} seconds.</p>")
-print("<p><a href='/cgi-test/'>← Back to CGI Tests</a></p>")
+print("<p><a href='/cgi-test/'>Back to CGI Tests</a></p>")
 print("</body>")
 print("</html>")

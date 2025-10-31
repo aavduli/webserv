@@ -77,6 +77,6 @@ for var in env_vars:
     print(f"<div class='env-var'><strong>{var}:</strong> {value}</div>")
 
 print("""    </div>
-    <p><a href="/form">← Back to Test Forms</a></p>
+	<p><a href='/cgi-test/'>Back to CGI Tests</a></p>
 </body>
 </html>""")

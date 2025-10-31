@@ -2,7 +2,18 @@
 <html>
 <head>
 	<title>POST Request Test Forms</title>
-	<link rel="stylesheet" href="../css/style.css">
+	<style>
+		body { font-family: Arial, sans-serif; margin: 40px; }
+		.main-title h1 { color: #333; margin: 35px 0 5px 0;}
+		.subtitle { margin-bottom: 35px; font-style: italic;}
+		h3 { color: #333; margin: 15px 0;}
+		.inner-card { margin: 20px 0;}
+		input, textarea { margin: 5px 0; padding: 8px; width: 300px; }
+		button { padding: 10px 20px; cursor: pointer; }
+		.divider {border-top: 1px solid #333; width: 300px;}
+		.links {margin: 5px 0;}
+		.links.home {margin-top: 50px;}
+	</style>
 </head>
 <body>
 	<div class="main-title">
@@ -10,44 +21,40 @@
 		<p class="subtitle">Test different POST request methods</p>
 	</div>
 	
-	<div class="card">
-		<div class="inner form">
-			<h2>URL-Encoded Form</h2>
-			<form action="/success" method="POST" enctype="application/x-www-form-urlencoded">
-				<label>Username:</label><br>
-				<input type="text" name="username" placeholder="username"><br>
-				<label>Password:</label><br>
-				<input type="password" name="password" placeholder="123456"><br>
-				<label>Email:</label><br>
-				<input type="email" name="email" placeholder="user@webserv.ch"><br>
-				<div class="links">
-					<button type="submit">Submit</button>
-				</div>
-			</form>
-		</div>
-
-		<div class="inner form">
-			<h2>Multipart Form</h2>
-			<form action="/success" method="POST" enctype="multipart/form-data">
-				<label>Description:</label><br>
-				<input type="text" name="description" placeholder="File description"><br>
-				<label>Additional Notes:</label><br>
-				<textarea name="notes" rows="2" placeholder="Optional notes..."></textarea><br>
-				<div class="links">
-					<button type="submit">Submit</button>
-				</div>
-			</form>
-		</div>
-
-		<div class="inner form">
-			<h2>Empty Form</h2>
-			<form action="/success" method="POST">
-				<p>This form has no fields.</p>
-				<div class="links">
-					<button type="submit">Submit</button>
-				</div>
-			</form>
-		</div>
+	<div class="inner form">
+		<h3>URL-Encoded Form</h3>
+		<form action="/success" method="POST" enctype="application/x-www-form-urlencoded">
+			<input type="text" name="username" placeholder="username"><br>
+			<input type="password" name="password" placeholder="123456"><br>
+			<input type="email" name="email" placeholder="user@webserv.ch"><br>
+			<div class="links">
+				<button type="submit">Submit</button>
+			</div>
+		</form>
+	</div>
+	<div class="divider"></div>
+	<div class="inner form">
+		<h3>Multipart Form</h3>
+		<form action="/success" method="POST" enctype="multipart/form-data">
+			<input type="text" name="description" placeholder="File description"><br>
+			<textarea name="notes" rows="2" placeholder="Optional notes..."></textarea><br>
+			<div class="links">
+				<button type="submit">Submit</button>
+			</div>
+		</form>
+	</div>
+	<div class="divider"></div>
+	<div class="inner form">
+		<h3>Empty Form</h3>
+		<form action="/success" method="POST">
+			<p>This form has no fields.</p>
+			<div class="links">
+				<button type="submit">Submit</button>
+			</div>
+		</form>
+	</div>
+	<div class="links home">
+		<a href="/">Return to homepage</a>
 	</div>
 </body>
 </html>
