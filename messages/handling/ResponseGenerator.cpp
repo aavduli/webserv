@@ -17,12 +17,12 @@ void ResponseGenerator::generateResponse() {
 
 	if (_last_status == E_REDIRECT_PERMANENT || _last_status == E_REDIRECT_TEMPORARY)
 		generateRedirResponse();
+	else if (_last_status == E_OK && isValidCGI())
+		generateCGIResponse();
 	else if (_last_status == E_OK && _request->getMethod() == "POST")
 		generatePostResponse();
 	else if (_last_status == E_OK && _request->getMethod() == "DELETE")
 		generateDeleteResponse();
-	else if (_last_status == E_OK && isValidCGI())
-		generateCGIResponse();
 	else if (_last_status == E_OK) {
 		addValidIndex();
 		if (is_directory(_request->getUri().getEffectivePath()))
@@ -177,7 +177,56 @@ void ResponseGenerator::generateErrorResponse() {
 void ResponseGenerator::generateCGIResponse() {
 
 	console::log("[INFO] Generating CGI response", MSG);
+
+	const std::string& script_path = _request->getUri().getEffectivePath();
+	std::string python_path = _config.getCgiPath(_request->ctx._location_name);
+
+	CgiExec executor(script_path, python_path, &_config);
+	std::string cgi_output = executor.execute(_request);
+
+	if (cgi_output.empty()){
+		console::log("[ERROR][CGI] CGI execution failed", MSG);
+		_last_status = E_INTERNAL_SERVER_ERROR;
+		return generateErrorResponse();
+	}
+
+	//parsing cgi output
+	parseCGIOutput(cgi_output);
+	_response->setStatus(E_OK);
 	_response->setBodyType(B_CGI);
+}
+
+void ResponseGenerator::parseCGIOutput(const std::string& cgi_output){
+	//first find the empty lime, separator header body
+	size_t header_end= cgi_output.find("\n\n");
+	if (header_end == std::string::npos){
+		//no head ? :(
+		_response->setBody(cgi_output);
+		_response->setBodyType(B_CGI);
+		return;
+	}
+
+	//separator header body
+	std::string header_part = cgi_output.substr(0,header_end);
+	std::string body_part = cgi_output.substr(header_end + 2); // count +2 for \n\n
+
+	//parse header line by line
+	std::istringstream header_stream(header_part);
+	std::string line;
+	while(std::getline(header_stream, line)){
+		size_t colon_position = line.find(':');
+		if (colon_position != std::string::npos){
+			std::string header_name = line.substr(0, colon_position);
+			std::string header_value = line.substr(colon_position + 1);
+
+			//delet space
+			while (!header_value.empty() && header_value[0] == ' '){
+				header_value = header_value.substr(1);}
+
+			_response->addHeader(header_name, str_to_vect(header_value, ""));
+		}
+	}
+	_response->setBody(body_part);
 }
 
 std::string HTMLTemplate::render() const {
