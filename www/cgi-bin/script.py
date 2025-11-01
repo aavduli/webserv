@@ -71,6 +71,6 @@ print(f"<p><strong>Current Dir:</strong> {os.getcwd()}</p>")
 
 
 print("""    </div>
-    <p><a href="/form">← Back to Test Forms</a></p>
+    <p><a href="/cgi-test">Back to CGI Tests</a></p>
 </body>
 </html>""")

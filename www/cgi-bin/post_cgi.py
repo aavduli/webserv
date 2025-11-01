@@ -38,5 +38,5 @@ print(f"<p>raw body: {body}</p>")
 #print pardsed data
 for key, value in data.items():
 	print(f"<p>{key} = {value}</p>")
-
+print("<p><a href='/cgi-test/'>Back to CGI Tests</a></p>")
 print("</body></html>")
