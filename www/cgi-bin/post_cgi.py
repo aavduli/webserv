@@ -1,4 +1,4 @@
-#!/usr/bin/env pyhton3
+#!/usr/bin/env python3
 import os
 import sys
 
@@ -11,7 +11,11 @@ content_length = int(os.environ.get('CONTENT_LENGTH', 0))
 
 #read body from stdin
 if content_length > 0:
-	body = sys.stdin.read(content_length)
+	body_bytes= sys.stdin.buffer.read(content_length)
+	try :
+		body = body_bytes.decode('utf-8')
+	except UnicodeDecodeError:
+		body = body_bytes.decode('latin-1')
 else:
 	body = ""
 
