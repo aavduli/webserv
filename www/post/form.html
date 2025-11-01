@@ -9,10 +9,12 @@
 		h3 { color: #333; margin: 15px 0;}
 		.inner-card { margin: 20px 0;}
 		input, textarea { margin: 5px 0; padding: 8px; width: 300px; }
+		input[type=file] {padding: 0;}
 		button { padding: 10px 20px; cursor: pointer; }
 		.divider {border-top: 1px solid #333; width: 300px;}
 		.links {margin: 5px 0;}
 		.links.home {margin-top: 50px;}
+		.text-small {font-size: 14px;}
 	</style>
 </head>
 <body>
@@ -21,7 +23,7 @@
 		<p class="subtitle">Test different POST request methods</p>
 	</div>
 	
-	<div class="inner form">
+	<div class="inner-card">
 		<h3>URL-Encoded Form</h3>
 		<form action="/success" method="POST" enctype="application/x-www-form-urlencoded">
 			<input type="text" name="username" placeholder="username"><br>
@@ -33,7 +35,7 @@
 		</form>
 	</div>
 	<div class="divider"></div>
-	<div class="inner form">
+	<div class="inner-card">
 		<h3>Multipart Form</h3>
 		<form action="/success" method="POST" enctype="multipart/form-data">
 			<input type="text" name="description" placeholder="File description"><br>
@@ -44,7 +46,7 @@
 		</form>
 	</div>
 	<div class="divider"></div>
-	<div class="inner form">
+	<div class="inner-card">
 		<h3>Empty Form</h3>
 		<form action="/success" method="POST">
 			<p>This form has no fields.</p>

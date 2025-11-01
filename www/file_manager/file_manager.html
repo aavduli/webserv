@@ -9,10 +9,12 @@
 		h3 { color: #333; margin: 15px 0;}
 		.inner-card { margin: 20px 0;}
 		input, textarea { margin: 5px 0; padding: 8px; width: 300px; }
+		input[type=file] {padding: 0;}
 		button { padding: 10px 20px; cursor: pointer; }
 		.divider {border-top: 1px solid #333; width: 300px;}
 		.links {margin: 5px 0;}
 		.links.home {margin-top: 50px;}
+		.text-small {font-size: 14px;}
 	</style>
 </head>
 <body>
@@ -21,7 +23,7 @@
 		<p class="subtitle">Upload, browse, and manage files</p>
 	</div>
 	
-	<div class="inner form">
+	<div class="inner-card">
 		<h3>Upload file</h3>
 		<form action="/files" method="POST" enctype="multipart/form-data">
 			<input type="file" name="file">
@@ -31,7 +33,7 @@
 		</form>
 	</div>
 	<div class="divider"></div>
-	<div class="inner form">
+	<div class="inner-card">
 		<h3>Browse Files</h3>
 		<p>View all uploaded files:</p>
 		<div class="links">
@@ -39,20 +41,20 @@
 		</div>
 	</div>
 	<div class="divider"></div>
-	<div class="inner form">
+	<div class="inner-card">
 		<h3>Delete file(s)</h3>
-		<p><strong>Enter the exact filename to delete from uploads folder:</strong></p>
+		<p>Enter the exact filename to delete from uploads folder:</p>
 		<form action="/files" method="POST">
 			<input type="hidden" name="_method" value="DELETE">
 			<input type="text" name="filename" placeholder="example.txt" required>
 			<div class="links">
 				<button type="submit">Delete</button>
 			</div>
-		</form><br>
+		</form>
 		<p class="text-small"><em>Note: This will permanently delete the file from the uploads directory.</em></p>
 	</div>
 	<div class="links home">
 		<a href="/">Return to homepage</a>
 	</div>
 </body>
-</html>	w
+</html>
