@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/07 15:20:30 by jim               #+#    #+#             */
-/*   Updated: 2025/10/27 14:54:45 by jim              ###   ########.fr       */
+/*   Updated: 2025/11/01 18:46:55 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -147,8 +147,9 @@ std::string CgiExec::execute(const HttpRequest* request){
 	close(stdin_pipefd[0]);
 
 	if (request->getMethod() == "POST" && !request->getBody().empty()){
-		const char* data = request->getBody().c_str();
-		size_t remain = request->getBody().size();
+		std::string body = request->getBody();
+		const char* data = body.c_str();
+		size_t remain = body.size();
 
 		while(remain > 0){
 			ssize_t written = write(stdin_pipefd[1], data, remain);
