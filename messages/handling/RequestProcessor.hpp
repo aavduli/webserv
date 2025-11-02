@@ -47,7 +47,6 @@ class RequestProcessor {
 		Status		getLastStatus() const;
 };
 
-ssize_t			write_on_fd(const int fd, const std::string& content, size_t &pos, size_t buf_size);
 std::string		generateFilename(const std::string& wanted_name, const std::string& upload_dir);
 
 #endif // REQUESTPROCESSOR_HPP

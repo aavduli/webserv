@@ -317,18 +317,6 @@ bool	RequestProcessor::processDeleteRequest() {
 	return true;
 }
 
-ssize_t	write_on_fd(const int fd, const std::string& content, size_t& pos, size_t buf_size) {
-
-	ssize_t	bytes_written = 0;
-	while (pos < content.size()) {
-		bytes_written = write(fd, &content[pos], buf_size);
-		if (bytes_written == -1)
-			return bytes_written;
-		pos += bytes_written;
-	}
-	return bytes_written;
-}
-
 std::string	generateFilename(const std::string& wanted_name, const std::string& upload_dir) {
 
 	std::string filename;
