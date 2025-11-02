@@ -108,6 +108,12 @@ p.text-small, label{
 }
 .links a:hover, .links button:hover{ transform:translateY(-1px) }
 
+.dir-link a{
+	cursor: pointer;
+	pointer-events:auto;
+	color:#9effb8;
+}
+
 /* Form elements styling */
 .form {
 	margin: 15px 0;
