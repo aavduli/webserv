@@ -253,7 +253,7 @@ bool RequestValidator::validateRedirection() {
 	std::string code = redirect.substr(0, space);
 	std::string destination = redirect.substr(space + 1);
 
-	RequestUri	uri = _request->getUri();
+	RequestUri	uri(_request->getUri());
 	uri.setRedirDestination(destination);
 	_request->ctx._has_redirect = true;
 	if (code == "301")

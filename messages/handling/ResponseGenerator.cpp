@@ -109,7 +109,7 @@ void ResponseGenerator::generateDirectoryResponse() {
 			parent_path = "/";
 		else
 			parent_path = parent_path.substr(0, last_slash);
-		content = "<p><a href=\"" + parent_path + "\">../</a>\n</p>";
+		content = "<p class=\"dir-link\"><a href=\"" + parent_path + "\">../</a>\n</p>";
 	}
 
 	struct dirent *en;
@@ -118,7 +118,7 @@ void ResponseGenerator::generateDirectoryResponse() {
 		if (name == "." || name == "..")
 			continue;
 		std::string file_path = build_full_path(url_path, name);
-		content += "<p><a href=\"" + file_path + "\">" + name + "</a>\n</p>";
+		content += "<p class=\"dir-link\"><a href=\"" + file_path + "\">" + name + "</a>\n</p>";
 	}
 	closedir(dir);
 
@@ -140,7 +140,7 @@ void ResponseGenerator::generateRedirResponse() {
 		subtitle = "Moved Permanently";
 	else
 		subtitle = "Found (Moved Temporarily)";
-	std::string content = "<p>New location: <a href=\"" + destination + "\"></a></p>\n";
+	std::string content = "<p>The document has moved to: <a href=\"" + destination + "\">" + destination + "</a></p>\n";
 	HTMLTemplate tmpl(title, subtitle, content, "", "", false);
 
 	_response->setStatus(_last_status);
