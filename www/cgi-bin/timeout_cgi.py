@@ -12,13 +12,13 @@ query_string = os.environ.get('QUERY_STRING', '')
 seconds = 2  # default
 
 if query_string:
-    for param in query_string.split('&'):
-        if param.startswith('seconds='):
-            try:
-                seconds = int(param.split('=')[1])
-                seconds = max(1, min(10, seconds))  # Clamp between 1-10
-            except:
-                seconds = 2
+	for param in query_string.split('&'):
+		if param.startswith('seconds='):
+			try:
+				seconds = int(param.split('=')[1])
+				seconds = max(1, min(60, seconds))  # Clamp between 1-10
+			except:
+				seconds = 2
 
 print("<html>")
 print("<head><title>CGI Timeout Test</title></head>")

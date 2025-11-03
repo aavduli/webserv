@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/07 15:20:30 by jim               #+#    #+#             */
-/*   Updated: 2025/11/01 18:46:55 by jim              ###   ########.fr       */
+/*   Updated: 2025/11/03 09:53:08 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,7 @@
 #include <signal.h>
 #include "../console/console.hpp"
 #include <fcntl.h>
-#define TIMEOUT_CGI 5
+#define TIMEOUT_CGI 60
 
 extern char** environ;
 
@@ -199,6 +199,7 @@ std::string CgiExec::execute(const HttpRequest* request){
 			break;
 		}
 
+		//network handler :: make non bloquant
 		//non blocking reading <- aavduli ? todo
 		fd_set read_fds;
 		FD_ZERO(&read_fds);
