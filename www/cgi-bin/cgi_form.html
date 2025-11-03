@@ -22,7 +22,7 @@
 		<h1>CGI Test forms</h1>
 		<p class="subtitle">Test different scripts</p>
 	</div>
-	
+
 	<div class="inner-card">
 		<h3>Simple CGI Script Test</h3>
 		<form action="/cgi-bin/script.py" method="GET">
@@ -49,7 +49,7 @@
 		<h3>Timeout Test</h3>
 		<p>Input seconds to wait:</p>
 		<form action="/cgi-bin/timeout_cgi.py" method="GET">
-			<input type="number" name="seconds" value="2" min="1" max="10"><br>
+			<input type="number" name="seconds" value="2" min="1" max="60"><br>
 			<div class="links">
 				<button type="submit">Test Timeout</button>
 			</div>
