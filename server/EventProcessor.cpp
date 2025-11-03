@@ -5,7 +5,7 @@ eventProcessor::eventProcessor(eventManager& em, connectionManager& cm, const st
 
 eventProcessor::~eventProcessor() {}
 
-//private helper method
+
 void eventProcessor::acceptNewConnections(int serverFd) {
 	while (true) {
 		struct sockaddr_storage clientAddr;
@@ -24,16 +24,8 @@ void eventProcessor::handleReceiveError(int clientFd, ssize_t recvResult) {
 		handleClientDisconnection(clientFd);
 	}
 	if (recvResult == -1) {
-		if (errno == EAGAIN || errno == EWOULDBLOCK)
-			return ;
-		if (errno == EINTR) {
 			console::log("Recv got interrupted, closing connection on FD: ", clientFd, SRV);
 			handleClientDisconnection(clientFd);
-		}
-		else {
-			console::log("Real error, closing connection on FD: ", clientFd, SRV);
-			handleClientDisconnection(clientFd);
-		}
 	}
 }
 
@@ -57,13 +49,6 @@ void eventProcessor::sendResponse(int clientFd, const std::string& response) {
 
 		_eventManager.modFd(clientFd, EPOLLIN | EPOLLOUT | EPOLLRDHUP);
 		console::log("Partial send, waiting for EPOLLOUT on FD: ", clientFd, SRV);
-	}
-	else if (errno == EAGAIN || errno == EWOULDBLOCK) {
-		connection.outBuffer = response;
-		connection.outSent = 0;
-		connection.hasDataToSend = true;
-		_eventManager.modFd(clientFd, EPOLLIN | EPOLLOUT | EPOLLRDHUP);
-		console::log("Send would block, waiting EPOLLOUT on FD: ", clientFd, SRV);
 	}
 	else {
 		console::log("Send error, closing FD", clientFd, SRV);
@@ -90,7 +75,7 @@ void eventProcessor::handleClientWriteReady(int clientFd) {
 			_eventManager.modFd(clientFd, EPOLLIN | EPOLLRDHUP);
 		}
 	}
-	else if (bytesSent == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+	else if (bytesSent == -1) {
 		return ;
 	}
 	else {
@@ -99,7 +84,6 @@ void eventProcessor::handleClientWriteReady(int clientFd) {
 	}
 }
 
-//public events handler
 void eventProcessor::runEventLoop(const WebservConfig& config) {
 	time_t lastTimeOutCheck = time(NULL);
 	const int timeOutInterval = ServerConstants::TIMEOUT_CHECK;
@@ -160,14 +144,12 @@ void eventProcessor::stopEventLoop() {
 
 void eventProcessor::handleClientDisconnection(int clientFd) {
 	_connectionManager.removeConnection(clientFd);
-	//EPOLLUP | EPOLLERR | EPOLLRDUP
 } 
 
 void eventProcessor::handleClientData(int clientFd, const WebservConfig& config) {
 	Conn& connection = _connectionManager.getConnection(clientFd); 
 	onConn::updateActivity(connection);
 	
-	// Define constants for safety
 	static const size_t MAX_REQUEST_SIZE = ServerConstants::MAX_REQUEST_SIZE;
 	static const size_t BUFFER_SIZE = ServerConstants::BUFFER_SIZE;
 	
@@ -178,7 +160,6 @@ void eventProcessor::handleClientData(int clientFd, const WebservConfig& config)
 		return ;
 	}
 	
-	// Check for request size limit to prevent DoS
 	if (connection.in.size() + static_cast<size_t>(bytesRead) > MAX_REQUEST_SIZE) {
 		console::log("Request too large, closing connection on FD: ", clientFd, SRV);
 		handleClientDisconnection(clientFd);

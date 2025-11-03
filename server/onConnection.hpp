@@ -9,10 +9,10 @@
 # include "../console/console.hpp"
 
 struct Conn {
-	std::string in; //raw bytes
-	bool header_done; //found \r\n\r\n
-	bool chunked; //Transfer-encoding: chunked
-	long content_len; //from content lenght (<= INT MAX ?)
+	std::string in; 
+	bool header_done;
+	bool chunked; 
+	long content_len;
 	size_t body_have;
 	size_t headers_end;
 	time_t lastActivity;
@@ -21,7 +21,7 @@ struct Conn {
 	size_t outSent;
 	bool hasDataToSend;
 	int serverFd;
-	int clientPort;  // Track which port this connection came from
+	int clientPort;
 
 	Conn();
 };
@@ -32,11 +32,10 @@ class onConn {
 		onConn();
 		~onConn();
 	
-	enum { MAX_HEADER_BYTES = 16384}; //16kb
+	enum { MAX_HEADER_BYTES = 16384}; 
 
 		static bool update_and_ready(Conn &c, size_t &req_end);
 		static bool onDiscon(Conn& c, bool alive, size_t endpos);
-		// time Handling
 		static bool isTimedOut(Conn& c, time_t currentTime, int timeOutSecond);
 		static void updateActivity(Conn& c);
 
