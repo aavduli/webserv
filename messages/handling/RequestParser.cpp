@@ -105,7 +105,7 @@ bool RequestParser::parseUri(std::string request_line) {
 	raw_uri = trim_whitespaces(raw_uri);
 	if (raw_uri.empty()) 
 		raw_uri = "/";
-	if (raw_uri.length() > MAX_URI_LENGTH) {
+	if (raw_uri.length() > ServerConstants::MAX_URI_LENGTH) {
 		console::log("[ERROR][REQUEST PARSER] Request URI too long", MSG);
 		_last_status = E_URI_TOO_LONG;
 		return false;

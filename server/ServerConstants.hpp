@@ -2,10 +2,14 @@
 # define SERVER_CONSTANTS_HPP
 
 namespace ServerConstants {
+
+	static const size_t MAX_URI_LENGTH = 2048;
+
 	// Buffer sizes
 	static const size_t BUFFER_SIZE = 8192;
 	static const size_t MAX_REQUEST_SIZE = 1048576;  // 1MB
 	static const size_t MAX_HEADER_SIZE = 16384;     // 16KB
+	static const int MAX_FILENAME_COUNTER = 10000;
 	
 	// Connection limits  
 	static const size_t DEFAULT_MAX_CONNECTIONS = 1000;
