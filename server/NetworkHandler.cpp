@@ -109,22 +109,6 @@ ssize_t NetworkHandler::sendData(int fd, char *buffer, ssize_t size) {
 	return sendBytes;
 }
 
-ssize_t NetworkHandler::sendFullData(int fd, char *buffer, ssize_t remainingBytes) {
-	ssize_t totalSend = 0;
-	while (totalSend < remainingBytes) {
-		ssize_t sent = send(fd, buffer + totalSend, remainingBytes - totalSend, 0);
-		if (sent < 0) {
-			if (errno == EAGAIN || errno == EWOULDBLOCK) {
-				return totalSend;
-			}
-			return -1;
-		}
-		if (sent == 0) break;
-		totalSend += sent;
-	}
-	return totalSend;
-}
-
 void NetworkHandler::ignoreSigPipe() {
 	struct sigaction sa;
 	std::memset(&sa, 0, sizeof(sa));

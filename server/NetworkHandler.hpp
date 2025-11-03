@@ -41,7 +41,6 @@ class NetworkHandler {
 
 		static ssize_t receiveData(int fd, char *buffer, ssize_t size);
 		static ssize_t sendData(int fd, char *buffer, ssize_t size);
-		static ssize_t sendFullData(int fd, char *buffer, ssize_t remainingBytes);
 		
 		static void ignoreSigPipe();
 		static bool isSocketError(int fd); 
