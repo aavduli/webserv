@@ -8,7 +8,7 @@ namespace ServerConstants {
 	// Buffer sizes
 	static const size_t BUFFER_SIZE = 8192;
 	static const size_t MAX_REQUEST_SIZE = 1048576;  // 1MB
-	static const size_t MAX_HEADER_SIZE = 16384;     // 16KB
+	static const size_t MAX_HEADER_SIZE = 1048576;
 	static const int MAX_FILENAME_COUNTER = 10000;
 	
 	// Connection limits  
