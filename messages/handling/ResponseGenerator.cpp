@@ -35,7 +35,6 @@ void ResponseGenerator::generateResponse() {
 	setHeaders();
 }
 
-// TODO check if correct logic
 void ResponseGenerator::generatePostResponse() {
 
 	std::string content;
@@ -58,7 +57,6 @@ void ResponseGenerator::generatePostResponse() {
 	_response->setBodyType(B_HTML);
 }
 
-// TODO check if correct logic
 void ResponseGenerator::generateDeleteResponse() {
 
 	HTMLTemplate tmpl("Success", "DELETE Method", "<p>File was successfully removed.</p>", "", "", false);
@@ -464,10 +462,6 @@ std::string getCurrentGMTDate() {
 
 	time(&now);				// get current time
 	gmt = gmtime(&now);		// convert to GMT/UTC
-
-	// %2d:%02d (gmt->tm_hour+2)%24, gmt->tm_min))
-
-	// format: Sun, 06 Nov 1994 08:49:37 GMT
 	strftime(buf, sizeof(buf), "%a, %d %b %Y %H:%M GMT", gmt);
 
 	std::string date(buf);

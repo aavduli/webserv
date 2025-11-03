@@ -19,7 +19,6 @@ void		MessageHandler::setLastStatus(Status status) {_last_status = status;}
 eventProcessor* g_eventProcessor = NULL;
 int g_clientFd = -1;
 
-// std::string	handle_messages(const WebservConfig& config, const std::string &raw_request, int port) {
 std::string handle_messages(const WebservConfig& config, const std::string &raw_request, int port, eventProcessor* evProc, int clientFd){
 
 
