@@ -77,6 +77,7 @@ int NetworkHandler::bindAndListen(int serverfd, const struct sockaddr_in& addres
 	return NET_SUCCESS;
 }
 
+//when connection, accept it and make it non block
 int NetworkHandler::acceptConnection(int fd, struct sockaddr_storage &clientAddr) {
 	socklen_t clientLength = sizeof(clientAddr);
 	int clientFD = accept(fd, (struct sockaddr*)&clientAddr, &clientLength);
