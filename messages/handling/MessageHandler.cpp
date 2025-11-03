@@ -24,7 +24,7 @@ std::string handle_messages(const WebservConfig& config, const std::string &raw_
 
 	g_eventProcessor = evProc;
 	g_clientFd = clientFd;
-	
+
 	console::log("========================================", MSG);
 	if (port > 0)
 		console::log("[INFO] Processing request for port: " + nb_to_string(port), MSG);
@@ -54,7 +54,6 @@ std::string handle_messages(const WebservConfig& config, const std::string &raw_
 	handler.generateResponse();
 	std::string response = handler.serializeResponse();
 	if (response.empty() || (response.find("\r\n\r\n") != std::string::npos && response.find("\r\n\r\n") + 4 >= response.length())){
-		//if response empty = is cgi
 		return "";
 	}
 	return response;

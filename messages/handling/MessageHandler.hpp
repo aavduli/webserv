@@ -38,7 +38,6 @@ class MessageHandler {
 		void			setLastStatus(Status status);
 };
 
-// std::string	handle_messages(const WebservConfig& config, const std::string& raw_request, int port);
 std::string handle_messages(const WebservConfig& config, const std::string& raw_request, int port, eventProcessor *evProc, int clientFd);
 
 #endif //MESSAGEHANDLER_HPP
