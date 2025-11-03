@@ -142,10 +142,10 @@ bool RequestUri::isAbsoluteUri(const std::string& uri) {
 	
 	std::string scheme = uri.substr(0, colon_pos);
 	for (size_t i = 0; i < scheme.length(); i++) {
-		if (!isalpha(scheme[i]) && !isdigit(scheme[i]) && scheme[i] != '+' && scheme[i] != '-' && scheme[i] != '.')
+		if (!std::isalpha(scheme[i]) && !isdigit(scheme[i]) && scheme[i] != '+' && scheme[i] != '-' && scheme[i] != '.')
 			return false;
 	}
-	if (!isalpha(scheme[0]))
+	if (!std::isalpha(scheme[0]))
 		return false;
 	return true;
 }

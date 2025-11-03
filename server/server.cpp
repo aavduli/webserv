@@ -19,7 +19,7 @@ void server::signalHandler(int signal) {
 }
 
 void server::setupSignalHandler() {
-	memset(&_sa, 0, sizeof(_sa));
+	std::memset(&_sa, 0, sizeof(_sa));
 	_sa.sa_handler = signalHandler;
 	sigemptyset(&_sa.sa_mask);
 	_sa.sa_flags = SA_RESTART;

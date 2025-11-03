@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ConfigValidator.cpp                                :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
+/*   By: angela <angela@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/15 14:57:26 by jim               #+#    #+#             */
-/*   Updated: 2025/10/28 13:08:15 by jim              ###   ########.fr       */
+/*   Updated: 2025/11/03 11:14:10 by angela           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -212,7 +212,7 @@ bool ConfigValidator::validateSrvName(const std::string& serverName){
 	//check for invalid char
 	for (size_t i = 0; i < serverName.length(); i++){
 		char c = serverName[i];
-		if (!isalnum(c) && c != '.' && c != '-' && c != '_'){
+		if (!std::isalnum(c) && c != '.' && c != '-' && c != '_'){
 			setError("invalid char in srv name: " + std::string(1, c));
 			console::log(_lastError, ERROR);
 			return (BLOCKINGERROR ? false : true);
@@ -239,7 +239,7 @@ bool ConfigValidator::validateErrorParge(const std::string& errorPageLine){
 		if (BLOCKINGERROR) return false;
 	}
 
-	int codeNum = atoi(code.c_str());
+	int codeNum = std::atoi(code.c_str());
 	if (codeNum < 400 || codeNum > 599){ // Todo check error code min max, and if we're gonne use them all
 		setError("Error code out of range (MIN -> MAX to define): " + code);
 		console::log(_lastError, ERROR);
@@ -345,7 +345,7 @@ bool ConfigValidator::validateMBS(const std::string& size){
 		if (BLOCKINGERROR) return false;
 	}
 
-	long sizeNum = atol(size.c_str());
+	long sizeNum = std::atol(size.c_str());
 	if (sizeNum <= 0 || sizeNum > 1000000000){ //todo decrease bc 1 gb is kinda overkill see commetn above
 		setError("Client MBS out of range: " + size);
 		console::log(_lastError, ERROR);
