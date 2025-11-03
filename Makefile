@@ -31,7 +31,7 @@ SRCS =	main.cpp \
 		parsing/Paths.cpp \
 		cgi/CgiExec.cpp
 
-OBJDIR = obj
+OBJDIR = obj/
 
 OBJS = $(SRCS:.cpp=.o)
 OBJS := $(addprefix $(OBJDIR)/, $(notdir $(OBJS:.o=.o)))
