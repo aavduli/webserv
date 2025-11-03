@@ -456,10 +456,6 @@ std::string getCurrentGMTDate() {
 
 	time(&now);				// get current time
 	gmt = gmtime(&now);		// convert to GMT/UTC
-
-	// %2d:%02d (gmt->tm_hour+2)%24, gmt->tm_min))
-
-	// format: Sun, 06 Nov 1994 08:49:37 GMT
 	strftime(buf, sizeof(buf), "%a, %d %b %Y %H:%M GMT", gmt);
 
 	std::string date(buf);

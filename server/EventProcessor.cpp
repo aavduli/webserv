@@ -23,17 +23,9 @@ void eventProcessor::handleReceiveError(int clientFd, ssize_t recvResult) {
 		console::log("Client closed the connection on FD: ", clientFd, SRV);
 		handleClientDisconnection(clientFd);
 	}
-	if (recvResult == -1) {
-		if (errno == EAGAIN || errno == EWOULDBLOCK)
-			return ;
-		if (errno == EINTR) {
-			console::log("Recv got interrupted, closing connection on FD: ", clientFd, SRV);
-			handleClientDisconnection(clientFd);
-		}
-		else {
-			console::log("Real error, closing connection on FD: ", clientFd, SRV);
-			handleClientDisconnection(clientFd);
-		}
+	if (recvResult == -1){
+		console::log("Real error, closing connection on FD: ", clientFd, SRV);
+		handleClientDisconnection(clientFd);
 	}
 }
 
@@ -57,13 +49,6 @@ void eventProcessor::sendResponse(int clientFd, const std::string& response) {
 
 		_eventManager.modFd(clientFd, EPOLLIN | EPOLLOUT | EPOLLRDHUP);
 		console::log("Partial send, waiting for EPOLLOUT on FD: ", clientFd, SRV);
-	}
-	else if (errno == EAGAIN || errno == EWOULDBLOCK) {
-		connection.outBuffer = response;
-		connection.outSent = 0;
-		connection.hasDataToSend = true;
-		_eventManager.modFd(clientFd, EPOLLIN | EPOLLOUT | EPOLLRDHUP);
-		console::log("Send would block, waiting EPOLLOUT on FD: ", clientFd, SRV);
 	}
 	else {
 		console::log("Send error, closing FD", clientFd, SRV);
@@ -89,9 +74,6 @@ void eventProcessor::handleClientWriteReady(int clientFd) {
 			connection.outSent = 0;
 			_eventManager.modFd(clientFd, EPOLLIN | EPOLLRDHUP);
 		}
-	}
-	else if (bytesSent == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
-		return ;
 	}
 	else {
 		console::log("Send error during EPOLLOUT on FD: ", clientFd, SRV);
