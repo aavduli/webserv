@@ -169,21 +169,12 @@ void eventProcessor::handleClientData(int clientFd, const WebservConfig& config)
 	Conn& connection = _connectionManager.getConnection(clientFd);
 	onConn::updateActivity(connection);
 
-	// Define constants for safety
-	static const size_t MAX_REQUEST_SIZE = ServerConstants::MAX_REQUEST_SIZE;
 	static const size_t BUFFER_SIZE = ServerConstants::BUFFER_SIZE;
 
 	char buffer[BUFFER_SIZE];
 	ssize_t bytesRead = NetworkHandler::receiveData(clientFd, buffer, sizeof(buffer));
 	if (bytesRead <= 0) {
 		handleReceiveError(clientFd, bytesRead);
-		return ;
-	}
-
-	// Check for request size limit to prevent DoS
-	if (connection.in.size() + static_cast<size_t>(bytesRead) > MAX_REQUEST_SIZE) {
-		console::log("Request too large, closing connection on FD: ", clientFd, SRV);
-		handleClientDisconnection(clientFd);
 		return ;
 	}
 

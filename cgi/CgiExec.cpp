@@ -116,7 +116,6 @@ CgiResult CgiExec::startCgi(const HttpRequest* request){
 			if (ct_it != headers.end() && !ct_it->second.empty())
 				setenv("CONTENT_TYPE", ct_it->second[0].c_str(), 1);
 		}
-		close(stdin_pipefd[1]);
 
 		//HTTP heeaders (HTTP_*)
 		std::map<std::string, std::vector<std::string> > headers = request->getHeaders();
