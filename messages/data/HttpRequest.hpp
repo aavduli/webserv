@@ -10,7 +10,7 @@ struct PostData {
 	std::string		filename;
 	std::string		new_filename;
 	std::string		content;
-	size_t			bytes_written;	// to remove
+	size_t			bytes_written;
 	std::string		content_type;
 	bool			is_file;
 

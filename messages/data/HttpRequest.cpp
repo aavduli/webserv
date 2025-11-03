@@ -23,8 +23,6 @@ void				HttpRequest::setPostData(const std::map<std::string, PostData>& post_dat
 
 void	print_request(HttpRequest* request) {
 	std::cout << "\n\n=== HTTP REQUEST ===" << std::endl;
-	
-	// Print request line
 	std::cout << "Method:		" << request->getMethod() << std::endl;
 	std::cout << "URI:		" << request->getUri().getRawUri() << std::endl;
 	std::cout << "HTTP Version:	" << request->getHttpVersionMajor() << "." << request->getHttpVersionMinor() << std::endl;

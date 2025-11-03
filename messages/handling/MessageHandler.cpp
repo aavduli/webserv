@@ -1,5 +1,5 @@
 #include "MessageHandler.hpp"
-#include "../../server/ConnectionManager.hpp" 
+#include "../../server/ConnectionManager.hpp"
 
 MessageHandler::MessageHandler(const WebservConfig& config, HttpRequest* request) : _config(config), _request(request), _response(), _last_status(E_INIT) {}
 MessageHandler::MessageHandler(const MessageHandler& rhs) : _config(rhs._config), _request(rhs._request), _response(rhs._response), _last_status(rhs._last_status) {}
@@ -17,7 +17,6 @@ Status		MessageHandler::getLastStatus() const {return _last_status;}
 void		MessageHandler::setLastStatus(Status status) {_last_status = status;}
 
 std::string	handle_messages(const WebservConfig& config, const std::string &raw_request, int port) {
-
 	console::log("========================================", MSG);
 	if (port > 0)
 		console::log("[INFO] Processing request for port: " + nb_to_string(port), MSG);
@@ -62,9 +61,9 @@ bool	MessageHandler::parseRequest(const std::string& raw_request, const int& por
 }
 
 bool	MessageHandler::validateRequest() {
-	
+
 	RequestValidator	validator(_config, _request);
-	
+
 	if (validator.validateRequest()) {
 		_last_status = validator.getLastStatus();
 		return true;
@@ -88,7 +87,7 @@ void MessageHandler::processRequest() {
 }
 
 void MessageHandler::generateResponse() {
-	
+
 	ResponseGenerator	generator(_config, _request, &_response, _last_status);
 
 	generator.generateResponse();
