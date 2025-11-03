@@ -298,6 +298,5 @@ void eventProcessor::handleCgiData(int pipeFd){
 }
 
 bool eventProcessor::isCgiPipe(int fd) const{
-	bool result = _runningCgi.find(fd) != _runningCgi.end();
 	return _runningCgi.find(fd) != _runningCgi.end();
 }
