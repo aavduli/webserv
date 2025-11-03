@@ -159,29 +159,29 @@ void eventProcessor::stopEventLoop() {
 
 void eventProcessor::handleClientDisconnection(int clientFd) {
 	_connectionManager.removeConnection(clientFd);
-} 
+}
 
 void eventProcessor::handleClientData(int clientFd, const WebservConfig& config) {
-	Conn& connection = _connectionManager.getConnection(clientFd); 
+	Conn& connection = _connectionManager.getConnection(clientFd);
 	onConn::updateActivity(connection);
-	
+
 	static const size_t MAX_REQUEST_SIZE = ServerConstants::MAX_REQUEST_SIZE;
 	static const size_t BUFFER_SIZE = ServerConstants::BUFFER_SIZE;
-	
+
 	char buffer[BUFFER_SIZE];
 	ssize_t bytesRead = NetworkHandler::receiveData(clientFd, buffer, sizeof(buffer));
 	if (bytesRead <= 0) {
 		handleReceiveError(clientFd, bytesRead);
 		return ;
 	}
-	
+
 
 	if (connection.in.size() + static_cast<size_t>(bytesRead) > MAX_REQUEST_SIZE) {
 		console::log("Request too large, closing connection on FD: ", clientFd, SRV);
 		handleClientDisconnection(clientFd);
 		return ;
 	}
-	
+
 	connection.in.append(buffer, static_cast<size_t>(bytesRead));
 	size_t requestEndPos;
 	if (onConn::update_and_ready(connection, requestEndPos)) {
@@ -224,7 +224,7 @@ bool eventProcessor::isDataSendEvent(uint32_t event) const {
 }
 
 static std::string build_timeout_response() {
-    std::string response = 
+    std::string response =
         "HTTP/1.0 408 Request Timeout\r\n"
         "Content-Type: text/html\r\n"
         "Content-Length: 147\r\n"
