@@ -7,11 +7,9 @@
 #include "../../config/WebservConfig.hpp"
 #include "../../parsing/Parsing.hpp"
 #include "../../status/status.hpp"
+#include "../../server/ServerConstants.hpp"
 
 #include <sys/stat.h>
-
-const size_t MAX_URI_LENGTH = 2048;
-const size_t MAX_HEADERS_SIZE = 8192;
 
 class RequestValidator {
 

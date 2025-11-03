@@ -44,7 +44,7 @@ void eventManager::addFd(int fd, uint32_t events) {
 	ev.events = events;
 	ev.data.fd = fd;
 	if (epoll_ctl(_epfd, EPOLL_CTL_ADD, fd, &ev) == -1)
-		std::cerr << RED << "epoll_ctl ADD failed" << RESET << std::endl;
+		console::log("[EPOLL]epoll_ctl ADD failed", SRV);
 }
 
 void eventManager::modFd(int fd, uint32_t events) {
@@ -53,10 +53,10 @@ void eventManager::modFd(int fd, uint32_t events) {
 	ev.events = events;
 	ev.data.fd = fd;
 	if (epoll_ctl(_epfd, EPOLL_CTL_MOD, fd, &ev) == -1)
-		std::cerr << RED << "epoll_ctl_mod failed" << RESET << std::endl;
+		console::log("[EPOLL]epoll_ctl_mod failed", SRV);
 }
 
 void eventManager::delFd(int fd) {
 	if (epoll_ctl(_epfd, EPOLL_CTL_DEL, fd, NULL) == -1)
-		std::cerr << RED << "epoll_ctl_del failed" << RESET << std::endl;
+		console::log("[EPOLL]epoll_ctl_del failed", SRV);
 }

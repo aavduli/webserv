@@ -9,12 +9,9 @@
 #include "../../console/console.hpp"
 #include "../../parsing/Parsing.hpp"
 #include "../../status/status.hpp"
+#include "../../server/ServerConstants.hpp"
 #include <unistd.h>
-#include <errno.h>
 #include <fcntl.h>
-
-const size_t DEFAULT_BUFFER_SIZE = 8192;
-const int MAX_FILENAME_COUNTER = 10000;
 
 class RequestProcessor {
 

@@ -5,7 +5,7 @@ eventProcessor::eventProcessor(eventManager& em, connectionManager& cm, const st
 
 eventProcessor::~eventProcessor() {}
 
-//private helper method
+
 void eventProcessor::acceptNewConnections(int serverFd) {
 	while (true) {
 		struct sockaddr_storage clientAddr;
@@ -99,7 +99,6 @@ void eventProcessor::handleClientWriteReady(int clientFd) {
 	}
 }
 
-//public events handler
 void eventProcessor::runEventLoop(const WebservConfig& config) {
 	time_t lastTimeOutCheck = time(NULL);
 	const int timeOutInterval = ServerConstants::TIMEOUT_CHECK;

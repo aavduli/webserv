@@ -1,7 +1,5 @@
 #pragma once
 
-//Handle Epoll events
-
 #include "../console/console.hpp"
 #include <iostream>
 #include "eventManager.hpp"

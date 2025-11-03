@@ -1,5 +1,4 @@
 #include "RequestProcessor.hpp"
-#include <cerrno>
 #include <cstring>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -339,7 +338,7 @@ std::string	generateFilename(const std::string& wanted_name, const std::string& 
 	std::string unique_name;
 
 	int counter = 1;
-	for (; counter < MAX_FILENAME_COUNTER; counter++) {
+	for (; counter < ServerConstants::MAX_FILENAME_COUNTER; counter++) {
 		unique_name = base_name + nb_to_string(counter);
 		if (!extension.empty())
 			unique_name = unique_name + "." + extension;
@@ -347,7 +346,7 @@ std::string	generateFilename(const std::string& wanted_name, const std::string& 
 		if (!is_accessible_path(full_name))
 			break;
 	}
-	if (counter == MAX_FILENAME_COUNTER) {
+	if (counter == ServerConstants::MAX_FILENAME_COUNTER) {
 		console::log("[ERROR][UPLOAD FILE] More than 9999 files with same name...", MSG);
 		return "";
 	}

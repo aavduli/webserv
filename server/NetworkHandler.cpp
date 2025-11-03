@@ -29,7 +29,6 @@ bool NetworkHandler::initializeServer(std::vector<int>& ports) {
 	return !_server_socket.empty();
 }
 
-//do operation on FD. SET_FL == file status FLAG / F_SETFD == file descriptor flags FD_CLOEXEC = atomicaly close the fd on exec
 int NetworkHandler::makeNonblocking(int fd) {
 	int fl = fcntl(fd, F_GETFL, 0);
 	if (fl == -1) return NON_BLOCK_ERROR;
@@ -56,7 +55,6 @@ int NetworkHandler::createServerSocket() {
 	return fd;
 }
 
-//make socket reusable
 void NetworkHandler::setupSocketOptions(int fd) {
 	int yes = 1;
 	if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) < 0)
@@ -67,7 +65,6 @@ void NetworkHandler::setupSocketOptions(int fd) {
 	#endif
 }
 
-//bind socket and listen what is comming
 int NetworkHandler::bindAndListen(int serverfd, const struct sockaddr_in& address) {
 	if (bind(serverfd, (struct sockaddr*)&address, sizeof(address)) < 0) {
 		logNetworkError("[NETWORK][BIND]", std::strerror(errno));
@@ -111,23 +108,6 @@ ssize_t NetworkHandler::receiveData(int fd, char *buffer, ssize_t size) {
 ssize_t NetworkHandler::sendData(int fd, char *buffer, ssize_t size) {
 	ssize_t sendBytes = send(fd, buffer, size, 0);
 	return sendBytes;
-}
-
-//For handling parsed data send
-ssize_t NetworkHandler::sendFullData(int fd, char *buffer, ssize_t remainingBytes) {
-	ssize_t totalSend = 0;
-	while (totalSend < remainingBytes) {
-		ssize_t sent = send(fd, buffer + totalSend, remainingBytes - totalSend, 0);
-		if (sent < 0) {
-			if (errno == EAGAIN || errno == EWOULDBLOCK) {
-				return totalSend;
-			}
-			return -1;
-		}
-		if (sent == 0) break;
-		totalSend += sent;
-	}
-	return totalSend;
 }
 
 void NetworkHandler::ignoreSigPipe() {

@@ -72,7 +72,7 @@ bool RequestValidator::validateHost() {
 		else
 			uri.setHost(tmp_host);
 	}
-	//here may be the probleme
+
 	std::string uri_host = uri.getHost();
 	if (uri_host.empty())
 		uri.setHost(config_host);
@@ -100,7 +100,7 @@ bool RequestValidator::validatePort() {
 		size_t colon = host_header.find(":");
 		if (colon != std::string::npos) {
 			std::string header_port = host_header.substr(colon + 1);
-			//maybe other problem there
+
 			char* endptr;
 			long port_value = std::strtol(header_port.c_str(), &endptr, 10);
 			if (*endptr != '\0' || port_value < 1 || port_value > 65535) {
@@ -109,7 +109,6 @@ bool RequestValidator::validatePort() {
 				return false;
 			}
 			
-			// Check if port exists in any of the configured servers
 			bool port_found = false;
 			for (size_t i = 0; i < all_ports.size(); i++) {
 				if (all_ports[i] == static_cast<int>(port_value)) {
@@ -234,7 +233,7 @@ bool RequestValidator::validateContentType() {
 bool RequestValidator::validateHeaderLimits() {
 
 	size_t headers_size = _request->getHeadersSize();
-	if (headers_size > MAX_HEADERS_SIZE) {
+	if (headers_size > ServerConstants::MAX_HEADER_SIZE) {
 		console::log("[ERROR][VALIDATION] Header size too large", MSG);
 		_last_status = E_HEADER_TOO_LARGE;
 		return false;
