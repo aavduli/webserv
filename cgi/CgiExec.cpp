@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/07 15:20:30 by jim               #+#    #+#             */
-/*   Updated: 2025/11/03 09:53:08 by jim              ###   ########.fr       */
+/*   Updated: 2025/11/03 13:49:15 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,7 @@
 #include <signal.h>
 #include "../console/console.hpp"
 #include <fcntl.h>
+#include "../server/NetworkHandler.hpp"
 #define TIMEOUT_CGI 60
 
 extern char** environ;
@@ -31,13 +32,18 @@ CgiExec::CgiExec(const std::string& script_path, const std::string& python_path,
 
 CgiExec::~CgiExec(){}
 
-std::string CgiExec::execute(const HttpRequest* request){
+CgiResult CgiExec::startCgi(const HttpRequest* request){
 	console::log("[CGI] Executing: " + _script_path, MSG);
+
+	CgiResult result;
+	result.pipeFd = -1;
+	result.pid = -1;
+	result.success = false;
 
 	int pipefd[2];
 	if (pipe(pipefd) == -1){
 		console::log("[CGI] failed to create pipe", ERROR);
-		return "";
+		return result;
 	}
 	fcntl(pipefd[0], F_SETFD, FD_CLOEXEC);
 	fcntl(pipefd[1], F_SETFD, FD_CLOEXEC);
@@ -48,7 +54,7 @@ std::string CgiExec::execute(const HttpRequest* request){
 		console::log("[CGI] failed to create second (stdin) pipe", ERROR);
 		close(pipefd[0]);
 		close(pipefd[1]);
-		return "";
+		return result;
 	}
 	fcntl(stdin_pipefd[0], F_SETFD, FD_CLOEXEC);
 	fcntl(stdin_pipefd[1], F_SETFD, FD_CLOEXEC);
@@ -61,7 +67,7 @@ std::string CgiExec::execute(const HttpRequest* request){
 		close(pipefd[1]);
 		close(stdin_pipefd[0]);
 		close(stdin_pipefd[1]);
-		return "";
+		return result;
 	}
 
 
@@ -170,69 +176,13 @@ std::string CgiExec::execute(const HttpRequest* request){
 	}
 	close(stdin_pipefd[1]);
 
-	//timeout
+	NetworkHandler::makeNonblocking(pipefd[0]);
 
-	std::string output;
-	char buffer[4096];
-	time_t start_time = time(NULL);
-	int status;
+	result.pipeFd = pipefd[0];
+	result.pid = pid;
+	result.success = true;
 
-	while(true){
-		//check global timeout
-		if (time(NULL) - start_time >= TIMEOUT_CGI){
-			console::log("[CGI] timeout reached, killing process", ERROR);
-			if (kill(pid, 0) == 0)
-				kill(pid, SIGKILL);
-			waitpid(pid, &status, 0);
-			close(pipefd[0]);
-			return "";
-		}
+	console::log("[CGI] Started non-Blocking, PID=" + nb_to_string(pid) + "pipe="+nb_to_string(pipefd[0]), MSG);
 
-		//process alive?
-		int result = waitpid(pid, &status, WNOHANG);
-		if (result > 0){
-			//process ended, read end data
-			ssize_t bytes_read;
-			while((bytes_read = read(pipefd[0], buffer, sizeof(buffer))) > 0){
-				output.append(buffer, bytes_read);
-			}
-			break;
-		}
-
-		//network handler :: make non bloquant
-		//non blocking reading <- aavduli ? todo
-		fd_set read_fds;
-		FD_ZERO(&read_fds);
-		FD_SET(pipefd[0], &read_fds);
-
-		struct timeval tv = {0, 100000};
-		int select_result = select(pipefd[0] + 1, &read_fds, NULL, NULL, &tv);
-
-		if (select_result > 0){
-			ssize_t bytes_read = read(pipefd[0], buffer, sizeof(buffer));
-			if (bytes_read > 0){
-				output.append(buffer, bytes_read);
-			}
-		}
-	}
-
-	close(pipefd[0]);
-
-	if (WIFEXITED(status)){
-		if (WEXITSTATUS(status) != 0){
-			console::log("[CGI] script exited with error code: "+nb_to_string(WEXITSTATUS(status)), ERROR);
-			return "";
-		}
-	}
-	else if (WIFSIGNALED(status)){
-		console::log("[CGI] script killed by signal: "+nb_to_string(WTERMSIG(status)), ERROR);
-		return "";
-	}
-	else{
-		console::log("[CGI] script terminated abnormally", ERROR);
-		return "";
-	}
-
-	console::log("[CGI] script executed succesfully", MSG);
-	return output;
+	return result;
 }

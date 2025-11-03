@@ -121,6 +121,9 @@ void eventProcessor::runEventLoop(const WebservConfig& config) {
 			else if (isServerSocket(fd)) {
 				acceptNewConnections(fd);
 			}
+			else if (isCgiPipe(fd)){
+				handleCgiData(fd);
+			}
 			else if (isDisconnectionEvent(events)) {
 				handleClientDisconnection(fd);
 			}
@@ -161,37 +164,39 @@ void eventProcessor::stopEventLoop() {
 void eventProcessor::handleClientDisconnection(int clientFd) {
 	_connectionManager.removeConnection(clientFd);
 	//EPOLLUP | EPOLLERR | EPOLLRDUP
-} 
+}
 
 void eventProcessor::handleClientData(int clientFd, const WebservConfig& config) {
-	Conn& connection = _connectionManager.getConnection(clientFd); 
+	Conn& connection = _connectionManager.getConnection(clientFd);
 	onConn::updateActivity(connection);
-	
+
 	// Define constants for safety
 	static const size_t MAX_REQUEST_SIZE = ServerConstants::MAX_REQUEST_SIZE;
 	static const size_t BUFFER_SIZE = ServerConstants::BUFFER_SIZE;
-	
+
 	char buffer[BUFFER_SIZE];
 	ssize_t bytesRead = NetworkHandler::receiveData(clientFd, buffer, sizeof(buffer));
 	if (bytesRead <= 0) {
 		handleReceiveError(clientFd, bytesRead);
 		return ;
 	}
-	
+
 	// Check for request size limit to prevent DoS
 	if (connection.in.size() + static_cast<size_t>(bytesRead) > MAX_REQUEST_SIZE) {
 		console::log("Request too large, closing connection on FD: ", clientFd, SRV);
 		handleClientDisconnection(clientFd);
 		return ;
 	}
-	
+
 	connection.in.append(buffer, static_cast<size_t>(bytesRead));
 	size_t requestEndPos;
 	if (onConn::update_and_ready(connection, requestEndPos)) {
 		std::string completeRequest = connection.in.substr(0, requestEndPos);
 		std::string response;
-		response = handle_messages(config, completeRequest, connection.clientPort);
-		sendResponse(clientFd, response);
+		response = handle_messages(config, completeRequest, connection.clientPort, this, clientFd);
+		if (!response.empty()){
+			sendResponse(clientFd, response);
+		}
 		connection.in.erase(0, requestEndPos);
 	}
 	bool alive = true;
@@ -227,7 +232,7 @@ bool eventProcessor::isDataSendEvent(uint32_t event) const {
 }
 
 static std::string build_timeout_response() {
-    std::string response = 
+    std::string response =
         "HTTP/1.0 408 Request Timeout\r\n"
         "Content-Type: text/html\r\n"
         "Content-Length: 147\r\n"
@@ -252,4 +257,52 @@ void eventProcessor::sendTimeOutResponse(int clientFd) {
 		handleClientDisconnection(clientFd);
 		return ;
 	}
+}
+
+void eventProcessor::handleCgiStart(int clientFd, const CgiResult& cgi){
+	if (!cgi.success) return;
+
+	CgiState state;
+	state.pipefd = cgi.pipeFd;
+	state.pid = cgi.pid;
+	state.startTime = time(NULL);
+	state.output = "";
+	state.clientFd = clientFd;
+
+	_runningCgi[cgi.pipeFd] = state;
+	_eventManager.addFd(cgi.pipeFd, EPOLLIN);
+	console::log("[CGI] started PID= "+nb_to_string(cgi.pid), MSG);
+}
+
+void eventProcessor::handleCgiData(int pipeFd){
+	std::map<int, CgiState>::iterator it = _runningCgi.find(pipeFd);
+	if (it == _runningCgi.end()) return;
+
+	CgiState& cgi = it->second;
+	char buffer[4096];
+	ssize_t bytes = read(pipeFd, buffer, sizeof(buffer));
+
+	if (bytes > 0){
+		cgi.output.append(buffer, bytes);
+	}
+	else if (bytes == 0){
+		int status;
+		pid_t result = waitpid(cgi.pid, &status, WNOHANG);
+		if (result <= 0) return; // let epoll handle if process not finished
+
+		if (!cgi.output.empty()){
+			sendResponse(cgi.clientFd, cgi.output);
+		}
+		else{
+			std::string error = "HTTP/1.0 500 Internal Server Error \r\n\r\n<h1>CGI Error</h1>";
+			sendResponse(cgi.clientFd, error);
+		}
+		_eventManager.delFd(pipeFd);
+		close(pipeFd);
+		_runningCgi.erase(it);
+	}
+}
+
+bool eventProcessor::isCgiPipe(int fd) const{
+	return _runningCgi.find(fd) != _runningCgi.end();
 }

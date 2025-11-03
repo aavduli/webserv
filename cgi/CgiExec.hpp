@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/07 15:20:25 by jim               #+#    #+#             */
-/*   Updated: 2025/10/26 15:55:08 by jim              ###   ########.fr       */
+/*   Updated: 2025/11/03 13:32:18 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,12 @@
 # include <string>
 # include "../messages/data/HttpRequest.hpp"
 # include "../config/WebservConfig.hpp"
+
+struct CgiResult{
+	int pipeFd;
+	pid_t pid;
+	bool success;
+};
 
 class CgiExec
 {
@@ -31,7 +37,8 @@ class CgiExec
 		CgiExec(const std::string& script_path, const std::string& pyhton_path, const WebservConfig* config);
 		~CgiExec();
 
-		std::string execute(const HttpRequest* request);
+		//std::string execute(const HttpRequest* request);
+		CgiResult startCgi(const HttpRequest* request);
 
 };
 

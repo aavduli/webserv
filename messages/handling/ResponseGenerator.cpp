@@ -175,25 +175,26 @@ void ResponseGenerator::generateErrorResponse() {
 }
 
 void ResponseGenerator::generateCGIResponse() {
-
-	console::log("[INFO] Generating CGI response", MSG);
-
+	console::log("[INFO] Generating CGI REsponse", MSG);
 	const std::string& script_path = _request->getUri().getEffectivePath();
 	std::string python_path = _config.getCgiPath(_request->ctx._location_name);
 
 	CgiExec executor(script_path, python_path, &_config);
-	std::string cgi_output = executor.execute(_request);
+	CgiResult cgi_result = executor.startCgi(_request);
 
-	if (cgi_output.empty()){
-		console::log("[ERROR][CGI] CGI execution failed", MSG);
+	extern eventProcessor* g_eventProcessor;
+	extern int g_clientFd;
+
+	if (cgi_result.success && g_eventProcessor){
+		g_eventProcessor->handleCgiStart(g_clientFd, cgi_result);
+
+		console::log("[CGI] Transfered to event loop", MSG);
+	}
+	else{
+		console::log("[ERROR] [CGI] CGI start failed", ERROR);
 		_last_status = E_INTERNAL_SERVER_ERROR;
 		return generateErrorResponse();
 	}
-
-	//parsing cgi output
-	parseCGIOutput(cgi_output);
-	_response->setStatus(E_OK);
-	_response->setBodyType(B_CGI);
 }
 
 void ResponseGenerator::parseCGIOutput(const std::string& cgi_output){

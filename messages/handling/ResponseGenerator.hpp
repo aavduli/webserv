@@ -6,6 +6,7 @@
 #include "../../config/WebservConfig.hpp"
 #include "../../console/console.hpp"
 #include "../../cgi/CgiExec.hpp"
+#include "../../server/EventProcessor.hpp"
 #include <ctime>
 #include <sstream>
 
@@ -18,8 +19,8 @@ struct HTMLTemplate {
 	std::string	page_type;			// "error-page", ""
 	bool		has_main_title;		// true for forms/file manager, false for errors
 
-	HTMLTemplate(const std::string& t = "", const std::string& st = "", 
-				const std::string& c = "", const std::string& ct = "", 
+	HTMLTemplate(const std::string& t = "", const std::string& st = "",
+				const std::string& c = "", const std::string& ct = "",
 				const std::string& pt = "", bool hmt = false)
 		: title(t), subtitle(st), content(c), card_type(ct), page_type(pt), has_main_title(hmt) {}
 

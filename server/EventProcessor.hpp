@@ -11,6 +11,17 @@
 #include "server.hpp"
 #include "ServerConstants.hpp"
 #include "../messages/handling/MessageHandler.hpp"
+#include <map>
+#include <sys/wait.h>
+#include "../cgi/CgiExec.hpp"
+
+struct CgiState {
+	int pipefd;
+	pid_t pid;
+	time_t startTime;
+	std::string output;
+	int clientFd;
+};
 
 class eventProcessor {
 	private:
@@ -19,11 +30,12 @@ class eventProcessor {
 		std::vector<int> _serverSocket;
 		bool _shouldStop;
 
-	private:
+		private:
 		void acceptNewConnections(int serverFd);
 		void handleReceiveError(int clientFd, ssize_t recvResult);
 		void sendResponse(int clientFd, const std::string& response);
 		void sendTimeOutResponse(int clientFd);
+		std::map<int, CgiState> _runningCgi;
 
 	public:
 		eventProcessor(eventManager& em, connectionManager& cm, const std::vector<int>& serverSocket);
@@ -41,4 +53,8 @@ class eventProcessor {
 		bool isDisconnectionEvent(uint32_t event) const;
 		bool isDataReadyEvent(uint32_t event) const;
 		bool isDataSendEvent(uint32_t event) const;
+
+		void handleCgiStart(int clientFd, const CgiResult& cgi);
+		void handleCgiData(int pipefd);
+		bool isCgiPipe(int fd) const;
 };
