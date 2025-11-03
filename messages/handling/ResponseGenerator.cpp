@@ -181,6 +181,7 @@ void ResponseGenerator::generateCGIResponse() {
 
 	CgiExec executor(script_path, python_path, &_config);
 	CgiResult cgi_result = executor.startCgi(_request);
+	//std::string cgi_output = executor.execute(_request);
 
 	extern eventProcessor* g_eventProcessor;
 	extern int g_clientFd;
@@ -195,6 +196,9 @@ void ResponseGenerator::generateCGIResponse() {
 		_last_status = E_INTERNAL_SERVER_ERROR;
 		return generateErrorResponse();
 	}
+
+	_response->setStatus(E_OK);
+	_response->setBodyType(B_CGI);
 }
 
 void ResponseGenerator::parseCGIOutput(const std::string& cgi_output){

@@ -23,6 +23,8 @@ struct Conn {
 	int serverFd;
 	int clientPort;  // Track which port this connection came from
 
+	bool waitingForCgi;
+
 	Conn();
 };
 
@@ -31,7 +33,7 @@ class onConn {
 	public:
 		onConn();
 		~onConn();
-	
+
 	enum { MAX_HEADER_BYTES = 16384}; //16kb
 
 		static bool update_and_ready(Conn &c, size_t &req_end);
@@ -41,7 +43,7 @@ class onConn {
 		static void updateActivity(Conn& c);
 
 		static size_t headers_end_pos(const std::string &buf);
-		static std::string extractHostHeader(const Conn& c); 
+		static std::string extractHostHeader(const Conn& c);
 
 	private:
 		static bool try_mark_headers(Conn &c);

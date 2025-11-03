@@ -10,6 +10,7 @@ Conn::Conn()
 	, lastActivity(time(NULL))
 	, serverFd(-1)
 	, clientPort(-1)
+	, waitingForCgi(false)
 {}
 
 onConn::onConn() {}
@@ -31,7 +32,7 @@ bool onConn::onDiscon(Conn& c,bool alive, size_t endpos) {
 	}
 	return false;
 }
-// 
+//
 // static std::string to_lower(std::string s) {
 // 	for (size_t i = 0; i < s.size(); ++i)
 // 		s[i] = static_cast<char>(std::tolower(s[i]));
@@ -53,14 +54,14 @@ size_t onConn::headers_end_pos(const std::string &buff) {
 
 bool onConn::try_mark_headers(Conn &c) {
     if (c.header_done) return true;
-    
+
     size_t maxHeaderSize = MAX_HEADER_BYTES;
-    
+
     if (c.in.size() > maxHeaderSize && c.in.find("\r\n\r\n") == std::string::npos) {
         console::log("Headers too large for server FD: ", c.serverFd, ERROR);
         return false;
     }
-    
+
     size_t he = headers_end_pos(c.in);
     if (he != std::string::npos) {
         c.header_done = true;
@@ -145,26 +146,26 @@ bool onConn::update_and_ready(Conn& c, size_t &req_end) {
 
 std::string onConn::extractHostHeader(const Conn& c) {
 	if (!c.header_done) return "";
-	
+
 	const std::string headers = c.in.substr(0, c.headers_end);
 	size_t host_start = headers.find("Host:");
 	if (host_start == std::string::npos) {
 		host_start = headers.find("host:");
 	}
 	if (host_start == std::string::npos) return "";
-	
+
 	host_start += 5;
 	while (host_start < headers.size() && (headers[host_start] == ' ' || headers[host_start] == '\t')) {
 		host_start++;
 	}
-	
+
 	size_t host_end = headers.find("\r\n", host_start);
 	if (host_end == std::string::npos) return "";
-	
+
 	std::string host = headers.substr(host_start, host_end - host_start);
 	while (!host.empty() && (host[host.size() - 1] == ' ' || host[host.size() - 1] == '\t')) {
 		host.erase(host.size() - 1, 1);
 	}
-	
+
 	return host;
 }
