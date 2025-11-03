@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/15 10:45:14 by jim               #+#    #+#             */
-/*   Updated: 2025/10/28 14:17:35 by jim              ###   ########.fr       */
+/*   Updated: 2025/11/03 15:34:02 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,7 +62,7 @@ ServerConfig ConfigParser::parseServer(const std::vector<std::string>& lines) co
 				}
 			}break;
 
-			case IN_LOCATION_BLOCK: // TODO
+			case IN_LOCATION_BLOCK:
 				break;
 		}
 	}
@@ -81,7 +81,6 @@ std::pair<std::string, std::string> ConfigParser::parseDirective(const std::stri
 	std::string key = cleanLine.substr(0, spacePos);
 	std::string value = cleanLine.substr(spacePos +1);
 
-	//normalize root
 	if (key == "root")
 		value = normalizeRootPath(value);
 
@@ -105,7 +104,6 @@ std::string ConfigParser::normalizeRootPath(const std::string& path){
 		}
 	}
 
-	//delete the / at the end if exist
 	while (!normalized.empty() && normalized[normalized.length() -1] == '/'){
 		normalized.erase(normalized.length() -1);
 	}
@@ -136,19 +134,17 @@ LocationsConfig ConfigParser::parseLocations(const std::vector<std::string> & li
 
 		if (line.empty() || line[0] == '#') continue;
 
-		//location block
+
 		if (line.find(LOCATION_START) == 0){
-			//save prev. location
 			if (!currentLocationPath.empty())
 				config.locations[currentLocationPath] = currentLocation;
 
-			//new loc
 			std::istringstream iss(line);
 			std::string keyword;
 			std::string path;
 			iss >>keyword >> path;
 
-			//delte the {
+
 			if (!path.empty() && path[path.length() -1] == '{')
 				path.resize(path.length() -1);
 
@@ -158,15 +154,12 @@ LocationsConfig ConfigParser::parseLocations(const std::vector<std::string> & li
 			continue;
 		}
 
-		//end loca block
 		if (line == BLOCK_END && !currentLocationPath.empty()){
-			//save current location
 			config.locations[currentLocationPath] = currentLocation;
 			currentLocationPath = "";
 			continue;
 		}
 
-		//parse directive inside loc. block
 		if (!currentLocationPath.empty()){
 			std::pair<std::string, std::string> directive = parseDirective(line);
 			if (!directive.first.empty())
@@ -174,7 +167,6 @@ LocationsConfig ConfigParser::parseLocations(const std::vector<std::string> & li
 		}
 	}
 
-	//save last location
 	if (!currentLocationPath.empty())
 		config.locations[currentLocationPath] = currentLocation;
 
@@ -195,7 +187,6 @@ std::vector<ServerConfig> ConfigParser::parseAllServers(const std::vector<std::s
 
 		if (line.empty() || line[0] == '#') continue;
 
-		//start of a block
 		if (line.find(SERVER_START) == 0 && state == OUTSIDE_BLOCK){
 			if (inServer){
 				if (!currentLocationPath.empty()){
@@ -205,14 +196,12 @@ std::vector<ServerConfig> ConfigParser::parseAllServers(const std::vector<std::s
 				servers.push_back(currentServer);
 			}
 
-			//new Server
 			currentServer = ServerConfig();
 			state = IN_SERVER_BLOCK;
 			inServer = true;
 			continue;
 		}
 
-		//in server block
 		if (state == IN_SERVER_BLOCK){
 			if (line == BLOCK_END){
 				if (!currentLocationPath.empty()){
@@ -225,7 +214,6 @@ std::vector<ServerConfig> ConfigParser::parseAllServers(const std::vector<std::s
 				continue;
 			}
 
-			//Begin location bloc
 			if (line.find(LOCATION_START) == 0){
 				if (!currentLocationPath.empty()){
 					currentServer.locations[currentLocationPath] = currentLocation;
@@ -251,7 +239,6 @@ std::vector<ServerConfig> ConfigParser::parseAllServers(const std::vector<std::s
 			if (!directive.first.empty()){
 				if (directive.first == "listen"){
 					currentServer.listen_ports.push_back(directive.second);
-					//std::cout <<"[DEBUG] added listen" << directive.second << std::endl;
 				}else if (directive.first == "error_page"){
 					std::istringstream iss(directive.second);
 					std::string code;
@@ -269,7 +256,7 @@ std::vector<ServerConfig> ConfigParser::parseAllServers(const std::vector<std::s
 				}
 			}
 		}
-		else if(state == IN_LOCATION_BLOCK){ // in location
+		else if(state == IN_LOCATION_BLOCK){ 
 			if (line == BLOCK_END){
 				currentServer.locations[currentLocationPath] = currentLocation;
 				currentLocationPath="";
@@ -277,7 +264,6 @@ std::vector<ServerConfig> ConfigParser::parseAllServers(const std::vector<std::s
 				continue;
 			}
 
-			//directive form loc
 			std::pair<std::string, std::string> directive = parseDirective(line);
 			if(!directive.first.empty()){
 				currentLocation.directives[directive.first]=directive.second;

@@ -35,7 +35,6 @@ void ResponseGenerator::generateResponse() {
 	setHeaders();
 }
 
-// TODO check if correct logic
 void ResponseGenerator::generatePostResponse() {
 
 	std::string content;
@@ -58,7 +57,6 @@ void ResponseGenerator::generatePostResponse() {
 	_response->setBodyType(B_HTML);
 }
 
-// TODO check if correct logic
 void ResponseGenerator::generateDeleteResponse() {
 
 	HTMLTemplate tmpl("Success", "DELETE Method", "<p>File was successfully removed.</p>", "", "", false);
@@ -102,8 +100,8 @@ void ResponseGenerator::generateDirectoryResponse() {
 	const std::string& url_path = _request->getUri().getPath();
 	std::string content;
 
-	if (url_path != "/" && url_path.length() > 1) {					// if not root, link parent dir
-		std::string parent_path = remove_suffix(url_path, "/");		// remove trailing /
+	if (url_path != "/" && url_path.length() > 1) {
+		std::string parent_path = remove_suffix(url_path, "/");
 		size_t last_slash = parent_path.find_last_of('/');
 		if (last_slash == 0)
 			parent_path = "/";
@@ -181,7 +179,6 @@ void ResponseGenerator::generateCGIResponse() {
 
 	CgiExec executor(script_path, python_path, &_config);
 	CgiResult cgi_result = executor.startCgi(_request);
-	//std::string cgi_output = executor.execute(_request);
 
 	extern eventProcessor* g_eventProcessor;
 	extern int g_clientFd;
@@ -202,20 +199,16 @@ void ResponseGenerator::generateCGIResponse() {
 }
 
 void ResponseGenerator::parseCGIOutput(const std::string& cgi_output){
-	//first find the empty lime, separator header body
 	size_t header_end= cgi_output.find("\n\n");
 	if (header_end == std::string::npos){
-		//no head ? :(
 		_response->setBody(cgi_output);
 		_response->setBodyType(B_CGI);
 		return;
 	}
 
-	//separator header body
 	std::string header_part = cgi_output.substr(0,header_end);
-	std::string body_part = cgi_output.substr(header_end + 2); // count +2 for \n\n
+	std::string body_part = cgi_output.substr(header_end + 2);
 
-	//parse header line by line
 	std::istringstream header_stream(header_part);
 	std::string line;
 	while(std::getline(header_stream, line)){
@@ -224,7 +217,6 @@ void ResponseGenerator::parseCGIOutput(const std::string& cgi_output){
 			std::string header_name = line.substr(0, colon_position);
 			std::string header_value = line.substr(colon_position + 1);
 
-			//delet space
 			while (!header_value.empty() && header_value[0] == ' '){
 				header_value = header_value.substr(1);}
 

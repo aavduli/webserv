@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/07 15:20:25 by jim               #+#    #+#             */
-/*   Updated: 2025/11/03 13:32:18 by jim              ###   ########.fr       */
+/*   Updated: 2025/11/03 15:25:32 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,7 +37,6 @@ class CgiExec
 		CgiExec(const std::string& script_path, const std::string& pyhton_path, const WebservConfig* config);
 		~CgiExec();
 
-		//std::string execute(const HttpRequest* request);
 		CgiResult startCgi(const HttpRequest* request);
 
 };

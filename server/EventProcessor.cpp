@@ -266,15 +266,12 @@ void eventProcessor::handleCgiStart(int clientFd, const CgiResult& cgi){
 
 	_runningCgi[cgi.pipeFd] = state;
 	_eventManager.addFd(cgi.pipeFd, EPOLLIN);
-	console::log("[CGI] started PID= "+nb_to_string(cgi.pid), MSG);
 }
 
 void eventProcessor::handleCgiData(int pipeFd){
-	console::log("[CGI] handleCgiData called for FD=" + nb_to_string(pipeFd), MSG);
 
 	std::map<int, CgiState>::iterator it = _runningCgi.find(pipeFd);
 	if (it == _runningCgi.end()) {
-		console::log("[CGI] FD not found in _runningCgi map!", ERROR);
 		return;
 	}
 
@@ -282,23 +279,17 @@ void eventProcessor::handleCgiData(int pipeFd){
 	CgiState& cgi = it->second;
 	char buffer[4096];
 	ssize_t bytes = read(pipeFd, buffer, sizeof(buffer));
-	console::log("[CGI] read() returned: " + nb_to_string(bytes), MSG);
 
 	if (bytes > 0){
-		console::log("[CGI] Read " + nb_to_string(bytes) + " bytes from pipe", MSG);
 		cgi.output.append(buffer, bytes);
 	}
 	else if (bytes == 0){
-		console::log("[CGI] EOF detected on pipe", MSG);
 		int status;
 		pid_t result = waitpid(cgi.pid, &status, WNOHANG);
-		console::log("[CGI] waitpid returned: " + nb_to_string(result), MSG);
 		if (result <= 0){
-			console::log("[CGI] Process still running, waiting",  MSG);
 			return;
 		}
 		if (!cgi.output.empty()){
-			console::log("[CGI] Sending response (" + nb_to_string(cgi.output.size()) + " bytes)", MSG);
 			std::string response = cgi.output;
 			if (response.find("HTTP/") != 0){
 				response = "HTTP/1.1 200 OK\r\n" + response;
@@ -309,7 +300,6 @@ void eventProcessor::handleCgiData(int pipeFd){
 			connection.waitingForCgi = false;
 
 			handleClientDisconnection(cgi.clientFd);
-			console::log("[CGI] Response sent, client can continue normally", MSG);
 		}
 		else{
 			console::log("[CGI] No output, sending error", ERROR);
@@ -321,12 +311,11 @@ void eventProcessor::handleCgiData(int pipeFd){
 		_runningCgi.erase(it);
 	}
 	else{
-		console::log("[CGI] read() returned -1 (EAGAIN or error)", MSG);
+		console::log("[CGI] read() returned -1 (EAGAIN or error)", ERROR);
 	}
 }
 
 bool eventProcessor::isCgiPipe(int fd) const{
 	bool result = _runningCgi.find(fd) != _runningCgi.end();
-	console::log("[CGI] isCgiPipe(" + nb_to_string(fd) + ") = " + (result ? "true" : "false"), MSG);
 	return _runningCgi.find(fd) != _runningCgi.end();
 }

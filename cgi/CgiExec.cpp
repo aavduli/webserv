@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/07 15:20:30 by jim               #+#    #+#             */
-/*   Updated: 2025/11/03 13:49:15 by jim              ###   ########.fr       */
+/*   Updated: 2025/11/03 15:25:26 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,8 +25,6 @@
 
 extern char** environ;
 
-//coinstr
-//todo Check for python path, what to do
 CgiExec::CgiExec(const std::string& script_path, const std::string& python_path, const WebservConfig* config) :
 	_script_path(script_path), _python_path(python_path), _config(config){}
 
@@ -48,7 +46,6 @@ CgiResult CgiExec::startCgi(const HttpRequest* request){
 	fcntl(pipefd[0], F_SETFD, FD_CLOEXEC);
 	fcntl(pipefd[1], F_SETFD, FD_CLOEXEC);
 
-	//need to send stdin for post
 	int stdin_pipefd[2];
 	if (pipe(stdin_pipefd) == -1){
 		console::log("[CGI] failed to create second (stdin) pipe", ERROR);
@@ -59,7 +56,6 @@ CgiResult CgiExec::startCgi(const HttpRequest* request){
 	fcntl(stdin_pipefd[0], F_SETFD, FD_CLOEXEC);
 	fcntl(stdin_pipefd[1], F_SETFD, FD_CLOEXEC);
 
-	//fork
 	pid_t pid = fork();
 	if (pid == -1){
 		console::log("[CGI] Fork failed", ERROR);
@@ -70,8 +66,6 @@ CgiResult CgiExec::startCgi(const HttpRequest* request){
 		return result;
 	}
 
-
-
 	if (pid == 0){
 		close(pipefd[0]);
 		dup2(pipefd[1], STDOUT_FILENO);
@@ -81,12 +75,6 @@ CgiResult CgiExec::startCgi(const HttpRequest* request){
 		dup2(stdin_pipefd[0], STDIN_FILENO);
 		close(stdin_pipefd[0]);
 
-
-
-		//change dir
-		//chdir("./www/cgi-bin");
-
-		//Setup CGI variable env
 		console::log("[CGI] Executing: setenv", MSG);
 		setenv("REQUEST_METHOD", request->getMethod().c_str(), 1);
 		setenv("SERVER_PROTOCOL", "HTTP/1.1", 1);
@@ -99,14 +87,13 @@ CgiResult CgiExec::startCgi(const HttpRequest* request){
 		setenv("PATH_INFO", "", 1);
 		setenv("PATH_TRANSLATED", "", 1);
 
-		setenv("REMOTE_ADDR", "127.0.0.1", 1); //Todo func to define true real addr ?? needed
+		setenv("REMOTE_ADDR", "127.0.0.1", 1);
 
 
 		if (!request->getUri().getQuery().empty()){
 			setenv("QUERY_STRING", request->getUri().getQuery().c_str(), 1);
 		}
 
-		//for POST method
 		if (request->getMethod() == "POST"){
 			std::ostringstream oss;
 			oss<<request->getBody().size();
@@ -133,7 +120,7 @@ CgiResult CgiExec::startCgi(const HttpRequest* request){
 				}
 			}
 
-		//execute python script
+		//execute script
 		if (access(_python_path.c_str(), X_OK) != 0){
 			console::log("[CGI] python not found: " + _python_path, ERROR);
 			exit(1);
@@ -142,12 +129,10 @@ CgiResult CgiExec::startCgi(const HttpRequest* request){
 		char* argv[] = {(char*)"python3", (char*)_script_path.c_str(), (char*) NULL};
 		execve(_python_path.c_str(), argv, environ);
 
-		//if exce fail
 		console::log("[CGI] exceve failed: "+std::string(strerror(errno)), ERROR);
 		exit(1);
 	}
 
-	//parent proc
 	close(pipefd[1]);
 	close(stdin_pipefd[0]);
 
@@ -167,7 +152,7 @@ CgiResult CgiExec::startCgi(const HttpRequest* request){
 				break;
 			}
 			if (written == 0){
-				break; // in case of
+				break;
 			}
 			data += written;
 			remain -= written;
