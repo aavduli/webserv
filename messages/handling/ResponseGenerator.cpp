@@ -1,7 +1,7 @@
 #include "ResponseGenerator.hpp"
 
-ResponseGenerator::ResponseGenerator(const WebservConfig& config, HttpRequest* request, HttpResponse* response, Status status) : _config(config), _request(request), _response(response), _last_status(status) {}
-ResponseGenerator::ResponseGenerator(const ResponseGenerator& rhs) : _config(rhs._config), _request(rhs._request), _response(rhs._response), _last_status(rhs._last_status){}
+ResponseGenerator::ResponseGenerator(const WebservConfig& config, HttpRequest* request, HttpResponse* response, Status status, eventManager& em) : _config(config), _request(request), _response(response), _last_status(status), _eventManager(em) {}
+ResponseGenerator::ResponseGenerator(const ResponseGenerator& rhs) : _config(rhs._config), _request(rhs._request), _response(rhs._response), _last_status(rhs._last_status), _eventManager(rhs._eventManager) {}
 ResponseGenerator& ResponseGenerator::operator=(const ResponseGenerator& rhs) {
 	if (this != &rhs) {
 		_request = rhs._request;
@@ -179,7 +179,7 @@ void ResponseGenerator::generateCGIResponse() {
 	const std::string& script_path = _request->getUri().getEffectivePath();
 	std::string python_path = _config.getCgiPath(_request->ctx._location_name);
 
-	CgiExec executor(script_path, python_path, &_config);
+	CgiExec executor(script_path, python_path, &_config, _eventManager);
 	std::string cgi_output = executor.execute(_request);
 
 	if (cgi_output.empty()){

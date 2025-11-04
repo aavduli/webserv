@@ -33,6 +33,7 @@ class ResponseGenerator {
 		HttpRequest*			_request;
 		HttpResponse*			_response;
 		Status					_last_status;
+		eventManager&			_eventManager;
 
 		void	generateRedirResponse();
 		void	generatePostResponse();
@@ -43,7 +44,7 @@ class ResponseGenerator {
 		void	generateErrorResponse();
 
 	public:
-		ResponseGenerator(const WebservConfig& config, HttpRequest* request, HttpResponse* response, Status status);
+		ResponseGenerator(const WebservConfig& config, HttpRequest* request, HttpResponse* response, Status status, eventManager& em);
 		ResponseGenerator(const ResponseGenerator& rhs);
 		ResponseGenerator& operator=(const ResponseGenerator& rhs);
 		~ResponseGenerator();

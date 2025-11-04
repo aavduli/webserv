@@ -39,4 +39,5 @@ class eventProcessor {
 		bool isDisconnectionEvent(uint32_t event) const;
 		bool isDataReadyEvent(uint32_t event) const;
 		bool isDataSendEvent(uint32_t event) const;
+
 };
