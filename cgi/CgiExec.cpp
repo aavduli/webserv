@@ -132,7 +132,7 @@ std::string CgiExec::execute(const HttpRequest* request){
 	close(pipefd[1]);
 	close(stdin_pipefd[0]);
 
-	_eventManager.addFd(pipefd[0], EPOLLIN);
+	_eventManager.addFd(pipefd[0], EPOLLOUT);
 
 	if (request->getMethod() == "POST" && !request->getBody().empty()){
 		std::string body = request->getBody();
@@ -192,7 +192,7 @@ std::string CgiExec::execute(const HttpRequest* request){
 			}
 			break;
 		}
-
+		_eventManager.addFd(pipefd[0], EPOLLIN);
 		int epoll_result = _eventManager.wait(1000);
 
 		for (int i = 0; i < epoll_result; i++) {
