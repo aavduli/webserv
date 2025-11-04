@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/07 15:20:30 by jim               #+#    #+#             */
-/*   Updated: 2025/11/03 09:53:08 by jim              ###   ########.fr       */
+/*   Updated: 2025/11/04 16:10:02 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,7 +22,7 @@
 #include "../console/console.hpp"
 #include <fcntl.h>
 #include "../server/NetworkHandler.hpp"
-#define TIMEOUT_CGI 100
+#define TIMEOUT_CGI 20
 
 extern char** environ;
 
@@ -145,7 +145,7 @@ std::string CgiExec::execute(const HttpRequest* request){
 	close(pipefd[1]);
 	close(stdin_pipefd[0]);
 
-	
+
 	_eventManager.addFd(pipefd[0], EPOLLIN);
 
 	if (request->getMethod() == "POST" && !request->getBody().empty()){
@@ -156,13 +156,9 @@ std::string CgiExec::execute(const HttpRequest* request){
 		while(remain > 0){
 			ssize_t written = write(stdin_pipefd[1], data, remain);
 			if (written < 0){
-				if (errno == EPIPE){
 					console::log("[CGI] child process closed stdin (EPIPE)", ERROR);
 					break;
 				}
-				console::log("[CGI] write error to child stdin", ERROR);
-				break;
-			}
 			if (written == 0){
 				break; // in case of
 			}
@@ -178,13 +174,28 @@ std::string CgiExec::execute(const HttpRequest* request){
 
 	while(true){
 		if (time(NULL) - start_time >= TIMEOUT_CGI){
-			console::log("[CGI] timeout reached, killing process", ERROR);
-			if (kill(pid, 0) == 0)
-				kill(pid, SIGKILL);
-			waitpid(pid, &status, 0);
+			console::log("[CGI] timeout reached, terminating child process", ERROR);
+			if (kill(pid, 0) == 0){
+				kill(pid, SIGTERM);
+				console::log("[CGI] sent sigterm to process", MSG);
+
+				time_t term_start = time(NULL);
+				int result = 0;
+				while(time(NULL) - term_start < 1){
+					result = waitpid(pid, &status, WNOHANG);
+					if (result > 0) break;
+					usleep(100000);
+				}
+
+				if (result == 0 && kill(pid, 0) == 0){
+					console::log("[CGI] SIGTERM failed, sending SIGKILL", ERROR);
+					kill(pid, SIGKILL);
+					waitpid(pid, &status, 0);
+				}
+			}
 			close(pipefd[0]);
 			_eventManager.delFd(pipefd[0]);
-			return "";
+			return "CGI_TIMEOUT";
 		}
 
 		int result = waitpid(pid, &status, WNOHANG);

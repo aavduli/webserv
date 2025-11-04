@@ -182,6 +182,11 @@ void ResponseGenerator::generateCGIResponse() {
 	CgiExec executor(script_path, python_path, &_config, _eventManager);
 	std::string cgi_output = executor.execute(_request);
 
+	if (cgi_output == "CGI_TIMEOUT"){
+		console::log("[ERROR][CGI] CGI TIMEOUT", MSG);
+		_last_status = E_GATEWAY_TIMEOUT;
+		return generateErrorResponse();
+	}
 	if (cgi_output.empty()){
 		console::log("[ERROR][CGI] CGI execution failed", MSG);
 		_last_status = E_INTERNAL_SERVER_ERROR;

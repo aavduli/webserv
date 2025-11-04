@@ -24,6 +24,7 @@ std::string	status_msg(Status e) {
 		case E_NOT_IMPLEMENTED: return "Not Implemented";
 		case E_BAD_GATEWAY: return "Bad Gateway";
 		case E_UNSUPPORTED_VERSION: return "HTTP Version Not Supported";
+		case E_GATEWAY_TIMEOUT: return "Gateway Timeout";
 		default: return "Unknown error";
 	}
 }

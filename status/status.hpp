@@ -25,6 +25,7 @@ enum Status {
 	E_INTERNAL_SERVER_ERROR = 500,
 	E_NOT_IMPLEMENTED = 501,	// server does not recognize the request method and is not capable of supporting it for any resource
 	E_BAD_GATEWAY = 502,
+	E_GATEWAY_TIMEOUT = 504,
 	E_UNSUPPORTED_VERSION = 505,
 };
 
