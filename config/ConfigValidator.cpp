@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/15 14:57:26 by jim               #+#    #+#             */
-/*   Updated: 2025/11/04 14:32:53 by jim              ###   ########.fr       */
+/*   Updated: 2025/11/04 14:48:08 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -489,7 +489,7 @@ bool ConfigValidator::validateNoDuplicatePorts(const std::vector<ServerConfig>& 
 			}
 			if (portUsed.find(port) != portUsed.end()){
 				std::ostringstream oss;
-				oss << "Port " << port << " is is used by multiple server : ( " << portUsed[port] << " and  " << i << ")";
+				oss << "Port " << port << " is used by multiples servers : ( " << portUsed[port] << " and  " << i << ")";
 				setError(oss.str());
 				console::log(_lastError, ERROR);
 				return false;
@@ -499,4 +499,3 @@ bool ConfigValidator::validateNoDuplicatePorts(const std::vector<ServerConfig>& 
 	}
 	return true;
 }
-

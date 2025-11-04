@@ -34,7 +34,7 @@ int main(int ac, char **av) {
 		}
 		test.close();
 		console::closeFile();
-		std::cout << RED << "Configuration error: please insert a config file " << RESET << std::endl;
+		std::cout << RED << "Error :" + config.getLastError() << RESET << std::endl;
 		return 1;
 	}
 	else{
