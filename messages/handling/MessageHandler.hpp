@@ -20,9 +20,10 @@ class MessageHandler {
 		HttpRequest*			_request;
 		HttpResponse			_response;
 		Status					_last_status;
+		eventManager&			_eventManager;
 
 	public:
-		MessageHandler(const WebservConfig& config, HttpRequest* request);
+		MessageHandler(const WebservConfig& config, HttpRequest* request, eventManager& em);
 		MessageHandler(const MessageHandler& rhs);
 		MessageHandler& operator=(const MessageHandler& rhs);
 		virtual ~MessageHandler();
@@ -37,6 +38,6 @@ class MessageHandler {
 		void			setLastStatus(Status status);
 };
 
-std::string	handle_messages(const WebservConfig& config, const std::string& raw_request, int port);
+std::string	handle_messages(const WebservConfig& config, const std::string& raw_request, int port, eventManager& em);
 
 #endif //MESSAGEHANDLER_HPP

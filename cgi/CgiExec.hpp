@@ -16,7 +16,7 @@
 # include <string>
 # include "../messages/data/HttpRequest.hpp"
 # include "../config/WebservConfig.hpp"
-# include <sys/epoll.h>
+# include "../server/eventManager.hpp"
 
 class CgiExec
 {
@@ -24,12 +24,11 @@ class CgiExec
 		std::string _script_path;
 		std::string _python_path;
 		const WebservConfig* _config;
-
-		bool isValidScriptPath(const std::string& script_path, const std::string& doc_root);
+		eventManager&		_eventManager;
 
 
 	public:
-		CgiExec(const std::string& script_path, const std::string& pyhton_path, const WebservConfig* config);
+		CgiExec(const std::string& script_path, const std::string& pyhton_path, const WebservConfig* config, eventManager& em);
 		~CgiExec();
 
 		std::string execute(const HttpRequest* request);

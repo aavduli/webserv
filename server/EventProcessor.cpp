@@ -187,7 +187,7 @@ void eventProcessor::handleClientData(int clientFd, const WebservConfig& config)
 	if (onConn::update_and_ready(connection, requestEndPos)) {
 		std::string completeRequest = connection.in.substr(0, requestEndPos);
 		std::string response;
-		response = handle_messages(config, completeRequest, connection.clientPort);
+		response = handle_messages(config, completeRequest, connection.clientPort, _eventManager);
 		sendResponse(clientFd, response);
 		connection.in.erase(0, requestEndPos);
 	}

@@ -22,19 +22,20 @@
 #include "../console/console.hpp"
 #include <fcntl.h>
 #include "../server/NetworkHandler.hpp"
-#define TIMEOUT_CGI 60
+#define TIMEOUT_CGI 100
 
 extern char** environ;
 
 //coinstr
 //todo Check for python path, what to do
-CgiExec::CgiExec(const std::string& script_path, const std::string& python_path, const WebservConfig* config) :
-	_script_path(script_path), _python_path(python_path), _config(config){}
+CgiExec::CgiExec(const std::string& script_path, const std::string& python_path, const WebservConfig* config, eventManager& em) :
+	_script_path(script_path), _python_path(python_path), _config(config), _eventManager(em) {}
 
 CgiExec::~CgiExec(){}
 
 std::string CgiExec::execute(const HttpRequest* request){
 	console::log("[CGI] Executing: " + _script_path, MSG);
+	int status = 0;
 
 	int pipefd[2];
 	if (pipe(pipefd) == -1){
@@ -65,8 +66,6 @@ std::string CgiExec::execute(const HttpRequest* request){
 		close(stdin_pipefd[1]);
 		return "";
 	}
-
-
 
 	if (pid == 0){
 		close(pipefd[0]);
@@ -145,30 +144,9 @@ std::string CgiExec::execute(const HttpRequest* request){
 	//parent proc
 	close(pipefd[1]);
 	close(stdin_pipefd[0]);
-	int status = 0;
-	int cgi_epoll_fd = epoll_create1(0);
-	if (cgi_epoll_fd == -1) {
-		console::log("[CGI][EPOLL] Failed to creat an epoll instance", ERROR);
-		close(pipefd[0]);
-		if (kill(pid, 0) == 0) {
-			kill(pid, SIGKILL);
-		}
-		waitpid(pid, &status, 0);
-		return "";
-	}
 
-	struct epoll_event ev;
-	ev.events = EPOLLIN;
-	ev.data.fd = pipefd[0];
-	if (epoll_ctl(cgi_epoll_fd, EPOLL_CTL_ADD, pipefd[0], &ev) == -1) {
-		console::log("[CGI][EPOLL] Failed to controle pipefd[0]", ERROR);
-		close(cgi_epoll_fd);
-		close(pipefd[0]);
-		if (kill(pid, 0) == 0)
-			kill(pid, SIGKILL);
-		waitpid(pid, &status, 0);
-		return "";
-	}
+	
+	_eventManager.addFd(pipefd[0], EPOLLIN);
 
 	if (request->getMethod() == "POST" && !request->getBody().empty()){
 		std::string body = request->getBody();
@@ -178,7 +156,7 @@ std::string CgiExec::execute(const HttpRequest* request){
 		while(remain > 0){
 			ssize_t written = write(stdin_pipefd[1], data, remain);
 			if (written < 0){
-				if (errno == 0){
+				if (errno == EPIPE){
 					console::log("[CGI] child process closed stdin (EPIPE)", ERROR);
 					break;
 				}
@@ -204,8 +182,8 @@ std::string CgiExec::execute(const HttpRequest* request){
 			if (kill(pid, 0) == 0)
 				kill(pid, SIGKILL);
 			waitpid(pid, &status, 0);
-			close(cgi_epoll_fd);
 			close(pipefd[0]);
+			_eventManager.delFd(pipefd[0]);
 			return "";
 		}
 
@@ -218,18 +196,21 @@ std::string CgiExec::execute(const HttpRequest* request){
 			break;
 		}
 
-		struct epoll_event events[1];
-		int epoll_result = epoll_wait(cgi_epoll_fd, events, 1, 100);
+		int epoll_result = _eventManager.wait(1000);
 
-		if (epoll_result > 0 && events[0].events & EPOLLIN){
-			ssize_t bytes_read = read(pipefd[0], buffer, sizeof(buffer));
-			if (bytes_read > 0){
-				output.append(buffer, bytes_read);
+		for (int i = 0; i < epoll_result; i++) {
+			if (_eventManager[i].data.fd == pipefd[0] && (_eventManager[i].events & EPOLLIN)) {
+				ssize_t bytes_read = read(pipefd[0], buffer, sizeof(buffer));
+				if (bytes_read > 0){
+					output.append(buffer, bytes_read);
+				}
+				else if (bytes_read == 0) {
+					break;
+				}
 			}
 		}
 	}
-
-	close(cgi_epoll_fd);
+	_eventManager.delFd(pipefd[0]);
 	close(pipefd[0]);
 
 	if (WIFEXITED(status)){

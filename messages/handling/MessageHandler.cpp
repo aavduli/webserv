@@ -1,8 +1,8 @@
 #include "MessageHandler.hpp"
 #include "../../server/ConnectionManager.hpp"
 
-MessageHandler::MessageHandler(const WebservConfig& config, HttpRequest* request) : _config(config), _request(request), _response(), _last_status(E_INIT) {}
-MessageHandler::MessageHandler(const MessageHandler& rhs) : _config(rhs._config), _request(rhs._request), _response(rhs._response), _last_status(rhs._last_status) {}
+MessageHandler::MessageHandler(const WebservConfig& config, HttpRequest* request, eventManager& em) : _config(config), _request(request), _response(), _last_status(E_INIT), _eventManager(em) {}
+MessageHandler::MessageHandler(const MessageHandler& rhs) : _config(rhs._config), _request(rhs._request), _response(rhs._response), _last_status(rhs._last_status), _eventManager(rhs._eventManager) {}
 MessageHandler& MessageHandler::operator=(const MessageHandler& rhs) {
 	if (this != &rhs) {
 		_request = rhs._request;
@@ -16,7 +16,7 @@ MessageHandler::~MessageHandler() {}
 Status		MessageHandler::getLastStatus() const {return _last_status;}
 void		MessageHandler::setLastStatus(Status status) {_last_status = status;}
 
-std::string	handle_messages(const WebservConfig& config, const std::string &raw_request, int port) {
+std::string	handle_messages(const WebservConfig& config, const std::string &raw_request, int port, eventManager& em) {
 	console::log("========================================", MSG);
 	if (port > 0)
 		console::log("[INFO] Processing request for port: " + nb_to_string(port), MSG);
@@ -24,7 +24,7 @@ std::string	handle_messages(const WebservConfig& config, const std::string &raw_
 		console::log("[INFO] Processing request (default server)", MSG);
 
 	HttpRequest			request;
-	MessageHandler		handler(config, &request);
+	MessageHandler		handler(config, &request, em);
 
 	if (port > 0) {
 		if (!config.getServerByPort(port)) {
@@ -88,7 +88,7 @@ void MessageHandler::processRequest() {
 
 void MessageHandler::generateResponse() {
 
-	ResponseGenerator	generator(_config, _request, &_response, _last_status);
+	ResponseGenerator	generator(_config, _request, &_response, _last_status, _eventManager);
 
 	generator.generateResponse();
 	_last_status = generator.getLastStatus();

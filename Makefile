@@ -34,21 +34,16 @@ SRCS =	main.cpp \
 OBJDIR = obj/
 
 OBJS = $(SRCS:.cpp=.o)
-OBJS := $(addprefix $(OBJDIR)/, $(notdir $(OBJS:.o=.o)))
+OBJS := $(addprefix $(OBJDIR)/, $(OBJS))
 
 all: $(NAME)
 
 $(NAME): $(OBJS)
 	$(CXX) $(CXXFLAGS) $(OBJS) -o $(NAME)
 
-$(OBJDIR)/%.o: %.cpp | $(OBJDIR)
+$(OBJDIR)/%.o: %.cpp
+	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
-
-$(OBJDIR)/%.o:
-	$(CXX) $(CXXFLAGS) -c $(filter %/$*.cpp,$(SRCS)) -o $@
-
-$(OBJDIR):
-	mkdir -p $(OBJDIR)
 
 clean:
 	rm -rf $(OBJDIR)
