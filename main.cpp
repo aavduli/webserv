@@ -8,6 +8,7 @@ int main(int ac, char **av) {
 
 	console::openFile();
 	std::string filename;
+	ConfigValidator validator;
 	if (ac == 2){
 		filename = av[1];
 	}else{
@@ -31,11 +32,21 @@ int main(int ac, char **av) {
 		std::ifstream test(fn.c_str());
 		if (!test.good()){
 			console::log("File does not exist: " + fn, ERROR);
+			test.close();
+			console::closeFile();
+			std::cout << RED << "Configuration error: File does not exist: " << fn << RESET << std::endl;
+			return 1;
 		}
 		test.close();
 		console::closeFile();
-		std::cout << RED << "Error :" + config.getLastError() << RESET << std::endl;
-		return 1;
+
+		std::string error = config.getLastError();
+		if (error.empty()) {
+			std::cout << RED << "Configuration error: Unknown error loading config file" << RESET << std::endl;
+		} else {
+			std::cout << RED << "Configuration error: " << error << RESET << std::endl;
+		}
+
 	}
 	else{
 		console::log("config loaded succeffulsy", CONF);
