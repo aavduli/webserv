@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/15 14:45:23 by jim               #+#    #+#             */
-/*   Updated: 2025/10/12 14:16:11 by jim              ###   ########.fr       */
+/*   Updated: 2025/11/04 14:21:45 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,6 +34,8 @@ class ConfigValidator{
 
 		bool validateBraces(const std::vector<std::string>& lines);
 		bool validateSyntax(const std::vector<std::string>& lines);
+
+		bool validateNoDuplicatePorts(const std::vector<ServerConfig>& servers);
 
 
 		//serveur

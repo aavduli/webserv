@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ConfigValidator.cpp                                :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: angela <angela@student.42.fr>              +#+  +:+       +#+        */
+/*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/15 14:57:26 by jim               #+#    #+#             */
-/*   Updated: 2025/11/03 11:14:10 by angela           ###   ########.fr       */
+/*   Updated: 2025/11/04 14:32:53 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -471,3 +471,32 @@ bool ConfigValidator::isPortUsed(int port) const{ //todo do we need a check for 
 	(void) port;
 	return false; // /!\ watch out invers, false = free port
 }
+
+bool ConfigValidator::validateNoDuplicatePorts(const std::vector<ServerConfig>& servers){
+	std::map<int, int> portUsed;
+
+	for (size_t i = 0; i <servers.size(); ++i){
+		const ServerConfig& server = servers[i];
+
+		for (size_t j = 0; j < server.listen_ports.size(); ++j){
+			const std::string& portStr = server.listen_ports[j];
+
+			int port = std::atoi(portStr.c_str());
+			if (port <= 0){
+				std::ostringstream oss;
+				oss << "invalid port number" << portStr;
+				return false;
+			}
+			if (portUsed.find(port) != portUsed.end()){
+				std::ostringstream oss;
+				oss << "Port " << port << " is is used by multiple server : ( " << portUsed[port] << " and  " << i << ")";
+				setError(oss.str());
+				console::log(_lastError, ERROR);
+				return false;
+			}
+			portUsed[port] = i;
+		}
+	}
+	return true;
+}
+

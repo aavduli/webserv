@@ -91,6 +91,10 @@ bool WebservConfig::loadConfig(const std::string& configFile){
 			}
 		}
 	}
+	if (!_validator.validateNoDuplicatePorts(serverConfigs)){
+		console::log("[ERROR] Port configuration error: " + _validator.getLastError(), ERROR);
+		return false;
+	}
 
 	_servers = serverConfigs;
 	_isValid = true;
