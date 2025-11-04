@@ -7,6 +7,7 @@
 #include "../data/HttpMessage.hpp"
 #include "../data/HttpRequest.hpp"
 #include "../data/HttpResponse.hpp"
+#include "../../server/eventManager.hpp"
 #include "RequestParser.hpp"
 #include "RequestValidator.hpp"
 #include "RequestProcessor.hpp"

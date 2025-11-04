@@ -18,8 +18,10 @@
 #include <cerrno>
 #include <ctime>
 #include <signal.h>
+#include <sys/epoll.h>
 #include "../console/console.hpp"
 #include <fcntl.h>
+#include "../server/NetworkHandler.hpp"
 #define TIMEOUT_CGI 60
 
 extern char** environ;
@@ -39,8 +41,8 @@ std::string CgiExec::execute(const HttpRequest* request){
 		console::log("[CGI] failed to create pipe", ERROR);
 		return "";
 	}
-	fcntl(pipefd[0], F_SETFD, FD_CLOEXEC);
-	fcntl(pipefd[1], F_SETFD, FD_CLOEXEC);
+	NetworkHandler::makeNonblocking(pipefd[0]);
+	NetworkHandler::makeNonblocking(pipefd[1]);
 
 	//need to send stdin for post
 	int stdin_pipefd[2];
@@ -50,8 +52,8 @@ std::string CgiExec::execute(const HttpRequest* request){
 		close(pipefd[1]);
 		return "";
 	}
-	fcntl(stdin_pipefd[0], F_SETFD, FD_CLOEXEC);
-	fcntl(stdin_pipefd[1], F_SETFD, FD_CLOEXEC);
+	NetworkHandler::makeNonblocking(stdin_pipefd[0]);
+	NetworkHandler::makeNonblocking(stdin_pipefd[1]);
 
 	//fork
 	pid_t pid = fork();
@@ -70,7 +72,6 @@ std::string CgiExec::execute(const HttpRequest* request){
 		close(pipefd[0]);
 		dup2(pipefd[1], STDOUT_FILENO);
 		close(pipefd[1]);
-
 		close(stdin_pipefd[1]);
 		dup2(stdin_pipefd[0], STDIN_FILENO);
 		close(stdin_pipefd[0]);
@@ -144,6 +145,30 @@ std::string CgiExec::execute(const HttpRequest* request){
 	//parent proc
 	close(pipefd[1]);
 	close(stdin_pipefd[0]);
+	int status = 0;
+	int cgi_epoll_fd = epoll_create1(0);
+	if (cgi_epoll_fd == -1) {
+		console::log("[CGI][EPOLL] Failed to creat an epoll instance", ERROR);
+		close(pipefd[0]);
+		if (kill(pid, 0) == 0) {
+			kill(pid, SIGKILL);
+		}
+		waitpid(pid, &status, 0);
+		return "";
+	}
+
+	struct epoll_event ev;
+	ev.events = EPOLLIN;
+	ev.data.fd = pipefd[0];
+	if (epoll_ctl(cgi_epoll_fd, EPOLL_CTL_ADD, pipefd[0], &ev) == -1) {
+		console::log("[CGI][EPOLL] Failed to controle pipefd[0]", ERROR);
+		close(cgi_epoll_fd);
+		close(pipefd[0]);
+		if (kill(pid, 0) == 0)
+			kill(pid, SIGKILL);
+		waitpid(pid, &status, 0);
+		return "";
+	}
 
 	if (request->getMethod() == "POST" && !request->getBody().empty()){
 		std::string body = request->getBody();
@@ -169,28 +194,23 @@ std::string CgiExec::execute(const HttpRequest* request){
 	}
 	close(stdin_pipefd[1]);
 
-	//timeout
-
 	std::string output;
 	char buffer[4096];
 	time_t start_time = time(NULL);
-	int status;
 
 	while(true){
-		//check global timeout
 		if (time(NULL) - start_time >= TIMEOUT_CGI){
 			console::log("[CGI] timeout reached, killing process", ERROR);
 			if (kill(pid, 0) == 0)
 				kill(pid, SIGKILL);
 			waitpid(pid, &status, 0);
+			close(cgi_epoll_fd);
 			close(pipefd[0]);
 			return "";
 		}
 
-		//process alive?
 		int result = waitpid(pid, &status, WNOHANG);
 		if (result > 0){
-			//process ended, read end data
 			ssize_t bytes_read;
 			while((bytes_read = read(pipefd[0], buffer, sizeof(buffer))) > 0){
 				output.append(buffer, bytes_read);
@@ -198,16 +218,10 @@ std::string CgiExec::execute(const HttpRequest* request){
 			break;
 		}
 
-		//network handler :: make non bloquant
-		//non blocking reading <- aavduli ? todo
-		fd_set read_fds;
-		FD_ZERO(&read_fds);
-		FD_SET(pipefd[0], &read_fds);
+		struct epoll_event events[1];
+		int epoll_result = epoll_wait(cgi_epoll_fd, events, 1, 100);
 
-		struct timeval tv = {0, 100000};
-		int select_result = select(pipefd[0] + 1, &read_fds, NULL, NULL, &tv);
-
-		if (select_result > 0){
+		if (epoll_result > 0 && events[0].events & EPOLLIN){
 			ssize_t bytes_read = read(pipefd[0], buffer, sizeof(buffer));
 			if (bytes_read > 0){
 				output.append(buffer, bytes_read);
@@ -215,6 +229,7 @@ std::string CgiExec::execute(const HttpRequest* request){
 		}
 	}
 
+	close(cgi_epoll_fd);
 	close(pipefd[0]);
 
 	if (WIFEXITED(status)){

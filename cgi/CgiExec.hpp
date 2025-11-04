@@ -16,6 +16,7 @@
 # include <string>
 # include "../messages/data/HttpRequest.hpp"
 # include "../config/WebservConfig.hpp"
+# include <sys/epoll.h>
 
 class CgiExec
 {
