@@ -193,17 +193,14 @@ void ResponseGenerator::generateCGIResponse() {
 		return generateErrorResponse();
 	}
 
-	//parsing cgi output
 	parseCGIOutput(cgi_output);
 	_response->setStatus(E_OK);
 	_response->setBodyType(B_CGI);
 }
 
 void ResponseGenerator::parseCGIOutput(const std::string& cgi_output){
-	//first find the empty lime, separator header body
 	size_t header_end= cgi_output.find("\n\n");
 	if (header_end == std::string::npos){
-		//no head ? :(
 		_response->setBody(cgi_output);
 		_response->setBodyType(B_CGI);
 		return;
@@ -211,7 +208,7 @@ void ResponseGenerator::parseCGIOutput(const std::string& cgi_output){
 
 	//separator header body
 	std::string header_part = cgi_output.substr(0,header_end);
-	std::string body_part = cgi_output.substr(header_end + 2); // count +2 for \n\n
+	std::string body_part = cgi_output.substr(header_end + 2); 
 
 	//parse header line by line
 	std::istringstream header_stream(header_part);
@@ -222,7 +219,6 @@ void ResponseGenerator::parseCGIOutput(const std::string& cgi_output){
 			std::string header_name = line.substr(0, colon_position);
 			std::string header_value = line.substr(colon_position + 1);
 
-			//delet space
 			while (!header_value.empty() && header_value[0] == ' '){
 				header_value = header_value.substr(1);}
 

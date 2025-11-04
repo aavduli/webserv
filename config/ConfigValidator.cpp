@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/15 14:57:26 by jim               #+#    #+#             */
-/*   Updated: 2025/11/04 14:48:08 by jim              ###   ########.fr       */
+/*   Updated: 2025/11/04 16:28:00 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,7 @@ const int ConfigValidator::MIN_PORT;
 const int ConfigValidator::MAX_PORT;
 const size_t ConfigValidator::MAX_DIRECTIVE_LEN;
 
-const int BLOCKINGERROR = 1; //0 nnon strict 1 strict
+const int BLOCKINGERROR = 1; 
 
 ConfigValidator::ConfigValidator(): _lastError(""){}
 ConfigValidator::~ConfigValidator() {}
@@ -34,7 +34,7 @@ void ConfigValidator::setError(const std::string& error){
 	_lastError = error;
 }
 
-std::string ConfigValidator::getLastError() const{//todo oo correct this func
+std::string ConfigValidator::getLastError() const{
 	return _lastError;
 }
 
@@ -42,7 +42,6 @@ void ConfigValidator::clearError(){
 	_lastError = "";
 }
 
-/// validation
 
 bool ConfigValidator::validateBraces(const std::vector<std::string>& lines){
 	int braceCount = 0;
@@ -126,11 +125,11 @@ std::string ConfigValidator::toString(size_t num) const {
 	return oss.str();
 }
 
-//mandatory direcovec
+//mandatory directives
 bool ConfigValidator::validateServerConfig(const ServerConfig& config) {
 	ParsingUtils utils;
 
-	// check mandatory dircrive
+	// check mandatory directives
 	if (config.listen_ports.empty()) {
 		setError("Missing required 'listen' directive");
 		console::log(_lastError, ERROR);
@@ -209,7 +208,6 @@ bool ConfigValidator::validateSrvName(const std::string& serverName){
 		return (BLOCKINGERROR ? false : true );
 	}
 
-	//check for invalid char
 	for (size_t i = 0; i < serverName.length(); i++){
 		char c = serverName[i];
 		if (!std::isalnum(c) && c != '.' && c != '-' && c != '_'){
@@ -240,7 +238,7 @@ bool ConfigValidator::validateErrorParge(const std::string& errorPageLine){
 	}
 
 	int codeNum = std::atoi(code.c_str());
-	if (codeNum < 400 || codeNum > 599){ // Todo check error code min max, and if we're gonne use them all
+	if (codeNum < 400 || codeNum > 599){
 		setError("Error code out of range (MIN -> MAX to define): " + code);
 		console::log(_lastError, ERROR);
 		if (BLOCKINGERROR) return false;
@@ -270,7 +268,6 @@ bool ConfigValidator::validateLocationConfig(const LocationConfig& config){
 		if (BLOCKINGERROR) return false;
 	}
 
-	//each directive
 	for (std::map<std::string, std::string>::const_iterator it = config.directives.begin();
 		it != config.directives.end(); ++it){
 			const std::string& key = it->first;
@@ -321,15 +318,15 @@ bool ConfigValidator::validateLocationPath(const std::string& path){
 
 bool ConfigValidator::validateHTTPMethods(const std::string& methods){
 	if (methods.empty()){
-		setError("should we accept empty method"+ methods ); //todo maybe accept some empty methods
+		setError("should we accept empty method"+ methods );
 		console::log(_lastError, ERROR);
 		if (BLOCKINGERROR) return false;
 	}
 	std::istringstream iss(methods);
-	std::string m; // m = method
+	std::string m;
 
 	while(iss>>m){
-		if (m != "GET" && m != "POST" && m != "DELETE" ){ // todo can add more if bonuses
+		if (m != "GET" && m != "POST" && m != "DELETE" ){
 			setError("Invalid method: "+ m);
 			console::log(_lastError, ERROR);
 			if (BLOCKINGERROR) return false;
@@ -346,7 +343,7 @@ bool ConfigValidator::validateMBS(const std::string& size){
 	}
 
 	long sizeNum = std::atol(size.c_str());
-	if (sizeNum <= 0 || sizeNum > 1000000000){ //todo decrease bc 1 gb is kinda overkill see commetn above
+	if (sizeNum <= 0 || sizeNum > 1000000000){
 		setError("Client MBS out of range: " + size);
 		console::log(_lastError, ERROR);
 		if (BLOCKINGERROR) return false;
@@ -441,7 +438,6 @@ bool ConfigValidator::validateRedirection(const std::string& redir) {
 		if (BLOCKINGERROR) return false;
 	}
 
-	// redirection arrives only when code
 	if (!isValidNumber(parts[0])) {
 		setError("Invalid redirection code: " + parts[0]);
 		console::log(_lastError, ERROR);
@@ -455,7 +451,6 @@ bool ConfigValidator::validateRedirection(const std::string& redir) {
 		if (BLOCKINGERROR) return false;
 	}
 
-	// url cant be mepty
 	if (parts[1].empty()) {
 		setError("Empty redirection URL");
 		console::log(_lastError, ERROR);
@@ -467,9 +462,9 @@ bool ConfigValidator::validateRedirection(const std::string& redir) {
 
 
 
-bool ConfigValidator::isPortUsed(int port) const{ //todo do we need a check for free port?
+bool ConfigValidator::isPortUsed(int port) const{
 	(void) port;
-	return false; // /!\ watch out invers, false = free port
+	return false;
 }
 
 bool ConfigValidator::validateNoDuplicatePorts(const std::vector<ServerConfig>& servers){

@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/15 10:45:14 by jim               #+#    #+#             */
-/*   Updated: 2025/10/28 14:17:35 by jim              ###   ########.fr       */
+/*   Updated: 2025/11/04 16:26:42 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,7 +62,7 @@ ServerConfig ConfigParser::parseServer(const std::vector<std::string>& lines) co
 				}
 			}break;
 
-			case IN_LOCATION_BLOCK: // TODO
+			case IN_LOCATION_BLOCK:
 				break;
 		}
 	}
@@ -81,7 +81,6 @@ std::pair<std::string, std::string> ConfigParser::parseDirective(const std::stri
 	std::string key = cleanLine.substr(0, spacePos);
 	std::string value = cleanLine.substr(spacePos +1);
 
-	//normalize root
 	if (key == "root")
 		value = normalizeRootPath(value);
 
@@ -251,7 +250,6 @@ std::vector<ServerConfig> ConfigParser::parseAllServers(const std::vector<std::s
 			if (!directive.first.empty()){
 				if (directive.first == "listen"){
 					currentServer.listen_ports.push_back(directive.second);
-					//std::cout <<"[DEBUG] added listen" << directive.second << std::endl;
 				}else if (directive.first == "error_page"){
 					std::istringstream iss(directive.second);
 					std::string code;
@@ -269,7 +267,7 @@ std::vector<ServerConfig> ConfigParser::parseAllServers(const std::vector<std::s
 				}
 			}
 		}
-		else if(state == IN_LOCATION_BLOCK){ // in location
+		else if(state == IN_LOCATION_BLOCK){ 
 			if (line == BLOCK_END){
 				currentServer.locations[currentLocationPath] = currentLocation;
 				currentLocationPath="";
@@ -277,7 +275,6 @@ std::vector<ServerConfig> ConfigParser::parseAllServers(const std::vector<std::s
 				continue;
 			}
 
-			//directive form loc
 			std::pair<std::string, std::string> directive = parseDirective(line);
 			if(!directive.first.empty()){
 				currentLocation.directives[directive.first]=directive.second;

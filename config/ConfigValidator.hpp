@@ -6,7 +6,7 @@
 /*   By: jim <jim@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/15 14:45:23 by jim               #+#    #+#             */
-/*   Updated: 2025/11/04 14:21:45 by jim              ###   ########.fr       */
+/*   Updated: 2025/11/04 16:28:14 by jim              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,7 @@ class ConfigValidator{
 
 		static const int MIN_PORT = 1;
 		static const int MAX_PORT = 65535;
-		static const size_t MAX_DIRECTIVE_LEN = 1024; // to change?delete?
+		static const size_t MAX_DIRECTIVE_LEN = 1024; 
 
 		bool isValidNumber(const std::string& str) const;
 		bool isValidPath(const std::string& path) const;
@@ -45,7 +45,7 @@ class ConfigValidator{
 		bool validateErrorParge(const std::string& errorPageLine);
 
 		//location
-		bool validateLocationSConfig(const LocationsConfig& config); //plurals
+		bool validateLocationSConfig(const LocationsConfig& config);
 		bool validateLocationConfig(const LocationConfig& config);
 		bool validateLocationPath(const std::string& path);
 		bool validateHTTPMethods(const std::string& methods);
@@ -58,7 +58,7 @@ class ConfigValidator{
 		bool validateCGIPath(const std::string& cgiPath);
 		bool validateCGIExtension(const std::string& extension);
 
-		bool isPortUsed(int port) const; // not sure if needed
+		bool isPortUsed(int port) const;
 		bool hasRPerm(const std::string& path) const;
 		bool hasWPerm(const std::string& path) const;
 

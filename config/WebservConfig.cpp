@@ -51,7 +51,6 @@ std::string WebservConfig::getConfigFile() const{
 	return _configFile;
 }
 
-//getDirective
 
 bool WebservConfig::loadConfig(const std::string& configFile){
 	_configFile = configFile;
@@ -73,7 +72,6 @@ bool WebservConfig::loadConfig(const std::string& configFile){
 	}
 
 	//validate all servers and lcoations
-	//std::cout<<"[DEBUG] parsed" << serverConfigs.size() << " servers" << std::endl;
 	for (size_t i = 0; i < serverConfigs.size(); i++){
 		if (!_validator.validateServerConfig(serverConfigs[i])){
 			std::ostringstream oss;
@@ -108,7 +106,7 @@ std::string WebservConfig::getLastError() const{
 }
 
 
-//getter being better harder faster stronger (lol)
+
 int WebservConfig::getPort() const {
 	if (_servers.empty() || _servers[0].listen_ports.empty()) return 0;
 
@@ -126,7 +124,7 @@ int WebservConfig::getPort() const {
 }
 
 
-std::string WebservConfig::getHost() const { // todo make bloquant error
+std::string WebservConfig::getHost() const {
 	std::string host = getDirective("host");
 	if (!host.empty()) return host;
 
@@ -137,7 +135,7 @@ std::string WebservConfig::getHost() const { // todo make bloquant error
 		return parts[0];
 	}
 
-	return "127.0.0.1"; // default
+	return "127.0.0.1";
 }
 
 std::vector<std::string> WebservConfig::getAllowedMethods() const{
@@ -158,7 +156,6 @@ std::vector<std::string> WebservConfig::getAllowedMethods() const{
 		}
 	}
 
-	//if no valid methods return get
 	if (validMethods.empty()){
 		validMethods.push_back("GET");
 	}
@@ -195,52 +192,26 @@ std::string WebservConfig::getErrorPage(int code) const {
 	oss << code;
 	std::string codeStr = oss.str();
 
-	//adding getter for multiple error code page
 	std::string keyPrefixe = "error_page_" + codeStr;
 	std::map<std::string, std::string>::const_iterator it = _servers[0].directives.find(keyPrefixe);
 
 	if (it != _servers[0].directives.end()){
 		return it->second; //return filepath
 	}
-	return ""; //not found
+	return "";
 }
 
 size_t WebservConfig::getMaxContentLength() const{
-	//for MessageParser.hpp MAX_CONTENT_LENGTH
-	//return client_max_size_body or default
+
 	if (_servers.empty()) return 1048576;
 	ParsingUtils utils;
 	std::map<std::string, std::string>::const_iterator it = _servers[0].directives.find("client_max_body_size");
 	if (it != _servers[0].directives.end()){
 		return utils.parseSize(it->second);
 	}
-	return 1048576; // like Default MEssage parser todo asking bebou for what to do
+	return 1048576;
 }
 
-// bool WebservConfig::matchesServerName(const std::string& host) const{
-// 	std::string serverName = getServerName();
-
-// 	//exacte match
-// 	if(host == serverName) return true;
-
-// 	//with port
-// 	std::ostringstream oss;
-// 	oss << getPort();
-// 	std::string hostWPort = serverName +":"+oss.str();
-// 	if (host == hostWPort) return true;
-
-// 	//matching without default port
-// 	if (getPort() == 80 || getPort() == 443){
-// 		size_t colonPos = host.find(':');
-// 		if (colonPos != std::string::npos){
-// 			std::string hostOnly = host.substr(0, colonPos);
-// 			if (hostOnly == serverName) return true;
-// 		}
-// 	}
-// 	return false;
-// }
-
-//std::vector<std::string> hostValue = _request.getHeaderValues("Host");
 bool WebservConfig::isValidHostHeader(const std::string& host) const{
 	if (host.empty()) return false;
 
@@ -266,13 +237,11 @@ std::string WebservConfig::getCgiPath(const std::string& location_path) const{
 
 std::vector<std::string> WebservConfig::getCgiExtension(const std::string& location_path) const{
 	std::vector<std::string> extension;
-	//todo accept only .py
 	std::map<std::string, std::string> loc_config = getLocationConfig(location_path, 0);
 	std::map<std::string, std::string>::const_iterator it = loc_config.find("cgi_ext");
 
 	if (it != loc_config.end()){
 		std::string cgi_ext_str = it->second;
-		//if multiple extension parse them
 		std::istringstream iss(cgi_ext_str);
 		std::string ext;
 		while (iss>>ext){
